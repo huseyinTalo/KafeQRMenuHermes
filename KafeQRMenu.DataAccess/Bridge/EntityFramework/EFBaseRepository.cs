@@ -42,7 +42,7 @@ namespace KafeQRMenu.DataAccess.Bridge.EntityFramework
             throw new NotImplementedException();
         }
 
-        public Task DeleteRangeAsync(IEnumerable<TEntity> )
+        public Task DeleteRangeAsync(IEnumerable<TEntity> tities)
         {
             throw new NotImplementedException();
         }

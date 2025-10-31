@@ -10,6 +10,6 @@ namespace KafeQRMenu.DataAccess.Bridge.Interfaces
     public interface IAsyncDeletableRepository<TEntity> where TEntity : BaseEntity
     {
         Task DeleteAsync(TEntity entity);
-        Task DeleteRangeAsync(IEnumerable<TEntity>);
+        Task DeleteRangeAsync(IEnumerable<TEntity> tities);
     }
 }
