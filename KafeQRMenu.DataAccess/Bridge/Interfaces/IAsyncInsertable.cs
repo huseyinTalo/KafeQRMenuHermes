@@ -10,6 +10,6 @@ namespace KafeQRMenu.DataAccess.Bridge.Interfaces
     public interface IAsyncInsertable<TEntity> where TEntity : BaseEntity
     {
         Task<TEntity> AddAsync(TEntity entity);
-        Task<IEnumerable<TEntity>> AddRangeAsync(IEnumerable<TEntity> tities/*:)*/);
+        Task AddRangeAsync(IEnumerable<TEntity> tities/*:)*/);
     }
 }

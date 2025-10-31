@@ -1,5 +1,7 @@
 ﻿using KafeQRMenu.Data.Core.Concrete;
+using KafeQRMenu.Data.Enums;
 using KafeQRMenu.DataAccess.Bridge.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
@@ -12,74 +14,91 @@ namespace KafeQRMenu.DataAccess.Bridge.EntityFramework
 {
     public class EFBaseRepository<TEntity> : IRepository, IAsyncDeletableRepository<TEntity>, IAsyncRepository, IAsyncFindable<TEntity>, IAsyncOrderable<TEntity>, IAsyncTransactionable, IAsyncUpdatable<TEntity>, IAsyncInsertable<TEntity>, IAsyncQueryable<TEntity> where TEntity : BaseEntity
     {
-        public Task<TEntity> AddAsync(TEntity entity)
+        protected readonly DbContext _dbContext;
+
+        protected readonly DbSet<TEntity> _table;
+
+        public EFBaseRepository(DbContext dbContext)
         {
-            throw new NotImplementedException();
+            _dbContext = dbContext;
+            _table = _dbContext.Set<TEntity>();
         }
 
-        public Task<IEnumerable<TEntity>> AddRangeAsync(IEnumerable<TEntity> tities)
+        public async Task<TEntity> AddAsync(TEntity entity)
         {
-            throw new NotImplementedException();
+            var entry = await _table.AddAsync(entity);
+            return entry.Entity;
         }
 
-        public Task<bool> AnyAsync(Expression<Func<TEntity, bool>> expression = null)
+        public async Task AddRangeAsync(IEnumerable<TEntity> tities)
         {
-            throw new NotImplementedException();
+            await _table.AddRangeAsync(tities);
+        }
+        protected IQueryable<TEntity> GetAllActives(bool tracking = true)
+        {
+            var values = _table.Where(o => o.Status != Status.Deleted);
+            return tracking ? values : values.AsNoTracking();
+        }
+        public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> expression = null)
+        {
+            return expression is null ? await GetAllActives().AnyAsync() : await GetAllActives().AnyAsync(expression);
         }
 
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return _dbContext.Database.BeginTransactionAsync(cancellationToken);
         }
 
         public Task<IExecutionStrategy> CreateExecutionStrategy()
         {
-            throw new NotImplementedException();
+            return Task.FromResult(_dbContext.Database.CreateExecutionStrategy());
         }
 
-        public Task DeleteAsync(TEntity entity)
+        public async Task DeleteAsync(TEntity entity)
         {
-            throw new NotImplementedException();
+            await Task.FromResult(_table.Remove(entity));
         }
 
-        public Task DeleteRangeAsync(IEnumerable<TEntity> tities)
+        public async Task DeleteRangeAsync(IEnumerable<TEntity> tities)
         {
-            throw new NotImplementedException();
+            _table.RemoveRange(tities);
+            await _dbContext.SaveChangesAsync();
         }
 
-        public Task<IEnumerable<TEntity>> GetAllAsync<TKey>(Expression<Func<TEntity, TKey>> orderBy, bool orderByDescending, bool tracking = true)
+        public async Task<IEnumerable<TEntity>> GetAllAsync<TKey>(Expression<Func<TEntity, TKey>> orderBy, bool orderByDescending, bool tracking = true)
         {
-            throw new NotImplementedException();
+            return orderByDescending ? await GetAllActives(tracking).OrderByDescending(orderBy).ToListAsync() : await GetAllActives(tracking).OrderBy(orderBy).ToListAsync();
         }
 
-        public Task<IEnumerable<TEntity>> GetAllAsync<TKey>(Expression<Func<TEntity, bool>> expression, Expression<Func<TEntity, TKey>> orderBy, bool orderByDescending, bool tracking = true)
+        public async Task<IEnumerable<TEntity>> GetAllAsync<TKey>(Expression<Func<TEntity, bool>> expression, Expression<Func<TEntity, TKey>> orderBy, bool orderByDescending, bool tracking = true)
         {
-            throw new NotImplementedException();
+            var values = GetAllActives(tracking).Where(expression);
+            return orderByDescending ? await values.OrderByDescending(orderBy).ToListAsync() : await values.OrderBy(orderBy).ToListAsync();
         }
 
-        public Task<IEnumerable<TEntity>> GetAllAsync(bool tracking = true)
+        public async Task<IEnumerable<TEntity>> GetAllAsync(bool tracking = true)
         {
-            throw new NotImplementedException();
+            return await GetAllActives(tracking).ToListAsync();
         }
 
-        public Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> expression, bool tracking = true)
+        public async Task<IEnumerable<TEntity>> GetAllAsync(Expression<Func<TEntity, bool>> expression, bool tracking = true)
         {
-            throw new NotImplementedException();
+            return await GetAllActives(tracking).Where(expression).ToListAsync();
         }
 
-        public Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> expression = null, bool tracking = true)
+        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> expression = null, bool tracking = true)
         {
-            throw new NotImplementedException();
+            return await GetAllActives(tracking).FirstOrDefaultAsync(expression);
         }
 
-        public Task<TEntity> GetById(Guid id, bool tracking = true)
+        public async Task<TEntity> GetById(Guid id, bool tracking = true)
         {
-            throw new NotImplementedException();
+            return await GetAllActives(tracking).FirstOrDefaultAsync(o => o.Id == id);
         }
 
         public int SaveChange()
         {
-            throw new NotImplementedException();
+            return _dbContext.SaveChanges();
         }
 
         public Task<int> SaveChangeAsync()
