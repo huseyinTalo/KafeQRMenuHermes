@@ -1,14 +1,14 @@
-﻿using KafeQRMenu.Data.Core.Concrete;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KafeQRMenu.Data.Entities
+namespace BLogic.DTOs.AdminDTOs
 {
-    public class SuperAdmin : AuditableEntity
+    public class AdminDTO
     {
+        public Guid Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }

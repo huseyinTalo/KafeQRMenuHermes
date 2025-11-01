@@ -13,5 +13,7 @@ namespace KafeQRMenu.Data.Entities
         public string LastName { get; set; }
         public string Email { get; set; }
         public string IdentityId { get; set; }
+
+        public virtual ICollection<Cafe> Cafes { get; set; } = new HashSet<Cafe>();
     }
 }
