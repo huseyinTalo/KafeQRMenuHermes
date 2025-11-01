@@ -101,14 +101,14 @@ namespace KafeQRMenu.DataAccess.Bridge.EntityFramework
             return _dbContext.SaveChanges();
         }
 
-        public Task<int> SaveChangeAsync()
+        public async Task<int> SaveChangeAsync()
         {
-            throw new NotImplementedException();
+            return await _dbContext.SaveChangesAsync();
         }
 
-        public Task<TEntity> UpdateAsync(TEntity entity)
+        public async Task<TEntity> UpdateAsync(TEntity entity)
         {
-            throw new NotImplementedException();
+            return await Task.FromResult(_table.Update(entity).Entity);
         }
     }
 }
