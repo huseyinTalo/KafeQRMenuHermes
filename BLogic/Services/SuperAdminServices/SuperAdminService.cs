@@ -1,6 +1,7 @@
 ﻿using BLogic.DTOs.SuperAdminDTOs;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.DataAccess.Repositories.SuperAdminRepositories;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,10 +13,12 @@ namespace BLogic.Services.SuperAdminServices
     public class SuperAdminService : ISuperAdminService
     {
         private readonly ISuperAdminRepository _superAdminRepository;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public SuperAdminService(ISuperAdminRepository superAdminRepository)
+        public SuperAdminService(ISuperAdminRepository superAdminRepository, UserManager<IdentityUser> userManager)
         {
             _superAdminRepository = superAdminRepository;
+            _userManager = userManager;
         }
 
         public Task<IResult> CreateAsync(SuperAdminCreateDTO superAdminCreateDto)

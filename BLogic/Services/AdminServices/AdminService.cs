@@ -1,6 +1,7 @@
 ﻿using BLogic.DTOs.AdminDTOs;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.DataAccess.Repositories.AdminRepositories;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,15 +13,18 @@ namespace BLogic.Services.AdminServices
     public class AdminService : IAdminService
     {
         private readonly IAdminRepository _adminRepository;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public AdminService(IAdminRepository adminRepository)
+        public AdminService(IAdminRepository adminRepository, UserManager<IdentityUser> userManager)
         {
             _adminRepository = adminRepository;
+            _userManager = userManager;
         }
 
         public Task<IResult> CreateAsync(AdminCreateDTO adminCreateDto)
         {
             throw new NotImplementedException();
+            
         }
 
         public Task<IResult> DeleteAsync(AdminDTO adminDto)

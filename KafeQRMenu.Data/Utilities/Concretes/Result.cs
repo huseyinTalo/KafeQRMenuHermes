@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace KafeQRMenu.Data.Utilities.Concretes
 {
-    public class Result : IDataResult
+    public class Result : IResult
     {
         public bool IsSuccess { get; set; }
         public string Message { get; set; }
