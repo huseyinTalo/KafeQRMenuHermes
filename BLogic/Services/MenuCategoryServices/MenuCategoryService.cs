@@ -44,11 +44,11 @@ namespace BLogic.Services.MenuCategoryServices
 
                 if (result > 0)
                 {
-                    _logger.LogInformation($"Yeni cafe oluşturuldu. Id: {menuCategoryEntity.Id}");
-                    return new SuccessResult("Cafe başarıyla oluşturuldu.");
+                    _logger.LogInformation($"Yeni Kategori oluşturuldu. Id: {menuCategoryEntity.Id}");
+                    return new SuccessResult("Kategori başarıyla oluşturuldu.");
                 }
 
-                return new ErrorResult("Cafe oluşturulurken bir hata oluştu.");
+                return new ErrorResult("Kategori oluşturulurken bir hata oluştu.");
             }
             catch (Exception ex)
             {
@@ -63,13 +63,13 @@ namespace BLogic.Services.MenuCategoryServices
             {
                 if (menuCategoryDto == null || menuCategoryDto.MenuCategoryId == Guid.Empty)
                 {
-                    return new ErrorResult("Geçersiz cafe bilgisi.");
+                    return new ErrorResult("Geçersiz Kategori bilgisi.");
                 }
                 var cafeEntity = await _menuCategoryRepository.GetById(menuCategoryDto.MenuCategoryId, tracking: true);
 
                 if (cafeEntity == null)
                 {
-                    return new ErrorResult("Cafe bulunamadı.");
+                    return new ErrorResult("Kategori bulunamadı.");
                 }
 
                 await _menuCategoryRepository.DeleteAsync(cafeEntity);
@@ -78,11 +78,11 @@ namespace BLogic.Services.MenuCategoryServices
 
                 if (result > 0)
                 {
-                    _logger.LogInformation($"Cafe silindi. Id: {menuCategoryDto.MenuCategoryId}");
-                    return new SuccessResult("Cafe başarıyla silindi.");
+                    _logger.LogInformation($"Kategori silindi. Id: {menuCategoryDto.MenuCategoryId}");
+                    return new SuccessResult("Kategori başarıyla silindi.");
                 }
 
-                return new ErrorResult("Cafe silinirken bir hata oluştu.");
+                return new ErrorResult("Kategori silinirken bir hata oluştu.");
             }
             catch (Exception ex)
             {
@@ -113,7 +113,7 @@ namespace BLogic.Services.MenuCategoryServices
 
                 return new SuccessDataResult<List<MenuCategoryListDTO>>(
                     menuCategoryDtoList,
-                    $"{menuCategoryDtoList.Count} adet cafe listelendi."
+                    $"{menuCategoryDtoList.Count} adet Kategori listelendi."
                 );
             }
             catch (Exception ex)
@@ -139,12 +139,12 @@ namespace BLogic.Services.MenuCategoryServices
 
                 if (menuCategoryEntity == null)
                 {
-                    return new ErrorDataResult<MenuCategoryDTO>(null, "Cafe bulunamadı.");
+                    return new ErrorDataResult<MenuCategoryDTO>(null, "Kategori bulunamadı.");
                 }
 
                 var menuCategoryDto = menuCategoryEntity.Adapt<MenuCategoryDTO>();
 
-                return new SuccessDataResult<MenuCategoryDTO>(menuCategoryDto, "Cafe detayları getirildi.");
+                return new SuccessDataResult<MenuCategoryDTO>(menuCategoryDto, "Kategori detayları getirildi.");
             }
             catch (Exception ex)
             {
@@ -182,11 +182,11 @@ namespace BLogic.Services.MenuCategoryServices
 
                 if (result > 0)
                 {
-                    _logger.LogInformation($"Cafe güncellendi. Id: {menuCategoryUpdateDto.MenuCategoryId}");
-                    return new SuccessResult("Cafe başarıyla güncellendi.");
+                    _logger.LogInformation($"Kategori güncellendi. Id: {menuCategoryUpdateDto.MenuCategoryId}");
+                    return new SuccessResult("Kategori başarıyla güncellendi.");
                 }
 
-                return new ErrorResult("Cafe güncellenirken bir hata oluştu.");
+                return new ErrorResult("Kategori güncellenirken bir hata oluştu.");
             }
             catch (Exception ex)
             {
