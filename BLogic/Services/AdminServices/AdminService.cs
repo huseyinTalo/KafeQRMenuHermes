@@ -8,6 +8,7 @@ using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,8 +39,6 @@ namespace BLogic.Services.AdminServices
         public async Task<IResult> CreateAsync(AdminCreateDTO adminCreateDto)
         {
             _logger.LogInformation("Admin oluşturma işlemi başlatıldı. Email: {Email}", adminCreateDto.Email);
-
-            IDbContextTransaction transaction = null;
             try
             {
                 // Validate password
@@ -77,84 +76,101 @@ namespace BLogic.Services.AdminServices
                     }
                 }
 
-                // Begin transaction
+                // Begin transaction with execution strategy
                 _logger.LogDebug("Transaction başlatılıyor.");
-                transaction = await _adminRepository.BeginTransactionAsync();
+                var strategy = await _adminRepository.CreateExecutionStrategy();
 
-                // Create Identity User with password
-                _logger.LogDebug("Identity kullanıcısı oluşturuluyor. Email: {Email}", adminCreateDto.Email);
-                var identityUser = new IdentityUser
+                return await strategy.ExecuteAsync<IResult>(async () =>
                 {
-                    UserName = adminCreateDto.Email,
-                    Email = adminCreateDto.Email,
-                    NormalizedEmail = adminCreateDto.Email.ToUpperInvariant(),
-                    NormalizedUserName = adminCreateDto.Email.ToUpperInvariant(),
-                    EmailConfirmed = true
-                };
+                    var transaction = await _adminRepository.BeginTransactionAsync().ConfigureAwait(false);
+                    try
+                    {
+                        // Create Identity User with password
+                        _logger.LogDebug("Identity kullanıcısı oluşturuluyor. Email: {Email}", adminCreateDto.Email);
+                        var identityUser = new IdentityUser
+                        {
+                            UserName = adminCreateDto.Email,
+                            Email = adminCreateDto.Email,
+                            NormalizedEmail = adminCreateDto.Email.ToUpperInvariant(),
+                            NormalizedUserName = adminCreateDto.Email.ToUpperInvariant(),
+                            EmailConfirmed = true
+                        };
 
-                var identityResult = await _userManager.CreateAsync(identityUser, adminCreateDto.Password);
-                if (!identityResult.Succeeded)
-                {
-                    await transaction.RollbackAsync();
-                    var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
-                    _logger.LogError("Identity kullanıcısı oluşturulamadı. Email: {Email}, Hatalar: {Errors}",
-                        adminCreateDto.Email, errors);
-                    return new ErrorResult($"Kullanıcı oluşturulamadı: {errors}");
-                }
+                        var identityResult = await _userManager.CreateAsync(identityUser, adminCreateDto.Password);
+                        if (!identityResult.Succeeded)
+                        {
+                            await transaction.RollbackAsync();
+                            var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                            _logger.LogError("Identity kullanıcısı oluşturulamadı. Email: {Email}, Hatalar: {Errors}",
+                                adminCreateDto.Email, errors);
+                            return new ErrorResult($"Kullanıcı oluşturulamadı: {errors}");
+                        }
 
-                _logger.LogInformation("Identity kullanıcısı başarıyla oluşturuldu. IdentityId: {IdentityId}, Email: {Email}",
-                    identityUser.Id, adminCreateDto.Email);
+                        _logger.LogInformation("Identity kullanıcısı başarıyla oluşturuldu. IdentityId: {IdentityId}, Email: {Email}",
+                            identityUser.Id, adminCreateDto.Email);
 
-                // Assign Admin role to user
-                _logger.LogDebug("Kullanıcıya Admin rolü atanıyor. IdentityId: {IdentityId}", identityUser.Id);
-                var roleAssignResult = await _userManager.AddToRoleAsync(identityUser, adminRoleName);
-                if (!roleAssignResult.Succeeded)
-                {
-                    await transaction.RollbackAsync();
-                    var errors = string.Join(", ", roleAssignResult.Errors.Select(e => e.Description));
-                    _logger.LogError("Kullanıcıya Admin rolü atanamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                        identityUser.Id, errors);
-                    return new ErrorResult($"Kullanıcıya Admin rolü atanamadı: {errors}");
-                }
+                        // Assign Admin role to user
+                        _logger.LogDebug("Kullanıcıya Admin rolü atanıyor. IdentityId: {IdentityId}", identityUser.Id);
+                        var roleAssignResult = await _userManager.AddToRoleAsync(identityUser, adminRoleName);
+                        if (!roleAssignResult.Succeeded)
+                        {
+                            await transaction.RollbackAsync();
+                            var errors = string.Join(", ", roleAssignResult.Errors.Select(e => e.Description));
+                            _logger.LogError("Kullanıcıya Admin rolü atanamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                identityUser.Id, errors);
+                            return new ErrorResult($"Kullanıcıya Admin rolü atanamadı: {errors}");
+                        }
 
-                _logger.LogInformation("Admin rolü başarıyla atandı. IdentityId: {IdentityId}", identityUser.Id);
+                        _logger.LogInformation("Admin rolü başarıyla atandı. IdentityId: {IdentityId}", identityUser.Id);
 
-                // Create Admin entity (without password)
-                _logger.LogDebug("Admin entity oluşturuluyor. IdentityId: {IdentityId}", identityUser.Id);
-                var admin = adminCreateDto.Adapt<Admin>();
-                admin.IdentityId = identityUser.Id;
+                        // Create Admin entity (without password)
+                        _logger.LogDebug("Admin entity oluşturuluyor. IdentityId: {IdentityId}", identityUser.Id);
+                        var admin = adminCreateDto.Adapt<Admin>();
+                        admin.IdentityId = identityUser.Id;
 
-                await _adminRepository.AddAsync(admin);
-                await _adminRepository.SaveChangeAsync();
+                        await _adminRepository.AddAsync(admin);
+                        int effectedRows = await _adminRepository.SaveChangeAsync();
+                        if (effectedRows <= 0)
+                        {
+                            await transaction.RollbackAsync();
+                            return new ErrorResult("Admin oluşturma sırasında hata oluştu.");
+                        }
 
-                _logger.LogInformation("Admin entity başarıyla oluşturuldu. AdminId: {AdminId}, IdentityId: {IdentityId}",
-                    admin.Id, identityUser.Id);
+                            _logger.LogInformation("Admin entity başarıyla oluşturuldu. AdminId: {AdminId}, IdentityId: {IdentityId}",
+                                admin.Id, identityUser.Id);
 
-                // Commit transaction
-                await transaction.CommitAsync();
-                _logger.LogInformation("Transaction commit edildi. Admin başarıyla oluşturuldu. Email: {Email}",
-                    adminCreateDto.Email);
+                        // Commit transaction
+                        await transaction.CommitAsync();
+                        _logger.LogInformation("Transaction commit edildi. Admin başarıyla oluşturuldu. Email: {Email}",
+                            adminCreateDto.Email);
 
-                return new SuccessResult("Admin başarıyla oluşturuldu.");
+                        return new SuccessResult("Admin başarıyla oluşturuldu.");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (transaction != null)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError(ex, "Admin oluşturma sırasında hata oluştu. Transaction rollback yapıldı. Email: {Email}",
+                                adminCreateDto.Email);
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "Admin oluşturma sırasında hata oluştu. Email: {Email}", adminCreateDto.Email);
+                        }
+
+                        return new ErrorResult($"Bir hata oluştu: {ex.Message}");
+                    }
+                    finally
+                    {
+                        transaction?.Dispose();
+                    }
+                });
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "Admin oluşturma sırasında hata oluştu. Transaction rollback yapıldı. Email: {Email}",
-                        adminCreateDto.Email);
-                }
-                else
-                {
-                    _logger.LogError(ex, "Admin oluşturma sırasında hata oluştu. Email: {Email}", adminCreateDto.Email);
-                }
-
-                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
-            }
-            finally
-            {
-                transaction?.Dispose();
+                _logger.LogError(ex, "Admin oluşturma işlemi başarısız oldu. Email: {Email}", adminCreateDto.Email);
+                return new ErrorResult($"Beklenmeyen bir hata oluştu: {ex.Message}");
             }
         }
 
@@ -163,7 +179,6 @@ namespace BLogic.Services.AdminServices
             _logger.LogInformation("Admin silme işlemi başlatıldı. AdminId: {AdminId}, Email: {Email}",
                 adminDto.Id, adminDto.Email);
 
-            IDbContextTransaction transaction = null;
             try
             {
                 // Get admin entity
@@ -175,77 +190,89 @@ namespace BLogic.Services.AdminServices
                     return new ErrorResult("Admin bulunamadı.");
                 }
 
-                // Begin transaction
+                // Begin transaction with execution strategy
                 _logger.LogDebug("Transaction başlatılıyor. AdminId: {AdminId}", adminDto.Id);
-                transaction = await _adminRepository.BeginTransactionAsync();
+                var strategy = await _adminRepository.CreateExecutionStrategy();
 
-                // Delete Identity User (this also deletes the password hash and role assignments)
-                _logger.LogDebug("Identity kullanıcısı siliniyor. IdentityId: {IdentityId}", admin.IdentityId);
-                var identityUser = await _userManager.FindByIdAsync(admin.IdentityId);
-                if (identityUser != null)
+                return await strategy.ExecuteAsync<IResult>(async () =>
                 {
-                    // Check if user has Admin role
-                    var isInAdminRole = await _userManager.IsInRoleAsync(identityUser, Roles.Admin.ToString());
-                    if (isInAdminRole)
+                    var transaction = await _adminRepository.BeginTransactionAsync().ConfigureAwait(false);
+                    try
                     {
-                        _logger.LogDebug("Kullanıcıdan Admin rolü kaldırılıyor. IdentityId: {IdentityId}", admin.IdentityId);
-                        var removeRoleResult = await _userManager.RemoveFromRoleAsync(identityUser, Roles.Admin.ToString());
-                        if (!removeRoleResult.Succeeded)
+                        // Delete Identity User (this also deletes the password hash and role assignments)
+                        _logger.LogDebug("Identity kullanıcısı siliniyor. IdentityId: {IdentityId}", admin.IdentityId);
+                        var identityUser = await _userManager.FindByIdAsync(admin.IdentityId);
+                        if (identityUser != null)
                         {
-                            _logger.LogWarning("Admin rolü kaldırılamadı, silme işlemine devam ediliyor. IdentityId: {IdentityId}",
+                            // Check if user has Admin role
+                            var isInAdminRole = await _userManager.IsInRoleAsync(identityUser, Roles.Admin.ToString());
+                            if (isInAdminRole)
+                            {
+                                _logger.LogDebug("Kullanıcıdan Admin rolü kaldırılıyor. IdentityId: {IdentityId}", admin.IdentityId);
+                                var removeRoleResult = await _userManager.RemoveFromRoleAsync(identityUser, Roles.Admin.ToString());
+                                if (!removeRoleResult.Succeeded)
+                                {
+                                    _logger.LogWarning("Admin rolü kaldırılamadı, silme işlemine devam ediliyor. IdentityId: {IdentityId}",
+                                        admin.IdentityId);
+                                }
+                            }
+
+                            var identityResult = await _userManager.DeleteAsync(identityUser);
+                            if (!identityResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Identity kullanıcısı silinemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    admin.IdentityId, errors);
+                                return new ErrorResult($"Identity kullanıcısı silinemedi: {errors}");
+                            }
+                            _logger.LogInformation("Identity kullanıcısı başarıyla silindi. IdentityId: {IdentityId}",
                                 admin.IdentityId);
                         }
-                    }
+                        else
+                        {
+                            _logger.LogWarning("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}", admin.IdentityId);
+                        }
 
-                    var identityResult = await _userManager.DeleteAsync(identityUser);
-                    if (!identityResult.Succeeded)
+                        // Delete Admin (soft delete will happen automatically in DbContext)
+                        _logger.LogDebug("Admin entity siliniyor (soft delete). AdminId: {AdminId}", adminDto.Id);
+                        await _adminRepository.DeleteAsync(admin);
+                        await _adminRepository.SaveChangeAsync();
+
+                        _logger.LogInformation("Admin entity başarıyla silindi. AdminId: {AdminId}", adminDto.Id);
+
+                        // Commit transaction
+                        await transaction.CommitAsync();
+                        _logger.LogInformation("Transaction commit edildi. Admin başarıyla silindi. AdminId: {AdminId}, Email: {Email}",
+                            adminDto.Id, adminDto.Email);
+
+                        return new SuccessResult("Admin başarıyla silindi.");
+                    }
+                    catch (Exception ex)
                     {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Identity kullanıcısı silinemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            admin.IdentityId, errors);
-                        return new ErrorResult($"Identity kullanıcısı silinemedi: {errors}");
+                        if (transaction != null)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError(ex, "Admin silme sırasında hata oluştu. Transaction rollback yapıldı. AdminId: {AdminId}",
+                                adminDto.Id);
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "Admin silme sırasında hata oluştu. AdminId: {AdminId}", adminDto.Id);
+                        }
+
+                        return new ErrorResult($"Bir hata oluştu: {ex.Message}");
                     }
-                    _logger.LogInformation("Identity kullanıcısı başarıyla silindi. IdentityId: {IdentityId}",
-                        admin.IdentityId);
-                }
-                else
-                {
-                    _logger.LogWarning("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}", admin.IdentityId);
-                }
-
-                // Delete Admin (soft delete will happen automatically in DbContext)
-                _logger.LogDebug("Admin entity siliniyor (soft delete). AdminId: {AdminId}", adminDto.Id);
-                await _adminRepository.DeleteAsync(admin);
-                await _adminRepository.SaveChangeAsync();
-
-                _logger.LogInformation("Admin entity başarıyla silindi. AdminId: {AdminId}", adminDto.Id);
-
-                // Commit transaction
-                await transaction.CommitAsync();
-                _logger.LogInformation("Transaction commit edildi. Admin başarıyla silindi. AdminId: {AdminId}, Email: {Email}",
-                    adminDto.Id, adminDto.Email);
-
-                return new SuccessResult("Admin başarıyla silindi.");
+                    finally
+                    {
+                        transaction?.Dispose();
+                    }
+                });
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "Admin silme sırasında hata oluştu. Transaction rollback yapıldı. AdminId: {AdminId}",
-                        adminDto.Id);
-                }
-                else
-                {
-                    _logger.LogError(ex, "Admin silme sırasında hata oluştu. AdminId: {AdminId}", adminDto.Id);
-                }
-
-                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
-            }
-            finally
-            {
-                transaction?.Dispose();
+                _logger.LogError(ex, "Admin silme işlemi başarısız oldu. AdminId: {AdminId}", adminDto.Id);
+                return new ErrorResult($"Beklenmeyen bir hata oluştu: {ex.Message}");
             }
         }
 
@@ -327,7 +354,6 @@ namespace BLogic.Services.AdminServices
             _logger.LogInformation("Admin güncelleme işlemi başlatıldı. AdminId: {AdminId}, Email: {Email}",
                 adminUpdateDto.Id, adminUpdateDto.Email);
 
-            IDbContextTransaction transaction = null;
             try
             {
                 // Get existing admin
@@ -339,122 +365,134 @@ namespace BLogic.Services.AdminServices
                     return new ErrorResult("Admin bulunamadı.");
                 }
 
-                // Begin transaction
+                // Begin transaction with execution strategy
                 _logger.LogDebug("Transaction başlatılıyor. AdminId: {AdminId}", adminUpdateDto.Id);
-                transaction = await _adminRepository.BeginTransactionAsync();
+                var strategy = await _adminRepository.CreateExecutionStrategy();
 
-                // Update Identity User
-                _logger.LogDebug("Identity kullanıcısı getiriliyor. IdentityId: {IdentityId}", admin.IdentityId);
-                var identityUser = await _userManager.FindByIdAsync(admin.IdentityId);
-                if (identityUser == null)
+                return await strategy.ExecuteAsync<IResult>(async () =>
                 {
-                    await transaction.RollbackAsync();
-                    _logger.LogError("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}, AdminId: {AdminId}",
-                        admin.IdentityId, adminUpdateDto.Id);
-                    return new ErrorResult("Identity kullanıcısı bulunamadı.");
-                }
-
-                // Update email if changed
-                if (identityUser.Email != adminUpdateDto.Email)
-                {
-                    _logger.LogInformation("Email değişikliği tespit edildi. Eski: {OldEmail}, Yeni: {NewEmail}",
-                        identityUser.Email, adminUpdateDto.Email);
-
-                    // Check if new email already exists
-                    var existingUser = await _userManager.FindByEmailAsync(adminUpdateDto.Email);
-                    if (existingUser != null && existingUser.Id != identityUser.Id)
+                    var transaction = await _adminRepository.BeginTransactionAsync().ConfigureAwait(false);
+                    try
                     {
-                        await transaction.RollbackAsync();
-                        _logger.LogWarning("Email değiştirilemedi. Email başka bir kullanıcı tarafından kullanılıyor: {Email}",
-                            adminUpdateDto.Email);
-                        return new ErrorResult("Bu email adresi başka bir kullanıcı tarafından kullanılıyor.");
+                        // Update Identity User
+                        _logger.LogDebug("Identity kullanıcısı getiriliyor. IdentityId: {IdentityId}", admin.IdentityId);
+                        var identityUser = await _userManager.FindByIdAsync(admin.IdentityId);
+                        if (identityUser == null)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}, AdminId: {AdminId}",
+                                admin.IdentityId, adminUpdateDto.Id);
+                            return new ErrorResult("Identity kullanıcısı bulunamadı.");
+                        }
+
+                        // Update email if changed
+                        if (identityUser.Email != adminUpdateDto.Email)
+                        {
+                            _logger.LogInformation("Email değişikliği tespit edildi. Eski: {OldEmail}, Yeni: {NewEmail}",
+                                identityUser.Email, adminUpdateDto.Email);
+
+                            // Check if new email already exists
+                            var existingUser = await _userManager.FindByEmailAsync(adminUpdateDto.Email);
+                            if (existingUser != null && existingUser.Id != identityUser.Id)
+                            {
+                                await transaction.RollbackAsync();
+                                _logger.LogWarning("Email değiştirilemedi. Email başka bir kullanıcı tarafından kullanılıyor: {Email}",
+                                    adminUpdateDto.Email);
+                                return new ErrorResult("Bu email adresi başka bir kullanıcı tarafından kullanılıyor.");
+                            }
+
+                            identityUser.Email = adminUpdateDto.Email;
+                            identityUser.UserName = adminUpdateDto.Email;
+                            identityUser.NormalizedEmail = adminUpdateDto.Email.ToUpperInvariant();
+                            identityUser.NormalizedUserName = adminUpdateDto.Email.ToUpperInvariant();
+
+                            _logger.LogDebug("Identity kullanıcısı güncelleniyor. IdentityId: {IdentityId}", identityUser.Id);
+                            var identityResult = await _userManager.UpdateAsync(identityUser);
+                            if (!identityResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Identity kullanıcısı güncellenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    identityUser.Id, errors);
+                                return new ErrorResult($"Identity kullanıcısı güncellenemedi: {errors}");
+                            }
+
+                            _logger.LogInformation("Identity kullanıcısı email bilgisi başarıyla güncellendi. IdentityId: {IdentityId}",
+                                identityUser.Id);
+                        }
+
+                        // Update password if provided
+                        if (!string.IsNullOrWhiteSpace(adminUpdateDto.Password))
+                        {
+                            _logger.LogDebug("Şifre güncelleme işlemi başlatıldı. IdentityId: {IdentityId}", identityUser.Id);
+
+                            // Remove old password and add new one
+                            var removePasswordResult = await _userManager.RemovePasswordAsync(identityUser);
+                            if (!removePasswordResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", removePasswordResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Eski şifre kaldırılamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    identityUser.Id, errors);
+                                return new ErrorResult($"Şifre güncellenemedi: {errors}");
+                            }
+
+                            var addPasswordResult = await _userManager.AddPasswordAsync(identityUser, adminUpdateDto.Password);
+                            if (!addPasswordResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Yeni şifre eklenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    identityUser.Id, errors);
+                                return new ErrorResult($"Şifre güncellenemedi: {errors}");
+                            }
+
+                            _logger.LogInformation("Şifre başarıyla güncellendi. IdentityId: {IdentityId}", identityUser.Id);
+                        }
+
+                        // Update Admin entity (without password)
+                        _logger.LogDebug("Admin entity güncelleniyor. AdminId: {AdminId}", adminUpdateDto.Id);
+                        admin.FirstName = adminUpdateDto.FirstName;
+                        admin.LastName = adminUpdateDto.LastName;
+                        admin.Email = adminUpdateDto.Email;
+
+                        await _adminRepository.UpdateAsync(admin);
+                        await _adminRepository.SaveChangeAsync();
+
+                        _logger.LogInformation("Admin entity başarıyla güncellendi. AdminId: {AdminId}", adminUpdateDto.Id);
+
+                        // Commit transaction
+                        await transaction.CommitAsync();
+                        _logger.LogInformation("Transaction commit edildi. Admin başarıyla güncellendi. AdminId: {AdminId}, Email: {Email}",
+                            adminUpdateDto.Id, adminUpdateDto.Email);
+
+                        return new SuccessResult("Admin başarıyla güncellendi.");
                     }
-
-                    identityUser.Email = adminUpdateDto.Email;
-                    identityUser.UserName = adminUpdateDto.Email;
-                    identityUser.NormalizedEmail = adminUpdateDto.Email.ToUpperInvariant();
-                    identityUser.NormalizedUserName = adminUpdateDto.Email.ToUpperInvariant();
-
-                    _logger.LogDebug("Identity kullanıcısı güncelleniyor. IdentityId: {IdentityId}", identityUser.Id);
-                    var identityResult = await _userManager.UpdateAsync(identityUser);
-                    if (!identityResult.Succeeded)
+                    catch (Exception ex)
                     {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Identity kullanıcısı güncellenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            identityUser.Id, errors);
-                        return new ErrorResult($"Identity kullanıcısı güncellenemedi: {errors}");
+                        if (transaction != null)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError(ex, "Admin güncelleme sırasında hata oluştu. Transaction rollback yapıldı. AdminId: {AdminId}",
+                                adminUpdateDto.Id);
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "Admin güncelleme sırasında hata oluştu. AdminId: {AdminId}", adminUpdateDto.Id);
+                        }
+
+                        return new ErrorResult($"Bir hata oluştu: {ex.Message}");
                     }
-
-                    _logger.LogInformation("Identity kullanıcısı email bilgisi başarıyla güncellendi. IdentityId: {IdentityId}",
-                        identityUser.Id);
-                }
-
-                // Update password if provided
-                if (!string.IsNullOrWhiteSpace(adminUpdateDto.Password))
-                {
-                    _logger.LogDebug("Şifre güncelleme işlemi başlatıldı. IdentityId: {IdentityId}", identityUser.Id);
-
-                    // Remove old password and add new one
-                    var removePasswordResult = await _userManager.RemovePasswordAsync(identityUser);
-                    if (!removePasswordResult.Succeeded)
+                    finally
                     {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", removePasswordResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Eski şifre kaldırılamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            identityUser.Id, errors);
-                        return new ErrorResult($"Şifre güncellenemedi: {errors}");
+                        transaction?.Dispose();
                     }
-
-                    var addPasswordResult = await _userManager.AddPasswordAsync(identityUser, adminUpdateDto.Password);
-                    if (!addPasswordResult.Succeeded)
-                    {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Yeni şifre eklenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            identityUser.Id, errors);
-                        return new ErrorResult($"Şifre güncellenemedi: {errors}");
-                    }
-
-                    _logger.LogInformation("Şifre başarıyla güncellendi. IdentityId: {IdentityId}", identityUser.Id);
-                }
-
-                // Update Admin entity (without password)
-                _logger.LogDebug("Admin entity güncelleniyor. AdminId: {AdminId}", adminUpdateDto.Id);
-                admin.FirstName = adminUpdateDto.FirstName;
-                admin.LastName = adminUpdateDto.LastName;
-                admin.Email = adminUpdateDto.Email;
-
-                await _adminRepository.UpdateAsync(admin);
-                await _adminRepository.SaveChangeAsync();
-
-                _logger.LogInformation("Admin entity başarıyla güncellendi. AdminId: {AdminId}", adminUpdateDto.Id);
-
-                // Commit transaction
-                await transaction.CommitAsync();
-                _logger.LogInformation("Transaction commit edildi. Admin başarıyla güncellendi. AdminId: {AdminId}, Email: {Email}",
-                    adminUpdateDto.Id, adminUpdateDto.Email);
-
-                return new SuccessResult("Admin başarıyla güncellendi.");
+                });
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "Admin güncelleme sırasında hata oluştu. Transaction rollback yapıldı. AdminId: {AdminId}",
-                        adminUpdateDto.Id);
-                }
-                else
-                {
-                    _logger.LogError(ex, "Admin güncelleme sırasında hata oluştu. AdminId: {AdminId}", adminUpdateDto.Id);
-                }
-
-                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
-            }
-            finally
-            {
-                transaction?.Dispose();
+                _logger.LogError(ex, "Admin güncelleme işlemi başarısız oldu. AdminId: {AdminId}", adminUpdateDto.Id);
+                return new ErrorResult($"Beklenmeyen bir hata oluştu: {ex.Message}");
             }
         }
     }

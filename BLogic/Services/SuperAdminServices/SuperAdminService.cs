@@ -6,6 +6,7 @@ using KafeQRMenu.Data.Utilities.Concretes;
 using KafeQRMenu.DataAccess.Repositories.SuperAdminRepositories;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using System;
@@ -13,6 +14,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace BLogic.Services.SuperAdminServices
 {
@@ -38,8 +41,6 @@ namespace BLogic.Services.SuperAdminServices
         public async Task<IResult> CreateAsync(SuperAdminCreateDTO superAdminCreateDto)
         {
             _logger.LogInformation("SuperAdmin oluşturma işlemi başlatıldı. Email: {Email}", superAdminCreateDto.Email);
-
-            IDbContextTransaction transaction = null;
             try
             {
                 // Validate password
@@ -79,82 +80,94 @@ namespace BLogic.Services.SuperAdminServices
 
                 // Begin transaction
                 _logger.LogDebug("Transaction başlatılıyor.");
-                transaction = await _superAdminRepository.BeginTransactionAsync();
+                var strategy = await _superAdminRepository.CreateExecutionStrategy();
 
-                // Create Identity User with password
-                _logger.LogDebug("Identity kullanıcısı oluşturuluyor. Email: {Email}", superAdminCreateDto.Email);
-                var identityUser = new IdentityUser
+                return await strategy.ExecuteAsync<IResult>(async () =>
                 {
-                    UserName = superAdminCreateDto.Email,
-                    Email = superAdminCreateDto.Email,
-                    NormalizedEmail = superAdminCreateDto.Email.ToUpperInvariant(),
-                    NormalizedUserName = superAdminCreateDto.Email.ToUpperInvariant(),
-                    EmailConfirmed = true
-                };
+                    var transactionScope = await _superAdminRepository.BeginTransactionAsync().ConfigureAwait(false);
+                    try
+                    {
+                        // Create Identity User with password
+                        _logger.LogDebug("Identity kullanıcısı oluşturuluyor. Email: {Email}", superAdminCreateDto.Email);
+                        var identityUser = new IdentityUser
+                        {
+                            UserName = superAdminCreateDto.Email,
+                            Email = superAdminCreateDto.Email,
+                            NormalizedEmail = superAdminCreateDto.Email.ToUpperInvariant(),
+                            NormalizedUserName = superAdminCreateDto.Email.ToUpperInvariant(),
+                            EmailConfirmed = true
+                        };
 
-                var identityResult = await _userManager.CreateAsync(identityUser, superAdminCreateDto.Password);
-                if (!identityResult.Succeeded)
-                {
-                    await transaction.RollbackAsync();
-                    var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
-                    _logger.LogError("Identity kullanıcısı oluşturulamadı. Email: {Email}, Hatalar: {Errors}",
-                        superAdminCreateDto.Email, errors);
-                    return new ErrorResult($"Kullanıcı oluşturulamadı: {errors}");
-                }
+                        var identityResult = await _userManager.CreateAsync(identityUser, superAdminCreateDto.Password);
+                        if (!identityResult.Succeeded)
+                        {
+                            await transactionScope.RollbackAsync();
+                            var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                            _logger.LogError("Identity kullanıcısı oluşturulamadı. Email: {Email}, Hatalar: {Errors}",
+                                superAdminCreateDto.Email, errors);
+                            return new ErrorResult($"Kullanıcı oluşturulamadı: {errors}");
+                        }
 
-                _logger.LogInformation("Identity kullanıcısı başarıyla oluşturuldu. IdentityId: {IdentityId}, Email: {Email}",
-                    identityUser.Id, superAdminCreateDto.Email);
+                        _logger.LogInformation("Identity kullanıcısı başarıyla oluşturuldu. IdentityId: {IdentityId}, Email: {Email}",
+                            identityUser.Id, superAdminCreateDto.Email);
 
-                // Assign SuperAdmin role to user
-                _logger.LogDebug("Kullanıcıya SuperAdmin rolü atanıyor. IdentityId: {IdentityId}", identityUser.Id);
-                var roleAssignResult = await _userManager.AddToRoleAsync(identityUser, superAdminRoleName);
-                if (!roleAssignResult.Succeeded)
-                {
-                    await transaction.RollbackAsync();
-                    var errors = string.Join(", ", roleAssignResult.Errors.Select(e => e.Description));
-                    _logger.LogError("Kullanıcıya SuperAdmin rolü atanamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                        identityUser.Id, errors);
-                    return new ErrorResult($"Kullanıcıya SuperAdmin rolü atanamadı: {errors}");
-                }
+                        // Assign SuperAdmin role to user
+                        _logger.LogDebug("Kullanıcıya SuperAdmin rolü atanıyor. IdentityId: {IdentityId}", identityUser.Id);
+                        var roleAssignResult = await _userManager.AddToRoleAsync(identityUser, superAdminRoleName);
+                        if (!roleAssignResult.Succeeded)
+                        {
+                            await transactionScope.RollbackAsync();
+                            var errors = string.Join(", ", roleAssignResult.Errors.Select(e => e.Description));
+                            _logger.LogError("Kullanıcıya SuperAdmin rolü atanamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                identityUser.Id, errors);
+                            return new ErrorResult($"Kullanıcıya SuperAdmin rolü atanamadı: {errors}");
+                        }
 
-                _logger.LogInformation("SuperAdmin rolü başarıyla atandı. IdentityId: {IdentityId}", identityUser.Id);
+                        _logger.LogInformation("SuperAdmin rolü başarıyla atandı. IdentityId: {IdentityId}", identityUser.Id);
 
-                // Create SuperAdmin entity (without password)
-                _logger.LogDebug("SuperAdmin entity oluşturuluyor. IdentityId: {IdentityId}", identityUser.Id);
-                var superAdmin = superAdminCreateDto.Adapt<SuperAdmin>();
-                superAdmin.IdentityId = identityUser.Id;
+                        // Create SuperAdmin entity (without password)
+                        _logger.LogDebug("SuperAdmin entity oluşturuluyor. IdentityId: {IdentityId}", identityUser.Id);
+                        var superAdmin = superAdminCreateDto.Adapt<SuperAdmin>();
+                        superAdmin.IdentityId = identityUser.Id;
 
-                await _superAdminRepository.AddAsync(superAdmin);
-                await _superAdminRepository.SaveChangeAsync();
+                        await _superAdminRepository.AddAsync(superAdmin);
+                        await _superAdminRepository.SaveChangeAsync();
 
-                _logger.LogInformation("SuperAdmin entity başarıyla oluşturuldu. SuperAdminId: {SuperAdminId}, IdentityId: {IdentityId}",
-                    superAdmin.Id, identityUser.Id);
+                        _logger.LogInformation("SuperAdmin entity başarıyla oluşturuldu. SuperAdminId: {SuperAdminId}, IdentityId: {IdentityId}",
+                            superAdmin.Id, identityUser.Id);
 
-                // Commit transaction
-                await transaction.CommitAsync();
-                _logger.LogInformation("Transaction commit edildi. SuperAdmin başarıyla oluşturuldu. Email: {Email}",
-                    superAdminCreateDto.Email);
+                        // Commit transaction
+                        await transactionScope.CommitAsync();
+                        _logger.LogInformation("Transaction commit edildi. SuperAdmin başarıyla oluşturuldu. Email: {Email}",
+                            superAdminCreateDto.Email);
 
-                return new SuccessResult("SuperAdmin başarıyla oluşturuldu.");
+                        return new SuccessResult("SuperAdmin başarıyla oluşturuldu.");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (transactionScope != null)
+                        {
+                            await transactionScope.RollbackAsync();
+                            _logger.LogError(ex, "SuperAdmin oluşturma sırasında hata oluştu. Transaction rollback yapıldı. Email: {Email}",
+                                superAdminCreateDto.Email);
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "SuperAdmin oluşturma sırasında hata oluştu. Email: {Email}", superAdminCreateDto.Email);
+                        }
+
+                        return new ErrorResult($"Bir hata oluştu: {ex.Message}");
+                    }
+                    finally
+                    {
+                        transactionScope?.Dispose();
+                    }
+                });
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "SuperAdmin oluşturma sırasında hata oluştu. Transaction rollback yapıldı. Email: {Email}",
-                        superAdminCreateDto.Email);
-                }
-                else
-                {
-                    _logger.LogError(ex, "SuperAdmin oluşturma sırasında hata oluştu. Email: {Email}", superAdminCreateDto.Email);
-                }
-
-                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
-            }
-            finally
-            {
-                transaction?.Dispose();
+                _logger.LogError(ex, "SuperAdmin oluşturma işlemi başarısız oldu. Email: {Email}", superAdminCreateDto.Email);
+                return new ErrorResult($"Beklenmeyen bir hata oluştu: {ex.Message}");
             }
         }
 
@@ -163,7 +176,6 @@ namespace BLogic.Services.SuperAdminServices
             _logger.LogInformation("SuperAdmin silme işlemi başlatıldı. SuperAdminId: {SuperAdminId}, Email: {Email}",
                 superAdminDto.SuperAdminId, superAdminDto.Email);
 
-            IDbContextTransaction transaction = null;
             try
             {
                 // Get superAdmin entity
@@ -175,79 +187,92 @@ namespace BLogic.Services.SuperAdminServices
                     return new ErrorResult("SuperAdmin bulunamadı.");
                 }
 
-                // Begin transaction
+                // Begin transaction with execution strategy
                 _logger.LogDebug("Transaction başlatılıyor. SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
-                transaction = await _superAdminRepository.BeginTransactionAsync();
+                var strategy = await _superAdminRepository.CreateExecutionStrategy();
 
-                // Delete Identity User (this also deletes the password hash and role assignments)
-                _logger.LogDebug("Identity kullanıcısı siliniyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
-                var identityUser = await _userManager.FindByIdAsync(superAdmin.IdentityId);
-                if (identityUser != null)
+                return await strategy.ExecuteAsync<IResult>(async () =>
                 {
-                    // Check if user has SuperAdmin role
-                    var isInSuperAdminRole = await _userManager.IsInRoleAsync(identityUser, Roles.SuperAdmin.ToString());
-                    if (isInSuperAdminRole)
+                    var transaction = await _superAdminRepository.BeginTransactionAsync().ConfigureAwait(false);
+                    try
                     {
-                        _logger.LogDebug("Kullanıcıdan SuperAdmin rolü kaldırılıyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
-                        var removeRoleResult = await _userManager.RemoveFromRoleAsync(identityUser, Roles.SuperAdmin.ToString());
-                        if (!removeRoleResult.Succeeded)
+                        // Delete Identity User (this also deletes the password hash and role assignments)
+                        _logger.LogDebug("Identity kullanıcısı siliniyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
+                        var identityUser = await _userManager.FindByIdAsync(superAdmin.IdentityId);
+                        if (identityUser != null)
                         {
-                            _logger.LogWarning("SuperAdmin rolü kaldırılamadı, silme işlemine devam ediliyor. IdentityId: {IdentityId}",
+                            // Check if user has SuperAdmin role
+                            var isInSuperAdminRole = await _userManager.IsInRoleAsync(identityUser, Roles.SuperAdmin.ToString());
+                            if (isInSuperAdminRole)
+                            {
+                                _logger.LogDebug("Kullanıcıdan SuperAdmin rolü kaldırılıyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
+                                var removeRoleResult = await _userManager.RemoveFromRoleAsync(identityUser, Roles.SuperAdmin.ToString());
+                                if (!removeRoleResult.Succeeded)
+                                {
+                                    _logger.LogWarning("SuperAdmin rolü kaldırılamadı, silme işlemine devam ediliyor. IdentityId: {IdentityId}",
+                                        superAdmin.IdentityId);
+                                }
+                            }
+
+                            var identityResult = await _userManager.DeleteAsync(identityUser);
+                            if (!identityResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Identity kullanıcısı silinemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    superAdmin.IdentityId, errors);
+                                return new ErrorResult($"Identity kullanıcısı silinemedi: {errors}");
+                            }
+                            _logger.LogInformation("Identity kullanıcısı başarıyla silindi. IdentityId: {IdentityId}",
                                 superAdmin.IdentityId);
                         }
-                    }
+                        else
+                        {
+                            _logger.LogWarning("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}", superAdmin.IdentityId);
+                        }
 
-                    var identityResult = await _userManager.DeleteAsync(identityUser);
-                    if (!identityResult.Succeeded)
+                        // Delete SuperAdmin (soft delete will happen automatically in DbContext)
+                        _logger.LogDebug("SuperAdmin entity siliniyor (soft delete). SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
+                        await _superAdminRepository.DeleteAsync(superAdmin);
+                        await _superAdminRepository.SaveChangeAsync();
+
+                        _logger.LogInformation("SuperAdmin entity başarıyla silindi. SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
+
+                        // Commit transaction
+                        await transaction.CommitAsync();
+                        _logger.LogInformation("Transaction commit edildi. SuperAdmin başarıyla silindi. SuperAdminId: {SuperAdminId}, Email: {Email}",
+                            superAdminDto.SuperAdminId, superAdminDto.Email);
+
+                        return new SuccessResult("SuperAdmin başarıyla silindi.");
+                    }
+                    catch (Exception ex)
                     {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Identity kullanıcısı silinemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            superAdmin.IdentityId, errors);
-                        return new ErrorResult($"Identity kullanıcısı silinemedi: {errors}");
+                        if (transaction != null)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError(ex, "SuperAdmin silme sırasında hata oluştu. Transaction rollback yapıldı. SuperAdminId: {SuperAdminId}",
+                                superAdminDto.SuperAdminId);
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "SuperAdmin silme sırasında hata oluştu. SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
+                        }
+
+                        return new ErrorResult($"Bir hata oluştu: {ex.Message}");
                     }
-                    _logger.LogInformation("Identity kullanıcısı başarıyla silindi. IdentityId: {IdentityId}",
-                        superAdmin.IdentityId);
-                }
-                else
-                {
-                    _logger.LogWarning("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}", superAdmin.IdentityId);
-                }
-
-                // Delete SuperAdmin (soft delete will happen automatically in DbContext)
-                _logger.LogDebug("SuperAdmin entity siliniyor (soft delete). SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
-                await _superAdminRepository.DeleteAsync(superAdmin);
-                await _superAdminRepository.SaveChangeAsync();
-
-                _logger.LogInformation("SuperAdmin entity başarıyla silindi. SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
-
-                // Commit transaction
-                await transaction.CommitAsync();
-                _logger.LogInformation("Transaction commit edildi. SuperAdmin başarıyla silindi. SuperAdminId: {SuperAdminId}, Email: {Email}",
-                    superAdminDto.SuperAdminId, superAdminDto.Email);
-
-                return new SuccessResult("SuperAdmin başarıyla silindi.");
+                    finally
+                    {
+                        transaction?.Dispose();
+                    }
+                });
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "SuperAdmin silme sırasında hata oluştu. Transaction rollback yapıldı. SuperAdminId: {SuperAdminId}",
-                        superAdminDto.SuperAdminId);
-                }
-                else
-                {
-                    _logger.LogError(ex, "SuperAdmin silme sırasında hata oluştu. SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
-                }
-
-                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
-            }
-            finally
-            {
-                transaction?.Dispose();
+                _logger.LogError(ex, "SuperAdmin silme işlemi başarısız oldu. SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
+                return new ErrorResult($"Beklenmeyen bir hata oluştu: {ex.Message}");
             }
         }
+
 
         public async Task<IDataResult<List<SuperAdminListDTO>>> GetAllAsync()
         {
@@ -327,7 +352,6 @@ namespace BLogic.Services.SuperAdminServices
             _logger.LogInformation("SuperAdmin güncelleme işlemi başlatıldı. SuperAdminId: {SuperAdminId}, Email: {Email}",
                 superAdminUpdateDto.SuperAdminId, superAdminUpdateDto.Email);
 
-            IDbContextTransaction transaction = null;
             try
             {
                 // Get existing superAdmin
@@ -339,122 +363,134 @@ namespace BLogic.Services.SuperAdminServices
                     return new ErrorResult("SuperAdmin bulunamadı.");
                 }
 
-                // Begin transaction
+                // Begin transaction with execution strategy
                 _logger.LogDebug("Transaction başlatılıyor. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
-                transaction = await _superAdminRepository.BeginTransactionAsync();
+                var strategy = await _superAdminRepository.CreateExecutionStrategy();
 
-                // Update Identity User
-                _logger.LogDebug("Identity kullanıcısı getiriliyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
-                var identityUser = await _userManager.FindByIdAsync(superAdmin.IdentityId);
-                if (identityUser == null)
+                return await strategy.ExecuteAsync<IResult>(async () =>
                 {
-                    await transaction.RollbackAsync();
-                    _logger.LogError("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}, SuperAdminId: {SuperAdminId}",
-                        superAdmin.IdentityId, superAdminUpdateDto.SuperAdminId);
-                    return new ErrorResult("Identity kullanıcısı bulunamadı.");
-                }
-
-                // Update email if changed
-                if (identityUser.Email != superAdminUpdateDto.Email)
-                {
-                    _logger.LogInformation("Email değişikliği tespit edildi. Eski: {OldEmail}, Yeni: {NewEmail}",
-                        identityUser.Email, superAdminUpdateDto.Email);
-
-                    // Check if new email already exists
-                    var existingUser = await _userManager.FindByEmailAsync(superAdminUpdateDto.Email);
-                    if (existingUser != null && existingUser.Id != identityUser.Id)
+                    var transaction = await _superAdminRepository.BeginTransactionAsync().ConfigureAwait(false);
+                    try
                     {
-                        await transaction.RollbackAsync();
-                        _logger.LogWarning("Email değiştirilemedi. Email başka bir kullanıcı tarafından kullanılıyor: {Email}",
-                            superAdminUpdateDto.Email);
-                        return new ErrorResult("Bu email adresi başka bir kullanıcı tarafından kullanılıyor.");
+                        // Update Identity User
+                        _logger.LogDebug("Identity kullanıcısı getiriliyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
+                        var identityUser = await _userManager.FindByIdAsync(superAdmin.IdentityId);
+                        if (identityUser == null)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError("Identity kullanıcısı bulunamadı. IdentityId: {IdentityId}, SuperAdminId: {SuperAdminId}",
+                                superAdmin.IdentityId, superAdminUpdateDto.SuperAdminId);
+                            return new ErrorResult("Identity kullanıcısı bulunamadı.");
+                        }
+
+                        // Update email if changed
+                        if (identityUser.Email != superAdminUpdateDto.Email)
+                        {
+                            _logger.LogInformation("Email değişikliği tespit edildi. Eski: {OldEmail}, Yeni: {NewEmail}",
+                                identityUser.Email, superAdminUpdateDto.Email);
+
+                            // Check if new email already exists
+                            var existingUser = await _userManager.FindByEmailAsync(superAdminUpdateDto.Email);
+                            if (existingUser != null && existingUser.Id != identityUser.Id)
+                            {
+                                await transaction.RollbackAsync();
+                                _logger.LogWarning("Email değiştirilemedi. Email başka bir kullanıcı tarafından kullanılıyor: {Email}",
+                                    superAdminUpdateDto.Email);
+                                return new ErrorResult("Bu email adresi başka bir kullanıcı tarafından kullanılıyor.");
+                            }
+
+                            identityUser.Email = superAdminUpdateDto.Email;
+                            identityUser.UserName = superAdminUpdateDto.Email;
+                            identityUser.NormalizedEmail = superAdminUpdateDto.Email.ToUpperInvariant();
+                            identityUser.NormalizedUserName = superAdminUpdateDto.Email.ToUpperInvariant();
+
+                            _logger.LogDebug("Identity kullanıcısı güncelleniyor. IdentityId: {IdentityId}", identityUser.Id);
+                            var identityResult = await _userManager.UpdateAsync(identityUser);
+                            if (!identityResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Identity kullanıcısı güncellenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    identityUser.Id, errors);
+                                return new ErrorResult($"Identity kullanıcısı güncellenemedi: {errors}");
+                            }
+
+                            _logger.LogInformation("Identity kullanıcısı email bilgisi başarıyla güncellendi. IdentityId: {IdentityId}",
+                                identityUser.Id);
+                        }
+
+                        // Update password if provided
+                        if (!string.IsNullOrWhiteSpace(superAdminUpdateDto.Password))
+                        {
+                            _logger.LogDebug("Şifre güncelleme işlemi başlatıldı. IdentityId: {IdentityId}", identityUser.Id);
+
+                            // Remove old password and add new one
+                            var removePasswordResult = await _userManager.RemovePasswordAsync(identityUser);
+                            if (!removePasswordResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", removePasswordResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Eski şifre kaldırılamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    identityUser.Id, errors);
+                                return new ErrorResult($"Şifre güncellenemedi: {errors}");
+                            }
+
+                            var addPasswordResult = await _userManager.AddPasswordAsync(identityUser, superAdminUpdateDto.Password);
+                            if (!addPasswordResult.Succeeded)
+                            {
+                                await transaction.RollbackAsync();
+                                var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
+                                _logger.LogError("Yeni şifre eklenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
+                                    identityUser.Id, errors);
+                                return new ErrorResult($"Şifre güncellenemedi: {errors}");
+                            }
+
+                            _logger.LogInformation("Şifre başarıyla güncellendi. IdentityId: {IdentityId}", identityUser.Id);
+                        }
+
+                        // Update SuperAdmin entity (without password)
+                        _logger.LogDebug("SuperAdmin entity güncelleniyor. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
+                        superAdmin.FirstName = superAdminUpdateDto.FirstName;
+                        superAdmin.LastName = superAdminUpdateDto.LastName;
+                        superAdmin.Email = superAdminUpdateDto.Email;
+
+                        await _superAdminRepository.UpdateAsync(superAdmin);
+                        await _superAdminRepository.SaveChangeAsync();
+
+                        _logger.LogInformation("SuperAdmin entity başarıyla güncellendi. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
+
+                        // Commit transaction
+                        await transaction.CommitAsync();
+                        _logger.LogInformation("Transaction commit edildi. SuperAdmin başarıyla güncellendi. SuperAdminId: {SuperAdminId}, Email: {Email}",
+                            superAdminUpdateDto.SuperAdminId, superAdminUpdateDto.Email);
+
+                        return new SuccessResult("SuperAdmin başarıyla güncellendi.");
                     }
-
-                    identityUser.Email = superAdminUpdateDto.Email;
-                    identityUser.UserName = superAdminUpdateDto.Email;
-                    identityUser.NormalizedEmail = superAdminUpdateDto.Email.ToUpperInvariant();
-                    identityUser.NormalizedUserName = superAdminUpdateDto.Email.ToUpperInvariant();
-
-                    _logger.LogDebug("Identity kullanıcısı güncelleniyor. IdentityId: {IdentityId}", identityUser.Id);
-                    var identityResult = await _userManager.UpdateAsync(identityUser);
-                    if (!identityResult.Succeeded)
+                    catch (Exception ex)
                     {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", identityResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Identity kullanıcısı güncellenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            identityUser.Id, errors);
-                        return new ErrorResult($"Identity kullanıcısı güncellenemedi: {errors}");
+                        if (transaction != null)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError(ex, "SuperAdmin güncelleme sırasında hata oluştu. Transaction rollback yapıldı. SuperAdminId: {SuperAdminId}",
+                                superAdminUpdateDto.SuperAdminId);
+                        }
+                        else
+                        {
+                            _logger.LogError(ex, "SuperAdmin güncelleme sırasında hata oluştu. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
+                        }
+
+                        return new ErrorResult($"Bir hata oluştu: {ex.Message}");
                     }
-
-                    _logger.LogInformation("Identity kullanıcısı email bilgisi başarıyla güncellendi. IdentityId: {IdentityId}",
-                        identityUser.Id);
-                }
-
-                // Update password if provided
-                if (!string.IsNullOrWhiteSpace(superAdminUpdateDto.Password))
-                {
-                    _logger.LogDebug("Şifre güncelleme işlemi başlatıldı. IdentityId: {IdentityId}", identityUser.Id);
-
-                    // Remove old password and add new one
-                    var removePasswordResult = await _userManager.RemovePasswordAsync(identityUser);
-                    if (!removePasswordResult.Succeeded)
+                    finally
                     {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", removePasswordResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Eski şifre kaldırılamadı. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            identityUser.Id, errors);
-                        return new ErrorResult($"Şifre güncellenemedi: {errors}");
+                        transaction?.Dispose();
                     }
-
-                    var addPasswordResult = await _userManager.AddPasswordAsync(identityUser, superAdminUpdateDto.Password);
-                    if (!addPasswordResult.Succeeded)
-                    {
-                        await transaction.RollbackAsync();
-                        var errors = string.Join(", ", addPasswordResult.Errors.Select(e => e.Description));
-                        _logger.LogError("Yeni şifre eklenemedi. IdentityId: {IdentityId}, Hatalar: {Errors}",
-                            identityUser.Id, errors);
-                        return new ErrorResult($"Şifre güncellenemedi: {errors}");
-                    }
-
-                    _logger.LogInformation("Şifre başarıyla güncellendi. IdentityId: {IdentityId}", identityUser.Id);
-                }
-
-                // Update SuperAdmin entity (without password)
-                _logger.LogDebug("SuperAdmin entity güncelleniyor. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
-                superAdmin.FirstName = superAdminUpdateDto.FirstName;
-                superAdmin.LastName = superAdminUpdateDto.LastName;
-                superAdmin.Email = superAdminUpdateDto.Email;
-
-                await _superAdminRepository.UpdateAsync(superAdmin);
-                await _superAdminRepository.SaveChangeAsync();
-
-                _logger.LogInformation("SuperAdmin entity başarıyla güncellendi. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
-
-                // Commit transaction
-                await transaction.CommitAsync();
-                _logger.LogInformation("Transaction commit edildi. SuperAdmin başarıyla güncellendi. SuperAdminId: {SuperAdminId}, Email: {Email}",
-                    superAdminUpdateDto.SuperAdminId, superAdminUpdateDto.Email);
-
-                return new SuccessResult("SuperAdmin başarıyla güncellendi.");
+                });
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "SuperAdmin güncelleme sırasında hata oluştu. Transaction rollback yapıldı. SuperAdminId: {SuperAdminId}",
-                        superAdminUpdateDto.SuperAdminId);
-                }
-                else
-                {
-                    _logger.LogError(ex, "SuperAdmin güncelleme sırasında hata oluştu. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
-                }
-
-                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
-            }
-            finally
-            {
-                transaction?.Dispose();
+                _logger.LogError(ex, "SuperAdmin güncelleme işlemi başarısız oldu. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
+                return new ErrorResult($"Beklenmeyen bir hata oluştu: {ex.Message}");
             }
         }
     }
