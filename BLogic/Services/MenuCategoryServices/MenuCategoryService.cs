@@ -2,6 +2,7 @@
 using KafeQRMenu.Data.Entities;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.Data.Utilities.Concretes;
+using KafeQRMenu.DataAccess.Repositories.CafeRepositories;
 using KafeQRMenu.DataAccess.Repositories.MenuCategoryRepositories;
 using Mapster;
 using Microsoft.Extensions.Logging;
@@ -12,11 +13,13 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
     {
         private readonly IMenuCategoryRepository _menuCategoryRepository;
         private readonly ILogger<MenuCategoryService> _logger;
+        private readonly ICafeRepository _cafeRepository;
 
-        public MenuCategoryService(IMenuCategoryRepository menuCategoryRepository, ILogger<MenuCategoryService> logger)
+        public MenuCategoryService(IMenuCategoryRepository menuCategoryRepository, ILogger<MenuCategoryService> logger, ICafeRepository cafeRepository)
         {
             _menuCategoryRepository = menuCategoryRepository;
             _logger = logger;
+            _cafeRepository = cafeRepository;
         }
 
         public async Task<IResult> CreateAsync(MenuCategoryCreateDTO menuCategoryCreateDto)
@@ -28,8 +31,16 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
                     return new ErrorResult("Kategori bilgisi boş olamaz.");
                 }
 
-                
+
                 var menuCategoryEntity = menuCategoryCreateDto.Adapt<MenuCategory>();
+
+                var preResult = await _cafeRepository.GetById(menuCategoryCreateDto.CafeId);
+                if (preResult.Id == Guid.Empty)
+                {
+                    return new ErrorResult("Kafe bilgisi boş olamaz");
+                }
+
+                menuCategoryEntity.Cafe = preResult;
 
                 await _menuCategoryRepository.AddAsync(menuCategoryEntity);
 
@@ -58,7 +69,7 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
                 {
                     return new ErrorResult("Geçersiz Kategori bilgisi.");
                 }
-                var cafeEntity = await _menuCategoryRepository.GetById(menuCategoryDto.MenuCategoryId, tracking: true);
+                var cafeEntity = await _menuCategoryRepository.GetById(menuCategoryDto.MenuCategoryId);
 
                 if (cafeEntity == null)
                 {
@@ -90,8 +101,7 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
             {
                 var menuCategories = await _menuCategoryRepository.GetAllAsync(
                     orderBy: x => x.CreatedTime,
-                    orderByDescending: true,
-                    tracking: false
+                    orderByDescending: true
                 );
 
                 if (menuCategories == null || !menuCategories.Any())
@@ -159,14 +169,14 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
                     return new ErrorResult("Geçersiz kategori bilgisi.");
                 }
 
-                var existingMenuCategory = await _menuCategoryRepository.GetById(menuCategoryUpdateDto.MenuCategoryId, tracking: true);
+                var existingMenuCategory = await _menuCategoryRepository.GetById(menuCategoryUpdateDto.MenuCategoryId);
 
                 if (existingMenuCategory == null)
                 {
                     return new ErrorResult("Güncellenecek kategori bulunamadı.");
                 }
 
-                
+
                 menuCategoryUpdateDto.Adapt(existingMenuCategory);
 
                 await _menuCategoryRepository.UpdateAsync(existingMenuCategory);

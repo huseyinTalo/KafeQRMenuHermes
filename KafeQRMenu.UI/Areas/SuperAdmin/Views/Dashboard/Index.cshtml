@@ -26,113 +26,121 @@
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <i class="bi bi-qr-code"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
             </div>
             <div class="stat-content">
-                <h3 class="stat-value">1,234</h3>
-                <p class="stat-label">QR Tarama</p>
+                <h3 class="stat-value">48</h3>
+                <p class="stat-label">Menü Kategorisi</p>
             </div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <i class="bi bi-graph-up-arrow"></i>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <i class="bi bi-basket-fill"></i>
             </div>
             <div class="stat-content">
-                <h3 class="stat-value">89%</h3>
-                <p class="stat-label">Aktiflik Oranı</p>
+                <h3 class="stat-value">342</h3>
+                <p class="stat-label">Menü Ürünleri</p>
             </div>
         </div>
     </div>
 
-    <!-- Admin Management Section -->
-    <div class="dashboard-section">
-        <div class="section-header">
-            <h2>
-                <i class="bi bi-people-fill"></i>
-                Admin Yönetimi
-            </h2>
-            <a asp-area="SuperAdmin" asp-controller="Admin" asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i>
-                Yeni Admin Ekle
-            </a>
-        </div>
-
-        <div class="section-body">
-            <p class="section-description">
-                Sistemdeki tüm admin kullanıcılarını bu bölümden yönetebilir, yeni admin ekleyebilir veya mevcut adminleri düzenleyebilirsiniz.
-            </p>
-
-            <div class="quick-actions">
+    <!-- Quick Actions Grid -->
+    <div class="quick-actions-grid">
+        <!-- Admin Management -->
+        <div class="action-section">
+            <div class="section-header">
+                <h2>
+                    <i class="bi bi-people-fill"></i>
+                    Admin Yönetimi
+                </h2>
+            </div>
+            <div class="action-cards">
                 <a asp-area="SuperAdmin" asp-controller="Admin" asp-action="Index" class="action-card">
                     <i class="bi bi-list-ul"></i>
                     <h4>Admin Listesi</h4>
-                    <p>Tüm adminleri görüntüle</p>
                 </a>
-
                 <a asp-area="SuperAdmin" asp-controller="Admin" asp-action="Create" class="action-card">
                     <i class="bi bi-person-plus-fill"></i>
-                    <h4>Admin Ekle</h4>
-                    <p>Yeni admin oluştur</p>
+                    <h4>Yeni Admin</h4>
                 </a>
+            </div>
+        </div>
 
+        <!-- Cafe Management -->
+        <div class="action-section">
+            <div class="section-header">
+                <h2>
+                    <i class="bi bi-shop"></i>
+                    Cafe Yönetimi
+                </h2>
+            </div>
+            <div class="action-cards">
                 <a asp-area="SuperAdmin" asp-controller="Cafe" asp-action="Index" class="action-card">
-                    <i class="bi bi-shop"></i>
-                    <h4>Cafe Yönetimi</h4>
-                    <p>Cafeleri yönet</p>
+                    <i class="bi bi-list-ul"></i>
+                    <h4>Cafe Listesi</h4>
                 </a>
-
-                <a asp-area="SuperAdmin" asp-controller="Reports" asp-action="Index" class="action-card">
-                    <i class="bi bi-bar-chart-fill"></i>
-                    <h4>Raporlar</h4>
-                    <p>Sistem raporları</p>
+                <a asp-area="SuperAdmin" asp-controller="Cafe" asp-action="Create" class="action-card">
+                    <i class="bi bi-plus-circle"></i>
+                    <h4>Yeni Cafe</h4>
                 </a>
             </div>
         </div>
-    </div>
 
-    <!-- Recent Activity -->
-    <div class="dashboard-section">
-        <div class="section-header">
-            <h2>
-                <i class="bi bi-clock-history"></i>
-                Son Aktiviteler
-            </h2>
+        <!-- Menu Category Management -->
+        <div class="action-section">
+            <div class="section-header">
+                <h2>
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                    Kategori Yönetimi
+                </h2>
+            </div>
+            <div class="action-cards">
+                <a asp-area="SuperAdmin" asp-controller="MenuCategory" asp-action="Index" class="action-card">
+                    <i class="bi bi-list-ul"></i>
+                    <h4>Kategori Listesi</h4>
+                </a>
+                <a asp-area="SuperAdmin" asp-controller="MenuCategory" asp-action="Create" class="action-card">
+                    <i class="bi bi-plus-circle"></i>
+                    <h4>Yeni Kategori</h4>
+                </a>
+            </div>
         </div>
 
-        <div class="activity-list">
-            <div class="activity-item">
-                <div class="activity-icon" style="background: #667eea;">
-                    <i class="bi bi-person-plus"></i>
-                </div>
-                <div class="activity-content">
-                    <h4>Yeni Admin Eklendi</h4>
-                    <p>Ali Yılmaz admin olarak sisteme eklendi</p>
-                    <span class="activity-time">2 saat önce</span>
-                </div>
+        <!-- Menu Item Management -->
+        <div class="action-section">
+            <div class="section-header">
+                <h2>
+                    <i class="bi bi-basket-fill"></i>
+                    Ürün Yönetimi
+                </h2>
             </div>
-
-            <div class="activity-item">
-                <div class="activity-icon" style="background: #f5576c;">
-                    <i class="bi bi-shop"></i>
-                </div>
-                <div class="activity-content">
-                    <h4>Cafe Güncellendi</h4>
-                    <p>Starbucks Kadıköy menüsü güncellendi</p>
-                    <span class="activity-time">5 saat önce</span>
-                </div>
+            <div class="action-cards">
+                <a asp-area="SuperAdmin" asp-controller="MenuItem" asp-action="Index" class="action-card">
+                    <i class="bi bi-list-ul"></i>
+                    <h4>Ürün Listesi</h4>
+                </a>
+                <a asp-area="SuperAdmin" asp-controller="MenuItem" asp-action="Create" class="action-card">
+                    <i class="bi bi-plus-circle"></i>
+                    <h4>Yeni Ürün</h4>
+                </a>
             </div>
+        </div>
 
-            <div class="activity-item">
-                <div class="activity-icon" style="background: #4facfe;">
-                    <i class="bi bi-qr-code-scan"></i>
-                </div>
-                <div class="activity-content">
-                    <h4>QR Kod Tarandı</h4>
-                    <p>Costa Coffee menüsü 45 kez tarandı</p>
-                    <span class="activity-time">1 gün önce</span>
-                </div>
+        <!-- Menu Preview -->
+        <div class="action-section">
+            <div class="section-header">
+                <h2>
+                    <i class="bi bi-eye-fill"></i>
+                    Menü Önizleme
+                </h2>
+            </div>
+            <div class="action-cards">
+                <a asp-area="SuperAdmin" asp-controller="MenuPreview" asp-action="Index" class="action-card highlight">
+                    <i class="bi bi-phone"></i>
+                    <h4>Menü Önizleme</h4>
+                </a>
             </div>
         </div>
     </div>
@@ -142,6 +150,7 @@
     <style>
         .dashboard-container {
             max-width: 1400px;
+            padding: 1rem;
         }
 
         /* Stats Grid */
@@ -159,13 +168,13 @@
             display: flex;
             align-items: center;
             gap: 1.5rem;
-            box-shadow: var(--shadow);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
 
             .stat-card:hover {
                 transform: translateY(-5px);
-                box-shadow: var(--shadow-hover);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             }
 
         .stat-icon {
@@ -177,6 +186,7 @@
             justify-content: center;
             color: white;
             font-size: 2rem;
+            flex-shrink: 0;
         }
 
         .stat-content {
@@ -186,155 +196,116 @@
         .stat-value {
             font-size: 2rem;
             font-weight: bold;
-            color: var(--dark-color);
-            margin-bottom: 0.25rem;
+            color: #2c3e50;
+            margin: 0 0 0.25rem 0;
         }
 
         .stat-label {
-            color: #666;
+            color: #6b7280;
             font-size: 0.95rem;
+            margin: 0;
         }
 
-        /* Dashboard Section */
-        .dashboard-section {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--light-color);
-        }
-
-            .section-header h2 {
-                font-size: 1.5rem;
-                color: var(--dark-color);
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
-
-        .btn-primary {
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-        }
-
-            .btn-primary:hover {
-                transform: translateY(-2px);
-                box-shadow: var(--shadow-hover);
-            }
-
-        .section-description {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        /* Quick Actions */
-        .quick-actions {
+        /* Quick Actions Grid */
+        .quick-actions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.5rem;
         }
 
-        .action-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 12px;
+        .action-section {
+            background: white;
+            border-radius: 15px;
             padding: 1.5rem;
-            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+            .action-section:hover {
+                box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            }
+
+        .section-header {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+            .section-header h2 {
+                font-size: 1.1rem;
+                color: #2c3e50;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin: 0;
+                font-weight: 600;
+            }
+
+                .section-header h2 i {
+                    font-size: 1.3rem;
+                }
+
+        .action-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .action-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 1rem;
             text-decoration: none;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
             border: 2px solid transparent;
         }
 
             .action-card:hover {
-                transform: translateY(-5px);
-                box-shadow: var(--shadow-hover);
-                border-color: var(--primary-color);
+                transform: translateX(5px);
+                border-color: #6366f1;
+                background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
             }
 
             .action-card i {
-                font-size: 2.5rem;
-                color: var(--primary-color);
-                margin-bottom: 1rem;
+                font-size: 1.5rem;
+                color: #6366f1;
+                width: 35px;
+                height: 35px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: white;
+                border-radius: 8px;
             }
 
             .action-card h4 {
-                font-size: 1.1rem;
-                color: var(--dark-color);
-                margin-bottom: 0.5rem;
+                font-size: 0.95rem;
+                color: #2c3e50;
+                margin: 0;
+                font-weight: 600;
             }
 
-            .action-card p {
-                color: #666;
-                font-size: 0.9rem;
+            .action-card.highlight {
+                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                border-color: #6366f1;
             }
 
-        /* Activity List */
-        .activity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
+                .action-card.highlight i {
+                    background: rgba(255, 255, 255, 0.2);
+                    color: white;
+                }
 
-        .activity-item {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
+                .action-card.highlight h4 {
+                    color: white;
+                }
 
-            .activity-item:hover {
-                background: #e9ecef;
-            }
-
-        .activity-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-
-        .activity-content h4 {
-            font-size: 1rem;
-            color: var(--dark-color);
-            margin-bottom: 0.25rem;
-        }
-
-        .activity-content p {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .activity-time {
-            color: #999;
-            font-size: 0.85rem;
-        }
+                .action-card.highlight:hover {
+                    transform: translateX(5px) translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+                }
 
         /* Responsive */
         @@media (max-width: 768px) {
@@ -344,14 +315,22 @@
             grid-template-columns: 1fr;
         }
 
-        .section-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
         }
 
-        .quick-actions {
-            grid-template-columns: 1fr;
+        .stat-card {
+            padding: 1rem;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
         }
 
         }

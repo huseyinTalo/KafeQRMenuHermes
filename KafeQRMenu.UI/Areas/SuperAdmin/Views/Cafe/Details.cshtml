@@ -1,0 +1,301 @@
+﻿@model KafeQRMenu.UI.Areas.SuperAdmin.Models.CafeVMs.SACafeVM
+
+@{
+    ViewData["Title"] = "Cafe Detayları";
+}
+
+<div class="page-header">
+    <div class="header-content">
+        <h1>
+            <i class="bi bi-info-circle"></i>
+            Cafe Detayları
+        </h1>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="detail-header">
+        <div class="cafe-icon-large">
+            <i class="bi bi-cup-hot"></i>
+        </div>
+        <h2>@Model.CafeName</h2>
+    </div>
+
+    <div class="detail-section">
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-tag"></i>
+                Cafe Adı
+            </div>
+            <div class="detail-value">@Model.CafeName</div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-file-text"></i>
+                Açıklama
+            </div>
+            <div class="detail-value">
+                @if (string.IsNullOrEmpty(Model.Description))
+                {
+                    <span class="text-muted">Açıklama girilmemiş</span>
+                }
+                else
+                {
+                    @Model.Description
+                }
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-geo-alt"></i>
+                Adres
+            </div>
+            <div class="detail-value">
+                @if (string.IsNullOrEmpty(Model.Address))
+                {
+                    <span class="text-muted">Adres girilmemiş</span>
+                }
+                else
+                {
+                    @Model.Address
+                }
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-key"></i>
+                ID
+            </div>
+            <div class="detail-value">
+                <code>@Model.Id</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Listeye Dön
+        </a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+            <i class="bi bi-pencil"></i>
+            Düzenle
+        </a>
+        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+            <i class="bi bi-trash"></i>
+            Sil
+        </a>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Base Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+            .btn i {
+                font-size: 1.1rem;
+            }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+            .btn-secondary:hover {
+                background: #5a6268;
+            }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+            .btn-warning:hover {
+                background: #e0a800;
+            }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+            .btn-danger:hover {
+                background: #c82333;
+            }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+            .btn-info:hover {
+                background: #138496;
+            }
+
+        /* Page Styles */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .header-content h1 {
+            font-size: 1.8rem;
+            color: var(--dark-color, #2c3e50);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+
+        .detail-header {
+            text-align: center;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 2rem;
+        }
+
+        .cafe-icon-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            margin: 0 auto 1rem;
+        }
+
+        .detail-header h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .detail-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+            .detail-item:hover {
+                background: #e9ecef;
+            }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .detail-label i {
+                color: #4CAF50;
+            }
+
+        .detail-value {
+            color: #2c3e50;
+            word-wrap: break-word;
+        }
+
+        .text-muted {
+            color: #999;
+            font-style: italic;
+        }
+
+        code {
+            background: #f1f3f4;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #d73a49;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        @@media (max-width: 768px) {
+            .content-card
+
+        {
+            padding: 1.5rem;
+        }
+
+        .detail-item {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+            .form-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+        }
+    </style>
+}

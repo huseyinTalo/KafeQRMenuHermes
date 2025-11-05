@@ -20,6 +20,7 @@
     <Folder Include="Areas\Admin\Models\" />
     <Folder Include="Areas\Admin\Views\" />
     <Folder Include="Areas\SuperAdmin\Data\" />
+    <Folder Include="Areas\SuperAdmin\Views\MenuCategory\" />
   </ItemGroup>
 
   <ItemGroup>

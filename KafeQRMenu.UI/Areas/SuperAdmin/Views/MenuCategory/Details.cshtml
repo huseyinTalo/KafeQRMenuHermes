@@ -1,0 +1,383 @@
+@model KafeQRMenu.UI.Areas.SuperAdmin.Models.MenuCategoryVMs.SAMenuCategoryVM
+
+@{
+    ViewData["Title"] = "Kategori Detayları";
+}
+
+<div class="page-header">
+    <div class="header-content">
+        <h1>
+            <i class="bi bi-info-circle-fill"></i>
+            Kategori Detayları
+        </h1>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="detail-header">
+        <div class="category-icon-large">
+            <i class="bi bi-folder-fill"></i>
+        </div>
+        <h2>@Model.MenuCategoryName</h2>
+        <div class="sort-badge-large">
+            <span>Sıra</span>
+            <strong>@Model.SortOrder</strong>
+        </div>
+    </div>
+
+    <div class="detail-section">
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-tag-fill"></i>
+                Kategori Adı
+            </div>
+            <div class="detail-value">@Model.MenuCategoryName</div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-sort-numeric-down"></i>
+                Sıra Numarası
+            </div>
+            <div class="detail-value">
+                <span class="sort-badge-inline">@Model.SortOrder</span>
+                <span class="detail-hint">Menüde bu sırada gösterilir</span>
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-cup-hot-fill"></i>
+                Bağlı Cafe
+            </div>
+            <div class="detail-value">
+                @if (!string.IsNullOrEmpty(Model.CafeName))
+                {
+                    <span class="badge badge-cafe">
+                        <i class="bi bi-cup-hot"></i>
+                        @Model.CafeName
+                    </span>
+                }
+                else
+                {
+                    <span class="text-muted">Cafe bilgisi yok</span>
+                }
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-file-text-fill"></i>
+                Açıklama
+            </div>
+            <div class="detail-value">
+                @if (string.IsNullOrEmpty(Model.Description))
+                {
+                    <span class="text-muted">Açıklama girilmemiş</span>
+                }
+                else
+                {
+                    @Model.Description
+                }
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-key-fill"></i>
+                Kategori ID
+            </div>
+            <div class="detail-value">
+                <code>@Model.MenuCategoryId</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Listeye Dön
+        </a>
+        <a asp-action="Edit" asp-route-id="@Model.MenuCategoryId" class="btn btn-warning">
+            <i class="bi bi-pencil"></i>
+            Düzenle
+        </a>
+        <a asp-action="Delete" asp-route-id="@Model.MenuCategoryId" class="btn btn-danger">
+            <i class="bi bi-trash"></i>
+            Sil
+        </a>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Base Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .btn i {
+                font-size: 1.1rem;
+            }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+            .btn-secondary:hover {
+                background: #4b5563;
+            }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+            .btn-warning:hover {
+                background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+            .btn-danger:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            }
+
+        /* Page Header */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .header-content h1 {
+            font-size: 1.8rem;
+            color: var(--dark-color, #2c3e50);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        /* Content Card */
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 900px;
+        }
+
+        /* Detail Header */
+        .detail-header {
+            text-align: center;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+
+        .category-icon-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .detail-header h2 {
+            font-size: 2rem;
+            color: #1f2937;
+            margin: 0 0 1rem 0;
+            font-weight: 700;
+        }
+
+        .sort-badge-large {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            border-radius: 12px;
+            gap: 0.25rem;
+        }
+
+            .sort-badge-large span {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                opacity: 0.9;
+            }
+
+            .sort-badge-large strong {
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+
+        /* Detail Section */
+        .detail-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 1.5rem;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+            .detail-item:hover {
+                background: white;
+                border-color: #e5e7eb;
+                transform: translateX(5px);
+            }
+
+        .detail-label {
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+            .detail-label i {
+                color: #6366f1;
+                font-size: 1.2rem;
+            }
+
+        .detail-value {
+            color: #1f2937;
+            word-wrap: break-word;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .detail-hint {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+        .sort-badge-inline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            padding: 0.4rem 0.8rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .text-muted {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        /* Badge Styles */
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge-cafe {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
+
+            .badge-cafe i {
+                font-size: 1.1rem;
+            }
+
+        code {
+            background: #f1f5f9;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #6366f1;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e5e7eb;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .content-card {
+                padding: 1.5rem;
+            }
+
+            .detail-item {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+                .form-actions .btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+
+            .category-icon-large {
+                width: 80px;
+                height: 80px;
+                font-size: 2.5rem;
+            }
+
+            .detail-header h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+}

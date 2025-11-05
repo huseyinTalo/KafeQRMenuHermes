@@ -14,5 +14,6 @@ namespace KafeQRMenu.Data.Entities
         public decimal Price { get; set; }
         public Guid MenuCategoryId { get; set; }
         public virtual MenuCategory MenuCategory { get; set; }
+        public int SortOrder { get; set; }
     }
 }

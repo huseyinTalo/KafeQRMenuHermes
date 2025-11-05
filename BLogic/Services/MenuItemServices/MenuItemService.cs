@@ -5,6 +5,7 @@ using KafeQRMenu.DataAccess.Repositories.MenuItemRepositories;
 using Microsoft.Extensions.Logging;
 using Mapster;
 using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
+using KafeQRMenu.DataAccess.Repositories.MenuCategoryRepositories;
 
 namespace KafeQRMenu.BLogic.Services.MenuItemServices
 {
@@ -12,11 +13,13 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
     {
         private readonly IMenuItemRepository _menuItemRepository;
         private readonly ILogger<MenuItemService> _logger;
+        private readonly IMenuCategoryRepository _menuCategoryRepository;
 
-        public MenuItemService(IMenuItemRepository menuItemRepository, ILogger<MenuItemService> logger)
+        public MenuItemService(IMenuItemRepository menuItemRepository, ILogger<MenuItemService> logger, IMenuCategoryRepository menuCategoryRepository)
         {
             _menuItemRepository = menuItemRepository;
             _logger = logger;
+            _menuCategoryRepository = menuCategoryRepository;
         }
 
         public async Task<IResult> CreateAsync(MenuItemCreateDTO menuItemCreateDto)
@@ -28,8 +31,16 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
                     return new ErrorResult("Ürün bilgisi boş olamaz.");
                 }
 
+                var preResult = await _menuCategoryRepository.GetById(menuItemCreateDto.MenuCategoryId);
+
+                if (preResult.Id == Guid.Empty)
+                {
+                    return new ErrorResult("Kategori bilgisi boş olamaz");
+                }
 
                 var menuItemEntity = menuItemCreateDto.Adapt<MenuItem>();
+
+                menuItemEntity.MenuCategory = preResult;
 
                 await _menuItemRepository.AddAsync(menuItemEntity);
 
@@ -58,7 +69,7 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
                 {
                     return new ErrorResult("Geçersiz Ürün bilgisi.");
                 }
-                var menuItemEntity = await _menuItemRepository.GetById(menuItemDto.MenuItemId, tracking: true);
+                var menuItemEntity = await _menuItemRepository.GetById(menuItemDto.MenuItemId);
 
                 if (menuItemEntity == null)
                 {
@@ -158,7 +169,7 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
                     return new ErrorResult("Geçersiz Ürün bilgisi.");
                 }
 
-                var existingMenuItem = await _menuItemRepository.GetById(menuItemUpdateDto.MenuItemId, tracking: true);
+                var existingMenuItem = await _menuItemRepository.GetById(menuItemUpdateDto.MenuItemId);
 
                 if (existingMenuItem == null)
                 {

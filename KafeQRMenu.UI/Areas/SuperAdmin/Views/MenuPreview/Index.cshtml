@@ -1,0 +1,448 @@
+﻿@model KafeQRMenu.UI.Areas.SuperAdmin.Models.MenuPreviewVMs.MenuPreviewVM
+
+@{
+    ViewData["Title"] = "Menü Önizleme";
+}
+
+<div class="page-header">
+    <div class="header-content">
+        <h1>
+            <i class="bi bi-phone"></i>
+            Menü Önizleme
+        </h1>
+    </div>
+</div>
+
+<div class="preview-container">
+    <!-- Cafe Selection -->
+    <div class="selection-card">
+        <h3>
+            <i class="bi bi-shop"></i>
+            Cafe Seçimi
+        </h3>
+        <div class="form-group">
+            <label for="cafeSelect" class="form-label">Önizlemek istediğiniz cafeyi seçin:</label>
+            <select id="cafeSelect" asp-items="ViewBag.Cafes" class="form-control form-select">
+                <option value="">-- Cafe Seçiniz --</option>
+            </select>
+        </div>
+        <button id="loadMenuBtn" class="btn btn-primary">
+            <i class="bi bi-eye"></i>
+            Menüyü Görüntüle
+        </button>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-container" style="display: none;">
+        <div class="spinner"></div>
+        <p>Menü yükleniyor...</p>
+    </div>
+
+    <!-- Mobile Preview -->
+    <div id="mobilePreview" class="mobile-preview" style="display: none;">
+        <div class="mobile-frame">
+            <div class="mobile-header">
+                <div class="status-bar">
+                    <span class="time">12:34</span>
+                    <div class="status-icons">
+                        <i class="bi bi-reception-4"></i>
+                        <i class="bi bi-wifi"></i>
+                        <i class="bi bi-battery-full"></i>
+                    </div>
+                </div>
+                <div class="cafe-header">
+                    <h2 id="cafeName"></h2>
+                    <p id="cafeAddress"></p>
+                </div>
+            </div>
+
+            <div class="mobile-body" id="menuContent">
+                <!-- Menu will be loaded here dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .header-content h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Selection Card */
+        .selection-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+            .selection-card h3 {
+                color: #2c3e50;
+                margin-bottom: 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+            .form-control:focus, .form-select:focus {
+                outline: none;
+                border-color: #6366f1;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            }
+
+        .form-select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            }
+
+        /* Loading */
+        .loading-container {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1rem;
+            border: 4px solid #e5e7eb;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Mobile Preview */
+        .mobile-preview {
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .mobile-frame {
+            width: 375px;
+            max-height: 812px;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            border: 8px solid #2c3e50;
+        }
+
+        .mobile-header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .cafe-header {
+            padding: 1.5rem 1rem;
+            text-align: center;
+        }
+
+            .cafe-header h2 {
+                margin: 0 0 0.5rem 0;
+                font-size: 1.5rem;
+            }
+
+            .cafe-header p {
+                margin: 0;
+                opacity: 0.9;
+                font-size: 0.9rem;
+            }
+
+        .mobile-body {
+            max-height: 600px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        /* Menu Content */
+        .menu-category {
+            margin-bottom: 1.5rem;
+        }
+
+        .category-header {
+            background: white;
+            padding: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+            .category-header h3 {
+                margin: 0 0 0.25rem 0;
+                color: #2c3e50;
+                font-size: 1.1rem;
+            }
+
+            .category-header p {
+                margin: 0;
+                color: #6b7280;
+                font-size: 0.85rem;
+            }
+
+        .menu-items {
+            background: white;
+        }
+
+        .menu-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 1rem;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+            .item-info h4 {
+                margin: 0 0 0.25rem 0;
+                color: #2c3e50;
+                font-size: 1rem;
+            }
+
+            .item-info p {
+                margin: 0;
+                color: #6b7280;
+                font-size: 0.85rem;
+                line-height: 1.4;
+            }
+
+        .item-price {
+            font-weight: 700;
+            color: #10b981;
+            font-size: 1.1rem;
+            white-space: nowrap;
+        }
+
+        .empty-category {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .no-menu {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6b7280;
+        }
+
+            .no-menu i {
+                font-size: 3rem;
+                color: #d1d5db;
+                margin-bottom: 1rem;
+            }
+
+        /* Scrollbar */
+        .mobile-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .mobile-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .mobile-body::-webkit-scrollbar-thumb {
+            background: #6366f1;
+            border-radius: 3px;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .mobile-frame {
+                width: 100%;
+                max-width: 375px;
+                border-radius: 20px;
+                border-width: 4px;
+            }
+
+            .mobile-preview {
+                padding: 1rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('loadMenuBtn').addEventListener('click', async function() {
+            const cafeSelect = document.getElementById('cafeSelect');
+            const cafeId = cafeSelect.value;
+            console.log("value is ere" + cafeSelect.value);
+
+            if (!cafeId) {
+                alert('Lütfen bir cafe seçiniz.');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('mobilePreview').style.display = 'none';
+
+            try {
+                const response = await fetch('@Url.Action("GetMenu", "MenuPreview")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify({ cafeId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update cafe info
+                    document.getElementById('cafeName').textContent = data.cafeName;
+                    document.getElementById('cafeAddress').textContent = data.cafeAddress || '';
+
+                    // Build menu content
+                    const menuContent = document.getElementById('menuContent');
+                    menuContent.innerHTML = '';
+
+                    if (data.categories && data.categories.length > 0) {
+                        data.categories.forEach(category => {
+                            const categoryDiv = document.createElement('div');
+                            categoryDiv.className = 'menu-category';
+
+                            let categoryHTML = `
+                                <div class="category-header">
+                                    <h3>${category.categoryName}</h3>
+                                    ${category.description ? `<p>${category.description}</p>` : ''}
+                                </div>
+                                <div class="menu-items">
+                            `;
+
+                            if (category.items && category.items.length > 0) {
+                                category.items.forEach(item => {
+                                    categoryHTML += `
+                                        <div class="menu-item">
+                                            <div class="item-info">
+                                                <h4>${item.itemName}</h4>
+                                                ${item.description ? `<p>${item.description}</p>` : ''}
+                                            </div>
+                                            <div class="item-price">${item.price.toFixed(2)} ₺</div>
+                                        </div>
+                                    `;
+                                });
+                            } else {
+                                categoryHTML += '<div class="empty-category">Bu kategoride henüz ürün bulunmuyor</div>';
+                            }
+
+                            categoryHTML += '</div>';
+                            categoryDiv.innerHTML = categoryHTML;
+                            menuContent.appendChild(categoryDiv);
+                        });
+                    } else {
+                        menuContent.innerHTML = `
+                            <div class="no-menu">
+                                <i class="bi bi-inbox"></i>
+                                <p>Bu cafe için henüz menü oluşturulmamış</p>
+                            </div>
+                        `;
+                    }
+
+                    // Show preview
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.getElementById('mobilePreview').style.display = 'flex';
+                } else {
+                    alert(data.message || 'Menü yüklenemedi.');
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Bir hata oluştu.');
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        });
+    </script>
+}

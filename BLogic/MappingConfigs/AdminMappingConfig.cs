@@ -14,7 +14,7 @@ namespace KafeQRMenu.BLogic.MappingConfigs
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<Admin, AdminListDTO>()
-                .Map(dest => dest.CafeName, src => src.Cafe.CafeName);
+                .Map(dest => dest.CafeName, src => src.Cafe.CafeName).TwoWays();
         }
     }
 }

@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace KafeQRMenu.BLogic.DTOs.MenuCategoryDTOs
+﻿namespace KafeQRMenu.UI.Areas.SuperAdmin.Models.MenuCategoryVMs
 {
-    public class MenuCategoryDTO
+    public class SAMenuCategoryVM
     {
         public Guid MenuCategoryId { get; set; }
         public string MenuCategoryName { get; set; }

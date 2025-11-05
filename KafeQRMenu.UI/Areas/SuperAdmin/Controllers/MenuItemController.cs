@@ -1,38 +1,44 @@
-﻿using KafeQRMenu.BLogic.DTOs.CafeDTOs;
-using KafeQRMenu.BLogic.Services.CafeServices;
-using KafeQRMenu.UI.Areas.SuperAdmin.Models.CafeVMs;
+﻿using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
+using KafeQRMenu.BLogic.Services.MenuCategoryServices;
+using KafeQRMenu.BLogic.Services.MenuItemServices;
+using KafeQRMenu.UI.Areas.SuperAdmin.Models.MenuItemVMs;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
 {
     [Area("SuperAdmin")]
     [Authorize(Roles = "SuperAdmin")]
-    public class CafeController : Controller
+    public class MenuItemController : Controller
     {
-        private readonly ICafeService _cafeService;
+        private readonly IMenuItemService _menuItemService;
+        private readonly IMenuCategoryService _menuCategoryService;
 
-        public CafeController(ICafeService cafeService)
+        public MenuItemController(
+            IMenuItemService menuItemService,
+            IMenuCategoryService menuCategoryService)
         {
-            _cafeService = cafeService;
+            _menuItemService = menuItemService;
+            _menuCategoryService = menuCategoryService;
         }
 
-        // GET: SuperAdmin/Cafe
+        // GET: SuperAdmin/MenuItem
         public async Task<IActionResult> Index()
         {
-            var result = await _cafeService.GetAllAsync();
+            var result = await _menuItemService.GetAllAsync();
 
             if (!result.IsSuccess)
             {
                 TempData["ErrorMessage"] = result.Message;
-                return View(new List<CafeListDTO>());
+                return View(new List<SAMenuItemListVM>());
             }
 
-            return View(result.Data.Adapt<List<SACafeListVM>>());
+            return View(result.Data.Adapt<List<SAMenuItemListVM>>());
         }
 
-        // GET: SuperAdmin/Cafe/Details/5
+        // GET: SuperAdmin/MenuItem/Details/5
         public async Task<IActionResult> Details(Guid id)
         {
             if (id == Guid.Empty)
@@ -41,7 +47,7 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var result = await _cafeService.GetByIdAsync(id);
+            var result = await _menuItemService.GetByIdAsync(id);
 
             if (!result.IsSuccess)
             {
@@ -49,26 +55,28 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(result.Data.Adapt<SACafeVM>());
+            return View(result.Data.Adapt<SAMenuItemVM>());
         }
 
-        // GET: SuperAdmin/Cafe/Create
-        public IActionResult Create()
+        // GET: SuperAdmin/MenuItem/Create
+        public async Task<IActionResult> Create()
         {
+            await LoadMenuCategoriesAsync();
             return View();
         }
 
-        // POST: SuperAdmin/Cafe/Create
+        // POST: SuperAdmin/MenuItem/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(SACafeCreateVM saCafeCreateVM)
+        public async Task<IActionResult> Create(SAMenuItemCreateVM viewModel)
         {
             if (!ModelState.IsValid)
             {
-                return View(saCafeCreateVM);
+                await LoadMenuCategoriesAsync();
+                return View(viewModel);
             }
 
-            var result = await _cafeService.CreateAsync(saCafeCreateVM.Adapt<CafeCreateDTO>());
+            var result = await _menuItemService.CreateAsync(viewModel.Adapt<MenuItemCreateDTO>());
 
             if (result.IsSuccess)
             {
@@ -77,10 +85,11 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
             }
 
             TempData["ErrorMessage"] = result.Message;
-            return View(saCafeCreateVM);
+            await LoadMenuCategoriesAsync();
+            return View(viewModel);
         }
 
-        // GET: SuperAdmin/Cafe/Edit/5
+        // GET: SuperAdmin/MenuItem/Edit/5
         public async Task<IActionResult> Edit(Guid id)
         {
             if (id == Guid.Empty)
@@ -89,7 +98,7 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var result = await _cafeService.GetByIdAsync(id);
+            var result = await _menuItemService.GetByIdAsync(id);
 
             if (!result.IsSuccess)
             {
@@ -97,17 +106,17 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var updateVM = result.Data.Adapt<SACafeUpdateVM>();
-
+            var updateVM = result.Data.Adapt<SAMenuItemUpdateVM>();
+            await LoadMenuCategoriesAsync();
             return View(updateVM);
         }
 
-        // POST: SuperAdmin/Cafe/Edit/5
+        // POST: SuperAdmin/MenuItem/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, SACafeUpdateVM saCafeUpdateVM)
+        public async Task<IActionResult> Edit(Guid id, SAMenuItemUpdateVM viewModel)
         {
-            if (id != saCafeUpdateVM.Id)
+            if (id != viewModel.MenuItemId)
             {
                 TempData["ErrorMessage"] = "Id uyuşmazlığı.";
                 return RedirectToAction(nameof(Index));
@@ -115,10 +124,11 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
 
             if (!ModelState.IsValid)
             {
-                return View(saCafeUpdateVM);
+                await LoadMenuCategoriesAsync();
+                return View(viewModel);
             }
 
-            var result = await _cafeService.UpdateAsync(saCafeUpdateVM.Adapt<CafeUpdateDTO>());
+            var result = await _menuItemService.UpdateAsync(viewModel.Adapt<MenuItemUpdateDTO>());
 
             if (result.IsSuccess)
             {
@@ -127,10 +137,11 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
             }
 
             TempData["ErrorMessage"] = result.Message;
-            return View(saCafeUpdateVM);
+            await LoadMenuCategoriesAsync();
+            return View(viewModel);
         }
 
-        // GET: SuperAdmin/Cafe/Delete/5
+        // GET: SuperAdmin/MenuItem/Delete/5
         public async Task<IActionResult> Delete(Guid id)
         {
             if (id == Guid.Empty)
@@ -139,7 +150,7 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var result = await _cafeService.GetByIdAsync(id);
+            var result = await _menuItemService.GetByIdAsync(id);
 
             if (!result.IsSuccess)
             {
@@ -147,15 +158,15 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(result.Data.Adapt<SACafeVM>());
+            return View(result.Data.Adapt<SAMenuItemVM>());
         }
 
-        // POST: SuperAdmin/Cafe/Delete/5
+        // POST: SuperAdmin/MenuItem/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var result = await _cafeService.GetByIdAsync(id);
+            var result = await _menuItemService.GetByIdAsync(id);
 
             if (!result.IsSuccess)
             {
@@ -163,7 +174,7 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var deleteResult = await _cafeService.DeleteAsync(result.Data);
+            var deleteResult = await _menuItemService.DeleteAsync(result.Data);
 
             if (deleteResult.IsSuccess)
             {
@@ -175,6 +186,21 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // Helper method to load menu categories for dropdown
+        private async Task LoadMenuCategoriesAsync()
+        {
+            var categoriesResult = await _menuCategoryService.GetAllAsync();
+
+            if (categoriesResult.IsSuccess && categoriesResult.Data != null)
+            {
+                ViewBag.MenuCategories = new SelectList(categoriesResult.Data, "MenuCategoryId", "MenuCategoryName");
+            }
+            else
+            {
+                ViewBag.MenuCategories = new SelectList(Enumerable.Empty<SelectListItem>());
+            }
         }
     }
 }

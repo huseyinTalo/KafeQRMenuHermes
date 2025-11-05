@@ -50,7 +50,7 @@ namespace KafeQRMenu.DataAccess.AppContext
         private void SetBaseProperties()
         {
             var entries = ChangeTracker.Entries<BaseEntity>();
-            var userId = GetUserId();
+            var userId = GetUserId().ToString();
             foreach (var entry in entries)
             {
                 SetIfAdded(userId, entry);

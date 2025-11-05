@@ -1,0 +1,214 @@
+﻿@model KafeQRMenu.UI.Areas.SuperAdmin.Models.CafeVMs.SACafeCreateVM
+
+@{
+    ViewData["Title"] = "Yeni Cafe Ekle";
+}
+
+<div class="page-header">
+    <div class="header-content">
+        <h1>
+            <i class="bi bi-plus-circle"></i>
+            Yeni Cafe Ekle
+        </h1>
+    </div>
+</div>
+
+<div class="content-card">
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+        <div class="form-group">
+            <label asp-for="CafeName" class="form-label">
+                Cafe Adı <span class="required">*</span>
+            </label>
+            <input asp-for="CafeName" class="form-control" placeholder="Cafe adını giriniz" />
+            <span asp-validation-for="CafeName" class="validation-message"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Description" class="form-label">Açıklama</label>
+            <textarea asp-for="Description" class="form-control" rows="4" placeholder="Cafe hakkında açıklama giriniz"></textarea>
+            <span asp-validation-for="Description" class="validation-message"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Address" class="form-label">Adres</label>
+            <textarea asp-for="Address" class="form-control" rows="3" placeholder="Cafe adresini giriniz"></textarea>
+            <span asp-validation-for="Address" class="validation-message"></span>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i>
+                İptal
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i>
+                Kaydet
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <style>
+        /* Base Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+            .btn i {
+                font-size: 1.1rem;
+            }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+            .btn-secondary:hover {
+                background: #5a6268;
+            }
+
+        /* Page Styles */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .header-content h1 {
+            font-size: 1.8rem;
+            color: var(--dark-color, #2c3e50);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+
+        .validation-summary {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+            .form-control:focus {
+                outline: none;
+                border-color: #4CAF50;
+                box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+            }
+
+            .form-control::placeholder {
+                color: #999;
+            }
+
+        textarea.form-control {
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .validation-message {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        @@media (max-width: 768px) {
+            .content-card
+
+        {
+            padding: 1.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column-reverse;
+        }
+
+            .form-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+        }
+    </style>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -65,7 +65,7 @@ public class CafeService : ICafeService
             }
 
             // Cafe'yi bul
-            var cafeEntity = await _cafeRepository.GetById(cafeDto.Id, tracking: true);
+            var cafeEntity = await _cafeRepository.GetById(cafeDto.Id);
 
             if (cafeEntity == null)
             {
@@ -172,7 +172,7 @@ public class CafeService : ICafeService
             }
 
             // Mevcut cafe'yi bul
-            var existingCafe = await _cafeRepository.GetById(cafeUpdateDto.Id, tracking: true);
+            var existingCafe = await _cafeRepository.GetById(cafeUpdateDto.Id);
 
             if (existingCafe == null)
             {
