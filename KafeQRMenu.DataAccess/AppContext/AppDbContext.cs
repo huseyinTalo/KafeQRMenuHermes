@@ -20,17 +20,16 @@ namespace KafeQRMenu.DataAccess.AppContext
     public class AppDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-
-        }
-        public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor = null) : base(options)
         {
             _httpContextAccessor = httpContextAccessor;
         }
 
         public virtual DbSet<SuperAdmin> SuperAdmins { get; set; }
         public virtual DbSet<Admin> Admins { get; set; }
+        public virtual DbSet<Cafe> Cafes { get; set; }
+        public virtual DbSet<MenuCategory> MenuCategories { get; set; }
+        public virtual DbSet<MenuItem> MenuItems { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(IEntityConfiguration).Assembly);

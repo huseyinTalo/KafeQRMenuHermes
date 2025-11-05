@@ -1,13 +1,7 @@
-﻿using BLogic.DTOs.AdminDTOs;
-using BLogic.DTOs.CafeDTOs;
+﻿using KafeQRMenu.BLogic.DTOs.CafeDTOs;
 using KafeQRMenu.Data.Utilities.Abstracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BLogic.Services.CafeServices
+namespace KafeQRMenu.BLogic.Services.CafeServices
 {
     public interface ICafeService
     {

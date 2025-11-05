@@ -1,20 +1,12 @@
-﻿using BLogic.DTOs.AdminDTOs;
-using BLogic.DTOs.MenuCategoryDTOs;
-using BLogic.DTOs.MenuItemDTOs;
-using BLogic.Services.MenuCategoryServices;
-using KafeQRMenu.Data.Entities;
+﻿using KafeQRMenu.Data.Entities;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.Data.Utilities.Concretes;
 using KafeQRMenu.DataAccess.Repositories.MenuItemRepositories;
 using Microsoft.Extensions.Logging;
 using Mapster;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
 
-namespace BLogic.Services.MenuItemServices
+namespace KafeQRMenu.BLogic.Services.MenuItemServices
 {
     public class MenuItemService : IMenuItemService
     {
@@ -98,8 +90,7 @@ namespace BLogic.Services.MenuItemServices
             {
                 var menuItems = await _menuItemRepository.GetAllAsync(
                     orderBy: x => x.CreatedTime,
-                    orderByDescending: true,
-                    tracking: false
+                    orderByDescending: true
                 );
 
                 if (menuItems == null || !menuItems.Any())
@@ -136,7 +127,7 @@ namespace BLogic.Services.MenuItemServices
                     return new ErrorDataResult<MenuItemDTO>(null, "Geçersiz Id.");
                 }
 
-                var menuItemEntity = await _menuItemRepository.GetById(Id, tracking: false);
+                var menuItemEntity = await _menuItemRepository.GetById(Id);
 
                 if (menuItemEntity == null)
                 {

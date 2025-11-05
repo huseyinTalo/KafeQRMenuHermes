@@ -1,13 +1,7 @@
-﻿using BLogic.DTOs.AdminDTOs;
-using BLogic.DTOs.SuperAdminDTOs;
+﻿using KafeQRMenu.BLogic.DTOs.SuperAdminDTOs;
 using KafeQRMenu.Data.Utilities.Abstracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BLogic.Services.SuperAdminServices
+namespace KafeQRMenu.BLogic.Services.SuperAdminServices
 {
     public interface ISuperAdminService
     {

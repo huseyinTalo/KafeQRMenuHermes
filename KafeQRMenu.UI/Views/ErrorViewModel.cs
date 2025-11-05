@@ -1,4 +1,4 @@
-namespace KafeQRMenu.UI.Models
+﻿namespace KafeQRMenu.UI.Models
 {
     public class ErrorViewModel
     {

@@ -1,8 +1,382 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model KafeQRMenu.UI.Models.HomeVMs.MenuVM
+@{
+    ViewData["Title"] = Model.Cafe?.CafeName ?? "Menü";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="menu-container">
+    <!-- Cafe Header -->
+    <header class="cafe-header">
+        <div class="cafe-info">
+            <h1 class="cafe-name">@Model.Cafe.CafeName</h1>
+            @if (!string.IsNullOrEmpty(Model.Cafe.Description))
+            {
+                <p class="cafe-description">@Model.Cafe.Description</p>
+            }
+            @if (!string.IsNullOrEmpty(Model.Cafe.Address))
+            {
+                <p class="cafe-address">
+                    <i class="bi bi-geo-alt-fill"></i> @Model.Cafe.Address
+                </p>
+            }
+        </div>
+    </header>
+
+    <!-- Categories Navigation -->
+    @if (Model.Categories != null && Model.Categories.Any())
+    {
+        <nav class="categories-nav" id="categoriesNav">
+            <div class="categories-scroll">
+                <button class="category-btn active" data-category="all">
+                    <i class="bi bi-grid-fill"></i> Tümü
+                </button>
+                @foreach (var category in Model.Categories.OrderBy(c => c.SortOrder))
+                {
+                    <button class="category-btn" data-category="@category.MenuCategoryId">
+                        @category.MenuCategoryName
+                    </button>
+                }
+            </div>
+        </nav>
+    }
+
+    <!-- Menu Items Grid -->
+    <main class="menu-items">
+        @if (Model.Products != null && Model.Products.Any())
+        {
+            <div class="items-grid" id="menuItems">
+                @foreach (var product in Model.Products)
+                {
+                    <div class="menu-item" data-category="@product.MenuItemId">
+                        <div class="item-content">
+                            <div class="item-header">
+                                <h3 class="item-name">@product.MenuItemName</h3>
+                                <span class="item-price">₺@product.Price.ToString("N2")</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(product.Description))
+                            {
+                                <p class="item-description">@product.Description</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h3>Henüz ürün eklenmemiş</h3>
+                <p>Menüde gösterilecek ürün bulunmuyor.</p>
+            </div>
+        }
+    </main>
 </div>
+
+@section Styles {
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #ff6b35;
+            --secondary-color: #f7931e;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        .menu-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+
+        /* Cafe Header */
+        .cafe-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .cafe-name {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .cafe-description {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin-bottom: 0.5rem;
+        }
+
+        .cafe-address {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* Categories Navigation */
+        .categories-nav {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+            z-index: 100;
+        }
+
+        .categories-scroll {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0 1rem;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+            .categories-scroll::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .categories-scroll::-webkit-scrollbar-track {
+                background: var(--light-color);
+            }
+
+            .categories-scroll::-webkit-scrollbar-thumb {
+                background: var(--primary-color);
+                border-radius: 3px;
+            }
+
+        .category-btn {
+            flex-shrink: 0;
+            padding: 0.75rem 1.5rem;
+            background: var(--light-color);
+            border: 2px solid transparent;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            .category-btn:hover {
+                background: var(--primary-color);
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-hover);
+            }
+
+            .category-btn.active {
+                background: var(--primary-color);
+                color: white;
+                border-color: var(--primary-color);
+            }
+
+        /* Menu Items */
+        .menu-items {
+            padding: 2rem 1rem;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .menu-item {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+
+            .menu-item:hover {
+                transform: translateY(-5px);
+                box-shadow: var(--shadow-hover);
+                border-color: var(--primary-color);
+            }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .item-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            flex: 1;
+        }
+
+        .item-price {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+
+        .item-description {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+        }
+
+            .empty-state i {
+                font-size: 4rem;
+                margin-bottom: 1rem;
+            }
+
+            .empty-state h3 {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+                color: #666;
+            }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .cafe-name {
+                font-size: 2rem;
+            }
+
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .category-btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .cafe-header {
+                padding: 1.5rem 1rem;
+            }
+
+            .cafe-name {
+                font-size: 1.75rem;
+            }
+
+            .item-name {
+                font-size: 1.1rem;
+            }
+
+            .item-price {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Loading Animation */
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-item {
+            animation: fadeIn 0.5s ease forwards;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Category filtering (basit versiyon - şimdilik tüm ürünleri gösterir)
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryButtons = document.querySelectorAll('.category-btn');
+
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Aktif sınıfı değiştir
+                    categoryButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Şimdilik tüm ürünleri göster
+                    // İleride kategoriye göre filtreleme eklenebilir
+                    const category = this.getAttribute('data-category');
+                    console.log('Seçilen kategori:', category);
+                });
+            });
+
+            // Smooth scroll for categories
+            const categoriesNav = document.getElementById('categoriesNav');
+            if (categoriesNav) {
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+
+                categoriesNav.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    startX = e.pageX - categoriesNav.offsetLeft;
+                    scrollLeft = categoriesNav.scrollLeft;
+                });
+
+                categoriesNav.addEventListener('mouseleave', () => {
+                    isDown = false;
+                });
+
+                categoriesNav.addEventListener('mouseup', () => {
+                    isDown = false;
+                });
+
+                categoriesNav.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - categoriesNav.offsetLeft;
+                    const walk = (x - startX) * 2;
+                    categoriesNav.scrollLeft = scrollLeft - walk;
+                });
+            }
+        });
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('PWA kuruluma hazır');
+        });
+    </script>
+}

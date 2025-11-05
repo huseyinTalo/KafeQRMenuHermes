@@ -1,0 +1,374 @@
+﻿@model KafeQRMenu.UI.Areas.SuperAdmin.Models.AdminViewModels.SAAdminVM
+@{
+    ViewData["Title"] = "Admin Sil";
+}
+
+<div class="page-header">
+    <h1>
+        <i class="bi bi-trash"></i>
+        Admin Sil
+    </h1>
+</div>
+
+<div class="delete-container">
+    <div class="warning-card">
+        <div class="warning-icon">
+            <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <h2>Bu işlem geri alınamaz!</h2>
+        <p>Aşağıdaki admin kullanıcısını silmek üzeresiniz. Bu işlem kalıcıdır ve geri alınamaz.</p>
+    </div>
+
+    <div class="admin-info-card">
+        <div class="info-header">
+            <div class="admin-avatar">
+                @Model.FirstName?.Substring(0, 1)@Model.LastName?.Substring(0, 1)
+            </div>
+            <div>
+                <h3>@Model.FirstName @Model.LastName</h3>
+                <p class="admin-role">
+                    <i class="bi bi-shield-check"></i>
+                    Admin Kullanıcısı
+                </p>
+            </div>
+        </div>
+
+        <div class="info-body">
+            <div class="info-row">
+                <span class="info-label">
+                    <i class="bi bi-envelope"></i>
+                    Email:
+                </span>
+                <span class="info-value">@Model.Email</span>
+            </div>
+
+
+            <div class="info-row">
+                <span class="info-label">
+                    <i class="bi bi-shop"></i>
+                    Atanmış Cafe:
+                </span>
+                <span class="info-value">
+                    @if (!string.IsNullOrEmpty(Model.CafeName))
+                    {
+                        <span class="cafe-tag">@Model.CafeName</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Cafe ataması yok</span>
+                    }
+                </span>
+            </div>
+
+
+            <div class="info-row">
+                <span class="info-label">
+                    <i class="bi bi-power"></i>
+                    Durum:
+                </span>
+              
+            </div>
+        </div>
+    </div>
+
+    <div class="consequences-card">
+        <h4>
+            <i class="bi bi-info-circle"></i>
+            Silme işlemi sonucunda:
+        </h4>
+        <ul>
+            <li>Admin kullanıcısı sisteme giriş yapamayacak</li>
+            <li>Kullanıcı hesabı kalıcı olarak silinecek</li>
+            <li>Admin'e ait tüm oturum bilgileri sonlandırılacak</li>
+            <li>Bu işlem geri alınamaz</li>
+        </ul>
+    </div>
+
+    <form asp-action="Delete" method="post" class="delete-form">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger btn-lg">
+                <i class="bi bi-trash-fill"></i>
+                Evet, Admini Sil
+            </button>
+            <a asp-action="Index" class="btn btn-secondary btn-lg">
+                <i class="bi bi-x-circle"></i>
+                Hayır, İptal Et
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <style>
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+            .page-header h1 {
+                font-size: 1.8rem;
+                color: #dc3545;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+        .delete-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Warning Card */
+        .warning-card {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-hover);
+        }
+
+        .warning-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100%
+
+        {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        }
+
+        .warning-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .warning-card p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        /* Admin Info Card */
+        .admin-info-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .info-header {
+            background: var(--light-color);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .admin-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .info-header h3 {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-role {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .info-body {
+            padding: 2rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+            .info-row:last-child {
+                border-bottom: none;
+            }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-value {
+            color: var(--dark-color);
+            font-weight: 500;
+        }
+
+        .text-muted {
+            color: #999;
+            font-style: italic;
+        }
+
+        .cafe-tag {
+            background: var(--light-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Consequences Card */
+        .consequences-card {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+            .consequences-card h4 {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: #856404;
+                margin-bottom: 1rem;
+                font-size: 1.1rem;
+            }
+
+            .consequences-card ul {
+                list-style: none;
+                padding: 0;
+            }
+
+            .consequences-card li {
+                padding: 0.5rem 0;
+                color: #856404;
+                position: relative;
+                padding-left: 1.5rem;
+            }
+
+                .consequences-card li:before {
+                    content: "▸";
+                    position: absolute;
+                    left: 0;
+                    font-weight: bold;
+                }
+
+        /* Form Actions */
+        .delete-form {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-lg {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+            .btn-danger:hover {
+                background: #c82333;
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-hover);
+            }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+            .btn-secondary:hover {
+                background: #5a6268;
+                transform: translateY(-2px);
+            }
+
+        @@media (max-width: 768px) {
+            .info-row
+
+        {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .info-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        }
+    </style>
+}

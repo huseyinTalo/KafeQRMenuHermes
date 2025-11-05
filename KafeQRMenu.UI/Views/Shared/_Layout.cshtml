@@ -1,49 +1,284 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - KafeQRMenu.UI</title>
+    <title>@ViewData["Title"] - Kafe QR Menü</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="QR kod ile erişilebilen dijital restoran menüsü">
+    <meta name="theme-color" content="#ff6b35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="QR Menü">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/icons/icon-72x72.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/icons/icon-72x72.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/KafeQRMenu.UI.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">KafeQRMenu.UI</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- Install PWA Banner -->
+    <div id="installBanner" class="install-banner" style="display: none;">
+        <div class="install-content">
+            <div class="install-icon">
+                <i class="bi bi-phone"></i>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+            <div class="install-text">
+                <h3>Ana Ekrana Ekle</h3>
+                <p>Daha hızlı erişim için uygulamayı yükleyin</p>
+            </div>
+            <div class="install-actions">
+                <button id="installBtn" class="btn btn-primary">
+                    <i class="bi bi-download"></i> Yükle
+                </button>
+                <button id="dismissBtn" class="btn btn-secondary">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - KafeQRMenu.UI - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <!-- Offline Indicator -->
+    <div id="offlineIndicator" class="offline-indicator" style="display: none;">
+        <i class="bi bi-wifi-off"></i> Çevrimdışı Mod
+    </div>
+
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- PWA Registration Script -->
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered successfully:', registration.scope);
+
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker available, show update notification
+                                    if (confirm('Yeni versiyon mevcut! Sayfayı yenilemek ister misiniz?')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+        const dismissBtn = document.getElementById('dismissBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Don't show banner if already dismissed
+            if (!localStorage.getItem('installBannerDismissed')) {
+                installBanner.style.display = 'block';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response: ${outcome}`);
+                    deferredPrompt = null;
+                    installBanner.style.display = 'none';
+                }
+            });
+        }
+
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                installBanner.style.display = 'none';
+                localStorage.setItem('installBannerDismissed', 'true');
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installed successfully');
+            installBanner.style.display = 'none';
+        });
+
+        // Online/Offline Detection
+        const offlineIndicator = document.getElementById('offlineIndicator');
+
+        window.addEventListener('online', () => {
+            offlineIndicator.style.display = 'none';
+            console.log('Back online');
+        });
+
+        window.addEventListener('offline', () => {
+            offlineIndicator.style.display = 'flex';
+            console.log('Connection lost');
+        });
+
+        // Check initial connection status
+        if (!navigator.onLine) {
+            offlineIndicator.style.display = 'flex';
+        }
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
+    <style>
+        /* Install Banner Styles */
+        .install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideUp 0.5s ease;
+        }
+
+        .install-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .install-icon {
+            font-size: 2rem;
+        }
+
+        .install-text {
+            flex: 1;
+        }
+
+        .install-text h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .install-text p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .install-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .install-actions .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .install-actions .btn-primary {
+            background: white;
+            color: #ff6b35;
+        }
+
+        .install-actions .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .install-actions .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .install-actions .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Offline Indicator */
+        .offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #e74c3c;
+            color: white;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        @@keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .install-content {
+                flex-wrap: wrap;
+            }
+
+            .install-text h3 {
+                font-size: 1rem;
+            }
+
+            .install-text p {
+                font-size: 0.85rem;
+            }
+
+            .install-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .install-actions .btn {
+                flex: 1;
+            }
+        }
+    </style>
 </body>
 </html>

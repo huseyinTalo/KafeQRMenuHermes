@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BLogic.DTOs.MenuItemDTOs
+namespace KafeQRMenu.BLogic.DTOs.MenuItemDTOs
 {
     public class MenuItemDTO
     {

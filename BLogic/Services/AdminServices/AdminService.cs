@@ -1,21 +1,15 @@
-﻿using BLogic.DTOs.AdminDTOs;
-using KafeQRMenu.Data.Entities;
+﻿using KafeQRMenu.Data.Entities;
 using KafeQRMenu.Data.Enums;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.Data.Utilities.Concretes;
 using KafeQRMenu.DataAccess.Repositories.AdminRepositories;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using KafeQRMenu.BLogic.DTOs.AdminDTOs;
 
-namespace BLogic.Services.AdminServices
+namespace KafeQRMenu.BLogic.Services.AdminServices
 {
     public class AdminService : IAdminService
     {
@@ -127,6 +121,7 @@ namespace BLogic.Services.AdminServices
                         _logger.LogDebug("Admin entity oluşturuluyor. IdentityId: {IdentityId}", identityUser.Id);
                         var admin = adminCreateDto.Adapt<Admin>();
                         admin.IdentityId = identityUser.Id;
+                        admin.CafeId = adminCreateDto.CafeId;
 
                         await _adminRepository.AddAsync(admin);
                         int effectedRows = await _adminRepository.SaveChangeAsync();
@@ -282,7 +277,7 @@ namespace BLogic.Services.AdminServices
 
             try
             {
-                var admins = await _adminRepository.GetAllAsync(tracking: false);
+                var admins = await _adminRepository.GetAllAsync();
 
                 if (admins == null || !admins.Any())
                 {
@@ -318,7 +313,7 @@ namespace BLogic.Services.AdminServices
 
             try
             {
-                var admin = await _adminRepository.GetById(Id, tracking: false);
+                var admin = await _adminRepository.GetById(Id);
 
                 if (admin == null)
                 {
@@ -330,6 +325,7 @@ namespace BLogic.Services.AdminServices
                 }
 
                 var adminDto = admin.Adapt<AdminDTO>();
+                adminDto.CafeName = admin.Cafe.CafeName;
 
                 _logger.LogInformation("Admin başarıyla getirildi. AdminId: {AdminId}, Email: {Email}",
                     Id, adminDto.Email);

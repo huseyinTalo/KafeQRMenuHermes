@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BLogic.DTOs.AdminDTOs
+namespace KafeQRMenu.BLogic.DTOs.AdminDTOs
 {
     public class AdminListDTO
     {
@@ -13,5 +13,6 @@ namespace BLogic.DTOs.AdminDTOs
         public string LastName { get; set; }
         public string Email { get; set; }
         public string IdentityId { get; set; }
+        public string CafeName { get; set; }
     }
 }

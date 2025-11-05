@@ -1,13 +1,11 @@
-﻿using KafeQRMenu.Data.Core.Concrete;
-using KafeQRMenu.Data.Enums;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Mapster;
-using BLogic.DTOs.CafeDTOs;
-using BLogic.Services.CafeServices;
 using KafeQRMenu.Data.Entities;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.Data.Utilities.Concretes;
 using KafeQRMenu.DataAccess.Repositories.CafeRepositories;
+using KafeQRMenu.BLogic.DTOs.CafeDTOs;
+using KafeQRMenu.BLogic.Services.CafeServices;
 
 public class CafeService : ICafeService
 {
@@ -101,8 +99,7 @@ public class CafeService : ICafeService
             // Tüm aktif cafe'leri getir
             var cafes = await _cafeRepository.GetAllAsync(
                 orderBy: x => x.CreatedTime,
-                orderByDescending: true,
-                tracking: false
+                orderByDescending: true
             );
 
             if (cafes == null || !cafes.Any())
@@ -142,7 +139,7 @@ public class CafeService : ICafeService
             }
 
             // Cafe'yi bul
-            var cafeEntity = await _cafeRepository.GetById(Id, tracking: false);
+            var cafeEntity = await _cafeRepository.GetById(Id);
 
             if (cafeEntity == null)
             {

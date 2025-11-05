@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ff6b35">
+    <title>Çevrimdışı - Kafe QR Menü</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .offline-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .retry-btn {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+            .retry-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+            }
+
+            .retry-btn:active {
+                transform: translateY(0);
+            }
+
+        .offline-tips {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            text-align: left;
+        }
+
+            .offline-tips h3 {
+                color: #2c3e50;
+                font-size: 1.2rem;
+                margin-bottom: 1rem;
+            }
+
+            .offline-tips ul {
+                list-style: none;
+                padding: 0;
+            }
+
+            .offline-tips li {
+                color: #666;
+                padding: 0.5rem 0;
+                padding-left: 1.5rem;
+                position: relative;
+            }
+
+                .offline-tips li::before {
+                    content: "✓";
+                    position: absolute;
+                    left: 0;
+                    color: #ff6b35;
+                    font-weight: bold;
+                }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 2rem 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+
+            .offline-icon {
+                font-size: 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>İnternet Bağlantısı Yok</h1>
+        <p>Şu anda çevrimdışısınız. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.</p>
+        <button class="retry-btn" onclick="window.location.reload()">
+            🔄 Tekrar Dene
+        </button>
+
+        <div class="offline-tips">
+            <h3>İpuçları:</h3>
+            <ul>
+                <li>Wi-Fi veya mobil veri bağlantınızı kontrol edin</li>
+                <li>Uçak modunda değilsiniz</li>
+                <li>Daha önceden önbelleğe alınan sayfalar çevrimdışı çalışabilir</li>
+                <li>Bağlantı sağlandığında otomatik olarak güncellenecektir</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Online olunca otomatik yenile
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+
+        // Her 5 saniyede bir bağlantıyı kontrol et
+        setInterval(() => {
+            fetch('/manifest.json', { method: 'HEAD', cache: 'no-cache' })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(() => {
+                    console.log('Hala çevrimdışı...');
+                });
+        }, 5000);
+    </script>
+</body>
+</html>

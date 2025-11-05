@@ -1,19 +1,12 @@
-﻿using BLogic.DTOs.AdminDTOs;
-using BLogic.DTOs.CafeDTOs;
-using BLogic.DTOs.MenuCategoryDTOs;
+﻿using KafeQRMenu.BLogic.DTOs.MenuCategoryDTOs;
 using KafeQRMenu.Data.Entities;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.Data.Utilities.Concretes;
 using KafeQRMenu.DataAccess.Repositories.MenuCategoryRepositories;
 using Mapster;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BLogic.Services.MenuCategoryServices
+namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
 {
     public class MenuCategoryService : IMenuCategoryService
     {
@@ -135,7 +128,7 @@ namespace BLogic.Services.MenuCategoryServices
                     return new ErrorDataResult<MenuCategoryDTO>(null, "Geçersiz Id.");
                 }
 
-                var menuCategoryEntity = await _menuCategoryRepository.GetById(Id, tracking: false);
+                var menuCategoryEntity = await _menuCategoryRepository.GetById(Id);
 
                 if (menuCategoryEntity == null)
                 {

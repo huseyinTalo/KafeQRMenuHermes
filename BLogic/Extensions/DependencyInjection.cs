@@ -1,28 +1,21 @@
-﻿using BLogic.Services.AdminServices;
-using BLogic.Services.CafeServices;
-using BLogic.Services.MenuCategoryServices;
-using BLogic.Services.MenuItemServices;
-using BLogic.Services.SuperAdminServices;
-using KafeQRMenu.DataAccess.AppContext;
-using KafeQRMenu.DataAccess.Repositories.AdminRepositories;
-using KafeQRMenu.DataAccess.Repositories.CafeRepositories;
-using KafeQRMenu.DataAccess.Repositories.MenuCategoryRepositories;
-using KafeQRMenu.DataAccess.Repositories.MenuItemRepositories;
-using KafeQRMenu.DataAccess.Repositories.SuperAdminRepositories;
+﻿using KafeQRMenu.BLogic.Services.AdminServices;
+using KafeQRMenu.BLogic.Services.CafeServices;
+using KafeQRMenu.BLogic.Services.MenuCategoryServices;
+using KafeQRMenu.BLogic.Services.MenuItemServices;
+using KafeQRMenu.BLogic.Services.SuperAdminServices;
+using Mapster;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
-namespace BLogic.Extensions
+namespace KafeQRMenu.BLogic.Extensions
 {
     public static class DependencyInjection
     {
         public static IServiceCollection AddBLogicServices(this IServiceCollection services)
         {
-         
+            var config = TypeAdapterConfig.GlobalSettings;
+            config.Scan(Assembly.GetExecutingAssembly());
+
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<ISuperAdminService, SuperAdminService>();
             services.AddScoped<ICafeService, CafeService>();

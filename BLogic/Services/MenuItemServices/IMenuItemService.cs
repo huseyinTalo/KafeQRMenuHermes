@@ -1,14 +1,7 @@
-﻿using BLogic.DTOs.AdminDTOs;
-using BLogic.DTOs.MenuCategoryDTOs;
-using BLogic.DTOs.MenuItemDTOs;
+﻿using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
 using KafeQRMenu.Data.Utilities.Abstracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BLogic.Services.MenuItemServices
+namespace KafeQRMenu.BLogic.Services.MenuItemServices
 {
     public interface IMenuItemService
     {

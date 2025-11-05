@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BLogic.DTOs.AdminDTOs
+namespace KafeQRMenu.BLogic.DTOs.AdminDTOs
 {
     public class AdminUpdateDTO
     {

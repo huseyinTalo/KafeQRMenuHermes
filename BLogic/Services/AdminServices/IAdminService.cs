@@ -1,14 +1,7 @@
-﻿using BLogic.DTOs.AdminDTOs;
-using KafeQRMenu.Data.Entities;
+﻿using KafeQRMenu.BLogic.DTOs.AdminDTOs;
 using KafeQRMenu.Data.Utilities.Abstracts;
-using KafeQRMenu.DataAccess.Repositories.AdminRepositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BLogic.Services.AdminServices
+namespace KafeQRMenu.BLogic.Services.AdminServices
 {
     public interface IAdminService
     {

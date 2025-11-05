@@ -36,7 +36,7 @@ namespace KafeQRMenu.DataAccess.Extensions
             //IOC Containers
 
             //Disable after first starts
-            SuperAdminSeed.SeedAsync(configuration).GetAwaiter().GetResult();
+            //SuperAdminSeed.SeedAsync(configuration).GetAwaiter().GetResult();
 
             return services;
         }

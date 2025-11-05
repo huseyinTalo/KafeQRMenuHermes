@@ -1,4 +1,4 @@
-﻿using BLogic.DTOs.SuperAdminDTOs;
+﻿using KafeQRMenu.BLogic.DTOs.SuperAdminDTOs;
 using KafeQRMenu.Data.Entities;
 using KafeQRMenu.Data.Enums;
 using KafeQRMenu.Data.Utilities.Abstracts;
@@ -7,17 +7,9 @@ using KafeQRMenu.DataAccess.Repositories.SuperAdminRepositories;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Transactions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
-namespace BLogic.Services.SuperAdminServices
+namespace KafeQRMenu.BLogic.Services.SuperAdminServices
 {
     public class SuperAdminService : ISuperAdminService
     {
@@ -280,7 +272,7 @@ namespace BLogic.Services.SuperAdminServices
 
             try
             {
-                var superAdmins = await _superAdminRepository.GetAllAsync(tracking: false);
+                var superAdmins = await _superAdminRepository.GetAllAsync();
 
                 if (superAdmins == null || !superAdmins.Any())
                 {
@@ -316,7 +308,7 @@ namespace BLogic.Services.SuperAdminServices
 
             try
             {
-                var superAdmin = await _superAdminRepository.GetById(Id, tracking: false);
+                var superAdmin = await _superAdminRepository.GetById(Id);
 
                 if (superAdmin == null)
                 {

@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafeQRMenu.Data", "KafeQRMe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafeQRMenu.DataAccess", "KafeQRMenu.DataAccess\KafeQRMenu.DataAccess.csproj", "{7D3B53FD-344E-4AF5-9A6C-FAA0113165B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLogic", "BLogic\BLogic.csproj", "{0A2FE2DD-66E2-4D6C-8D93-DCA25B7CD1C9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafeQRMenu.BLogic", "BLogic\KafeQRMenu.BLogic.csproj", "{0A2FE2DD-66E2-4D6C-8D93-DCA25B7CD1C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

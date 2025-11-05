@@ -8,7 +8,7 @@ namespace KafeQRMenu.Data.Core.Abstract
 {
     public interface IDeletable
     {
-        public string DeletedBy { get; set; }
-        public DateTime DeletedTime { get; set; }
+        public string? DeletedBy { get; set; }
+        public DateTime? DeletedTime { get; set; }
     }
 }

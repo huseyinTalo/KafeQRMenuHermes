@@ -8,7 +8,7 @@ namespace KafeQRMenu.Data.Core.Abstract
 {
     public interface IUpdatable : ICreatable
     {
-        public string UpdatedBy { get; set; }
-        public DateTime UpdatedTime { get; set; }
+        public string? UpdatedBy { get; set; }
+        public DateTime? UpdatedTime { get; set; }
     }
 }

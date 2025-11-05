@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BLogic.DTOs.SuperAdminDTOs
+namespace KafeQRMenu.BLogic.DTOs.SuperAdminDTOs
 {
     public class SuperAdminDTO
     {
