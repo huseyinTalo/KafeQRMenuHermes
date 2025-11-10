@@ -16,5 +16,6 @@ namespace KafeQRMenu.Data.Entities
         public virtual Cafe Cafe { get; set; }
         public virtual ICollection<MenuItem> MenuItems { get; set; } = new HashSet<MenuItem>();
         public Guid? MenuCategoryImageId { get; set; }
+        public virtual ICollection<Menu> Menus { get; set; } = new HashSet<Menu>();
     }
 }

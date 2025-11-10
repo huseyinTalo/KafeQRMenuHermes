@@ -13,7 +13,8 @@ namespace KafeQRMenu.Data.Enums
         Cafe = 2,
         Person = 3,
         Background = 4,
-        Misc = 5,
+        Menu = 5,
+        Misc = 6,
 
     }
 }

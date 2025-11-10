@@ -1,0 +1,437 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.ViewModels.Menu.MenuIndexViewModel
+
+@{
+    ViewData["Title"] = "Menü Yönetimi";
+    ViewData["BreadcrumbTitle"] = "Menüler";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="fade-in">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-1">Menü Yönetimi</h1>
+            <p class="text-muted mb-0">Tüm menüleri görüntüleyin ve yönetin</p>
+        </div>
+        <div class="col-md-6 text-end">
+            @if (Model.CanCreate)
+            {
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Yeni Menü Oluştur
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-4 col-md-4">
+            <div class="card stat-card border-0">
+                <div class="card-body" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="text-white">
+                        <h6 class="text-white-50 mb-2">Toplam Menü</h6>
+                        <h2 class="mb-3">@Model.TotalCount</h2>
+                        <small class="text-white-50">
+                            Sistemdeki tüm menüler
+                        </small>
+                    </div>
+                    <i class="bi bi-book stat-icon text-white"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-4">
+            <div class="card stat-card border-0">
+                <div class="card-body" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <div class="text-white">
+                        <h6 class="text-white-50 mb-2">Aktif Menüler</h6>
+                        <h2 class="mb-3">@Model.Menus.Count(m => m.IsActive)</h2>
+                        <small class="text-white-50">
+                            Müşterilere gösteriliyor
+                        </small>
+                    </div>
+                    <i class="bi bi-check-circle stat-icon text-white"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-4">
+            <div class="card stat-card border-0">
+                <div class="card-body" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="text-white">
+                        <h6 class="text-white-50 mb-2">Pasif Menüler</h6>
+                        <h2 class="mb-3">@Model.Menus.Count(m => !m.IsActive)</h2>
+                        <small class="text-white-50">
+                            Görünümde değil
+                        </small>
+                    </div>
+                    <i class="bi bi-x-circle stat-icon text-white"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Cards Grid -->
+    @if (Model.Menus != null && Model.Menus.Any())
+    {
+        <div class="row g-4">
+            @foreach (var menu in Model.Menus)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <!-- Menu Image -->
+                        <div class="position-relative" style="overflow: hidden;">
+                            <img src="@menu.ImageDataUrl"
+                                 class="card-img-top menu-image"
+                                 alt="@menu.MenuName"
+                                 style="height: 220px; object-fit: cover; transition: transform 0.3s;">
+
+                            <!-- Active Badge Overlay -->
+                            <div class="position-absolute top-0 end-0 m-3">
+                                @if (menu.IsActive)
+                                {
+                                    <span class="badge bg-success" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                        <i class="bi bi-check-circle me-1"></i>Aktif
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
+                                        <i class="bi bi-x-circle me-1"></i>Pasif
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Menu Name -->
+                            <h5 class="card-title mb-2 fw-bold">
+                                @menu.MenuName
+                            </h5>
+
+                            <!-- Meta Information -->
+                            <div class="d-flex flex-column gap-2 mb-3">
+                                <p class="card-text text-muted mb-0">
+                                    <i class="bi bi-shop me-2"></i>
+                                    @menu.CafeName
+                                </p>
+
+                                <p class="card-text text-muted mb-0">
+                                    <i class="bi bi-tags me-2"></i>
+                                    @menu.CategoryCount Kategori
+                                </p>
+
+                                <p class="card-text mb-0">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar3 me-2"></i>
+                                        @menu.CreatedTime.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
+                                    </small>
+                                </p>
+                            </div>
+
+                            <!-- Active Toggle Switch -->
+                            @if (menu.CanToggleActive)
+                            {
+                                <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded mb-3">
+                                    <div>
+                                        <strong class="d-block mb-1">Durum</strong>
+                                        <small class="text-muted status-text">@(menu.IsActive ? "Aktif" : "Pasif")</small>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input toggle-active-switch"
+                                               type="checkbox"
+                                               role="switch"
+                                               id="toggleActive_@menu.MenuId"
+                                               data-menu-id="@menu.MenuId"
+                                               style="width: 3rem; height: 1.5rem; cursor: pointer;"
+                                        @(menu.IsActive ? "checked" : "")>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="card-footer bg-white border-0 pt-0 pb-3">
+                            <div class="d-grid gap-2">
+                                @if (menu.CanViewDetails)
+                                {
+                                    <a asp-action="Details"
+                                       asp-route-id="@menu.MenuId"
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye me-2"></i>Detaylar ve Kategoriler
+                                    </a>
+                                }
+                                <div class="btn-group" role="group">
+                                    @if (menu.CanEdit)
+                                    {
+                                        <a asp-action="Edit"
+                                           asp-route-id="@menu.MenuId"
+                                           class="btn btn-outline-info btn-sm">
+                                            <i class="bi bi-pencil me-1"></i>Düzenle
+                                        </a>
+                                    }
+
+                                    @if (menu.CanDelete)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm delete-menu-btn"
+                                                data-menu-id="@menu.MenuId"
+                                                data-menu-name="@menu.MenuName">
+                                            <i class="bi bi-trash me-1"></i>Sil
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Empty State -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-book text-muted" style="font-size: 5rem;"></i>
+                </div>
+                <h4 class="text-muted mb-3">Henüz menü bulunmuyor</h4>
+                <p class="text-muted mb-4">Yeni bir menü oluşturarak başlayın</p>
+                @if (Model.CanCreate)
+                {
+                    <a asp-action="Create" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        İlk Menüyü Oluştur
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Form (Hidden) -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Styles {
+    <style>
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+            }
+
+                .card:hover .menu-image {
+                    transform: scale(1.08);
+                }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+            .stat-card::after {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            }
+
+        .stat-icon {
+            font-size: 3.5rem;
+            opacity: 0.25;
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .form-check-input:checked {
+            background-color: #43e97b;
+            border-color: #43e97b;
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 233, 123, 0.25);
+        }
+
+        /* Loading spinner for toggle switch */
+        .toggle-loading {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .menu-image {
+            background-color: #f8f9fa;
+        }
+
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+
+            // Toggle Active/Inactive via Ajax
+            $('.toggle-active-switch').on('change', function() {
+                const checkbox = $(this);
+                const menuId = checkbox.data('menu-id');
+                const isActive = checkbox.is(':checked');
+                const card = checkbox.closest('.card');
+                const statusText = card.find('.status-text');
+
+                // Add loading state
+                checkbox.addClass('toggle-loading');
+
+                $.ajax({
+                    url: '@Url.Action("ToggleActive", "Menu")',
+                    type: 'POST',
+                    data: {
+                        id: menuId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        checkbox.removeClass('toggle-loading');
+
+                        if (response.success) {
+                            // Update status text
+                            statusText.text(response.isActive ? 'Aktif' : 'Pasif');
+
+                            // Update badge
+                            const badge = card.find('.badge');
+
+                            if (response.isActive) {
+                                badge.removeClass('bg-secondary').addClass('bg-success');
+                                badge.html('<i class="bi bi-check-circle me-1"></i>Aktif');
+                            } else {
+                                badge.removeClass('bg-success').addClass('bg-secondary');
+                                badge.html('<i class="bi bi-x-circle me-1"></i>Pasif');
+                            }
+
+                            // Show success toast using layout's toast function
+                            if (typeof showToast === 'function') {
+                                showToast(response.message, 'success', 3000);
+                            } else {
+                                // Fallback to SweetAlert toast
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: response.message,
+                                    showConfirmButton: false,
+                                    timer: 3000,
+                                    timerProgressBar: true
+                                });
+                            }
+                        } else {
+                            // Revert checkbox state on error
+                            checkbox.prop('checked', !isActive);
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Hata',
+                                text: response.message,
+                                confirmButtonText: 'Tamam',
+                                confirmButtonColor: '#667eea'
+                            });
+                        }
+                    },
+                    error: function() {
+                        checkbox.removeClass('toggle-loading');
+                        checkbox.prop('checked', !isActive);
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Bağlantı Hatası',
+                            text: 'Durum güncellenirken bir hata oluştu.',
+                            confirmButtonText: 'Tamam',
+                            confirmButtonColor: '#667eea'
+                        });
+                    }
+                });
+            });
+
+            // Delete Menu with SweetAlert confirmation
+            $('.delete-menu-btn').on('click', function() {
+                const menuId = $(this).data('menu-id');
+                const menuName = $(this).data('menu-name');
+
+                Swal.fire({
+                    title: 'Emin misiniz?',
+                    html: `<strong>${menuName}</strong> menüsünü silmek istediğinizden emin misiniz?<br><br>` +
+                          `<span class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Bu işlem geri alınamaz!</span>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-trash me-2"></i>Evet, Sil!',
+                    cancelButtonText: 'İptal',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show loading
+                        Swal.fire({
+                            title: 'Siliniyor...',
+                            html: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div>',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false
+                        });
+
+                        // Submit delete form
+                        const form = $('#deleteForm');
+                        form.attr('action', '@Url.Action("Delete", "Menu")/' + menuId);
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -31,6 +31,7 @@ namespace KafeQRMenu.DataAccess.AppContext
         public virtual DbSet<MenuCategory> MenuCategories { get; set; }
         public virtual DbSet<MenuItem> MenuItems { get; set; }
         public virtual DbSet<ImageFile> ImageFiles { get; set; }
+        public virtual DbSet<Menu> Menus { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(IEntityConfiguration).Assembly);

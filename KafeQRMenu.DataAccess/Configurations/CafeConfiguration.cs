@@ -23,6 +23,7 @@ namespace KafeQRMenu.DataAccess.Configurations
                    .IsRequired()
                    .HasMaxLength(128);
 
+
             base.Configure(builder);
         }
     }

@@ -20,6 +20,7 @@ namespace KafeQRMenu.Data.Entities
         public virtual Admin Admin { get; set; }
         public Guid? SuperAdminId { get; set; }
         public Guid? CafeId { get; set; }
+        public Guid? MenuId { get; set; }
         public ImageContentType ImageContentType { get; set; }
     }
 }

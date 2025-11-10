@@ -2,6 +2,7 @@
 const urlsToCache = [
     '/',
     '/Home/Index',
+    '/offline.html',
     '/css/site.css',
     '/js/site.js',
     '/lib/bootstrap/dist/css/bootstrap.min.css',

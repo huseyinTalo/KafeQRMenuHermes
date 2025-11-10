@@ -173,7 +173,7 @@
         });
 
         ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName', () => {
+            dropArea.addEventListener(eventName, () => {  // Fixed: removed the extra quote
                 dropArea.classList.remove('dragover');
             }, false);
         });

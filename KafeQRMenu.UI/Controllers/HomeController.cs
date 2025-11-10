@@ -60,6 +60,17 @@ public class HomeController : Controller
                     menuVM.Cafe = adminLoggedCafe.Adapt<CafeVM>();
                     cafeId = adminLoggedCafe.Id;
                 }
+                else
+                {
+                    var cafesOfAll = await _cafeService.GetAllAsync();
+                    foreach(var item in cafesOfAll.Data)
+                    {
+                        if(item.CafeName == "PiGo")
+                        {
+                            cafeId = item.Id;
+                        }
+                    }
+                }
             }
 
             // If still no cafe found, show welcome message

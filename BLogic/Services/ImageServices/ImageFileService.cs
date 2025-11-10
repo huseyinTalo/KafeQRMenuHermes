@@ -267,7 +267,8 @@ namespace KafeQRMenu.BLogic.Services.ImageServices
                 Data.Enums.ImageContentType.Category => dto.MenuCategoryId.HasValue,
                 Data.Enums.ImageContentType.Product => dto.MenuItemId.HasValue,
                 Data.Enums.ImageContentType.Cafe => dto.CafeId.HasValue,
-                Data.Enums.ImageContentType.Person => dto.AdminId.HasValue || dto.SuperAdminId.HasValue,
+                Data.Enums.ImageContentType.Person => dto.AdminId.HasValue,
+                Data.Enums.ImageContentType.Menu => dto.MenuId.HasValue || dto.SuperAdminId.HasValue,
                 Data.Enums.ImageContentType.Background => dto.CafeId.HasValue,
                 Data.Enums.ImageContentType.Misc => true,
                 _ => false
@@ -281,7 +282,8 @@ namespace KafeQRMenu.BLogic.Services.ImageServices
                 Data.Enums.ImageContentType.Category => dto.MenuCategoryId.HasValue,
                 Data.Enums.ImageContentType.Product => dto.MenuItemId.HasValue,
                 Data.Enums.ImageContentType.Cafe => dto.CafeId.HasValue,
-                Data.Enums.ImageContentType.Person => dto.AdminId.HasValue || dto.SuperAdminId.HasValue,
+                Data.Enums.ImageContentType.Person => dto.AdminId.HasValue,
+                Data.Enums.ImageContentType.Menu => dto.MenuId.HasValue || dto.SuperAdminId.HasValue,
                 Data.Enums.ImageContentType.Background => dto.CafeId.HasValue,
                 Data.Enums.ImageContentType.Misc => true,
                 _ => false

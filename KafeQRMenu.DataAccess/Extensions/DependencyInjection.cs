@@ -4,6 +4,7 @@ using KafeQRMenu.DataAccess.Repositories.CafeRepositories;
 using KafeQRMenu.DataAccess.Repositories.ImageRepositories;
 using KafeQRMenu.DataAccess.Repositories.MenuCategoryRepositories;
 using KafeQRMenu.DataAccess.Repositories.MenuItemRepositories;
+using KafeQRMenu.DataAccess.Repositories.MenuRepositories;
 using KafeQRMenu.DataAccess.Repositories.SuperAdminRepositories;
 using KafeQRMenu.DataAccess.Seeds;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ namespace KafeQRMenu.DataAccess.Extensions
             services.AddScoped<IMenuCategoryRepository, MenuCategoryRepository>();
             services.AddScoped<IMenuItemRepository, MenuItemRepository>();
             services.AddScoped<IImageFileRepository, ImageFileRepository>();
+            services.AddScoped<IMenuRepository, MenuRepository>();
             services.AddHttpContextAccessor();
             //IOC Containers
 

@@ -10,5 +10,6 @@ namespace KafeQRMenu.DataAccess.Repositories.MenuItemRepositories
 {
     public interface IMenuItemRepository : IAsyncDeletableRepository<MenuItem>, IAsyncFindable<MenuItem>, IAsyncInsertable<MenuItem>, IAsyncOrderable<MenuItem>, IAsyncQueryable<MenuItem>, IAsyncRepository, IAsyncUpdatable<MenuItem>, IAsyncTransactionable
     {
+       
     }
 }

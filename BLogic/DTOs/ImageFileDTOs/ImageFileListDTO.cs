@@ -18,5 +18,6 @@ namespace KafeQRMenu.BLogic.DTOs.ImageFileDTOs
         public Guid? MenuCategoryId { get; set; }
         public Guid? MenuItemId { get; set; }
         public Guid? CafeId { get; set; }
+        public Guid? MenuId { get; set; }
     }
 }

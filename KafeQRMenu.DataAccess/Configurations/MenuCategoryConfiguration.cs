@@ -16,6 +16,10 @@ namespace KafeQRMenu.DataAccess.Configurations
         {
             builder.Property(x => x.MenuCategoryName).IsRequired().HasMaxLength(128);
             builder.Property(x => x.SortOrder).IsRequired();
+            builder.HasOne(mc => mc.Cafe)
+           .WithMany(c => c.MenuCategories)
+           .HasForeignKey(mc => mc.CafeId)
+           .OnDelete(DeleteBehavior.Restrict); // ← RESTRICT
             base.Configure(builder);
         }
     }
