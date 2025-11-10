@@ -384,7 +384,13 @@
                     <span class="menu-badge" id="menuItemCount">0</span>
                 </a>
             </div>
-
+            <div class="menu-item">
+                <a href="/Admin/MenuPreview/Index" class="menu-link @(controller == "MenuPreview" ? "active" : "")">
+                    <i class="bi bi-menu-button-wide"></i>
+                    <span>Preview</span>
+                    @* <span class="menu-badge" id="menuItemCount">0</span> *@
+                </a>
+            </div>
             <div class="menu-item">
                 <a href="/Admin/Cafe/Settings" class="menu-link @(controller == "Cafe" ? "active" : "")">
                     <i class="bi bi-gear"></i>

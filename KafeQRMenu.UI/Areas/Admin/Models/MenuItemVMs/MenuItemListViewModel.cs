@@ -11,5 +11,7 @@
         public Guid? CategoryFilter { get; set; }
         public decimal? MinPrice { get; set; }
         public decimal? MaxPrice { get; set; }
+        public string? ImageFileBase64 { get; set; }
     }
+
 }

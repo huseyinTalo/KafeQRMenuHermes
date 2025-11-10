@@ -12,21 +12,33 @@
                     <h5 class="mb-0">Kategori Düzenle: @Model.MenuCategoryName</h5>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data" id="categoryForm">
                         <input type="hidden" asp-for="MenuCategoryId" />
                         <input type="hidden" asp-for="CafeId" />
                         <input type="hidden" asp-for="ImageFileId" />
+                        <input type="hidden" id="removeImageFlag" name="RemoveImage" value="false" />
 
                         <div class="mb-3">
                             <label asp-for="MenuCategoryName" class="form-label"></label>
-                            <input asp-for="MenuCategoryName" class="form-control" />
-                            <span asp-validation-for="MenuCategoryName" class="text-danger"></span>
+                            <input asp-for="MenuCategoryName" class="form-control" maxlength="100" id="categoryName" />
+                            <div class="d-flex justify-content-between">
+                                <span asp-validation-for="MenuCategoryName" class="text-danger"></span>
+                                <small class="text-muted">
+                                    <span id="nameCounter">@Model.MenuCategoryName?.Length</span>/100 karakter
+                                </small>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Description" class="form-label"></label>
-                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                      maxlength="500" id="categoryDescription"></textarea>
+                            <div class="d-flex justify-content-between">
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                                <small class="text-muted">
+                                    <span id="descCounter">@(Model.Description?.Length ?? 0)</span>/500 karakter
+                                </small>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -38,42 +50,81 @@
                         @* Display current image if exists *@
                         @if (Model.ImageFileId.HasValue && Model.ImageFileBytes != null && Model.ImageFileBytes.Length > 0)
                         {
-                            <div class="mb-3">
+                            <div class="mb-3" id="currentImageContainer">
                                 <label class="form-label">Mevcut Resim</label>
-                                <div class="border rounded p-3 text-center bg-light">
-                                    @{
-                                        var base64 = Convert.ToBase64String(Model.ImageFileBytes);
-                                        var imgSrc = $"data:image/jpeg;base64,{base64}";
-                                    }
-                                    <img src="@imgSrc" alt="@Model.MenuCategoryName" style="max-width: 100%; max-height: 200px;">
+                                <div class="position-relative">
+                                    <div class="border rounded p-3 text-center bg-light">
+                                        @{
+                                            var base64 = Convert.ToBase64String(Model.ImageFileBytes);
+                                            var imgSrc = $"data:image/jpeg;base64,{base64}";
+                                        }
+                                        <img src="@imgSrc" alt="@Model.MenuCategoryName"
+                                             style="max-width: 100%; max-height: 300px; border-radius: 8px;"
+                                             id="currentImage">
+                                    </div>
+                                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                            onclick="removeCurrentImage()">
+                                        <i class="bi bi-trash"></i> Resmi Kaldır
+                                    </button>
                                 </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle"></i> Yeni resim yüklerseniz veya kaldırırsanız mevcut resim değiştirilir
+                                </small>
                             </div>
                         }
 
                         <div class="mb-4">
-                            <label asp-for="ImageFile" class="form-label"></label>
-                            <input asp-for="ImageFile" type="file" class="form-control" accept=".jpg,.jpeg" onchange="previewImage(this)" />
-                            <div class="form-text">
+                            <label asp-for="ImageFile" class="form-label">
                                 @if (Model.ImageFileId.HasValue)
                                 {
-                                    <text>Yeni resim yüklerseniz mevcut resim değiştirilir - Sadece JPG formatı</text>
+                                    <text>Yeni Resim Yükle (Opsiyonel)</text>
                                 }
                                 else
                                 {
-                                    <text>Kategori için görsel (opsiyonel) - Sadece JPG formatı</text>
+                                    <text>Resim Yükle</text>
                                 }
+                            </label>
+
+                            <!-- Drag & Drop Area -->
+                            <div class="image-upload-area" id="dropArea">
+                                <div class="upload-placeholder">
+                                    <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: #667eea;"></i>
+                                    <p class="mb-2">Resmi sürükle-bırak veya tıklayarak seç</p>
+                                    <small class="text-muted">Sadece JPG formatı - Maks 5MB</small>
+                                </div>
+                                <input asp-for="ImageFile" type="file" class="form-control d-none"
+                                       accept=".jpg,.jpeg" id="imageInput" />
+                            </div>
+
+                            <!-- File Info -->
+                            <div id="fileInfo" class="alert alert-info mt-2" style="display: none;">
+                                <small>
+                                    <strong>Seçilen:</strong> <span id="fileName"></span><br>
+                                    <strong>Boyut:</strong> <span id="fileSize"></span>
+                                    <span id="compressedSize" style="display: none;">
+                                        → <strong class="text-success"><span id="compressedSizeValue"></span> (Sıkıştırıldı)</strong>
+                                    </span>
+                                </small>
                             </div>
                         </div>
 
+                        <!-- New Image Preview -->
                         <div class="mb-4" id="previewContainer" style="display: none;">
                             <label class="form-label">Yeni Resim Önizleme</label>
-                            <div class="border rounded p-3 text-center bg-light">
-                                <img id="imagePreview" src="" alt="Preview" style="max-width: 100%; max-height: 200px;">
+                            <div class="position-relative">
+                                <div class="border rounded p-3 text-center bg-light">
+                                    <img id="imagePreview" src="" alt="Preview"
+                                         style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+                                </div>
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                                        onclick="removeNewImage()">
+                                    <i class="bi bi-x-lg"></i> Kaldır
+                                </button>
                             </div>
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="bi bi-check-circle me-2"></i>Güncelle
                             </button>
                             <a asp-action="Index" class="btn btn-secondary">
@@ -87,18 +138,189 @@
     </div>
 </div>
 
+@section Styles {
+    <style>
+        .image-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+            .image-upload-area:hover {
+                background: #e8f0fe;
+                border-color: #764ba2;
+            }
+
+            .image-upload-area.dragover {
+                background: #d4e5ff;
+                border-color: #0066cc;
+                transform: scale(1.02);
+            }
+
+        .upload-placeholder {
+            pointer-events: none;
+        }
+    </style>
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.min.js"></script>
     <script>
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('imagePreview').src = e.target.result;
-                    document.getElementById('previewContainer').style.display = 'block';
-                }
-                reader.readAsDataURL(input.files[0]);
+        let compressedFile = null;
+
+        // Character counters
+        document.getElementById('categoryName').addEventListener('input', function() {
+            document.getElementById('nameCounter').textContent = this.value.length;
+        });
+
+        document.getElementById('categoryDescription').addEventListener('input', function() {
+            document.getElementById('descCounter').textContent = this.value.length;
+        });
+
+        // Remove current image
+        function removeCurrentImage() {
+            if (confirm('Mevcut resmi kaldırmak istediğinizden emin misiniz?')) {
+                document.getElementById('currentImageContainer').style.display = 'none';
+                document.getElementById('removeImageFlag').value = 'true';
+                document.getElementById('currentImage').style.opacity = '0.3';
             }
         }
+
+        // Drag and drop (same as create)
+        const dropArea = document.getElementById('dropArea');
+        const imageInput = document.getElementById('imageInput');
+
+        dropArea.addEventListener('click', () => imageInput.click());
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => {
+                dropArea.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => {
+                dropArea.classList.remove('dragover');
+            }, false);
+        });
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                imageInput.files = files;
+                handleImageSelect({ target: imageInput });
+            }
+        }
+
+        imageInput.addEventListener('change', handleImageSelect);
+
+        async function handleImageSelect(event) {
+            const file = event.target.files[0];
+
+            if (!file) return;
+
+            if (!file.type.match('image/jpeg')) {
+                alert('Lütfen sadece JPG formatında resim yükleyin.');
+                imageInput.value = '';
+                return;
+            }
+
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileInfo').style.display = 'block';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('previewContainer').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            if (file.size > 500 * 1024) {
+                try {
+                    document.getElementById('submitBtn').disabled = true;
+                    document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resim sıkıştırılıyor...';
+
+                    const options = {
+                        maxSizeMB: 0.5,
+                        maxWidthOrHeight: 1024,
+                        useWebWorker: true,
+                        fileType: 'image/jpeg'
+                    };
+
+                    compressedFile = await imageCompression(file, options);
+
+                    document.getElementById('compressedSizeValue').textContent = formatFileSize(compressedFile.size);
+                    document.getElementById('compressedSize').style.display = 'inline';
+                } catch (error) {
+                    console.error('Compression error:', error);
+                } finally {
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-circle me-2"></i>Güncelle';
+                }
+            }
+        }
+
+        function removeNewImage() {
+            imageInput.value = '';
+            compressedFile = null;
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('fileInfo').style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        document.getElementById('categoryForm').addEventListener('submit', function(e) {
+            if (compressedFile) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                formData.delete('ImageFile');
+                formData.append('ImageFile', compressedFile, compressedFile.name);
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        return response.text();
+                    }
+                })
+                .then(html => {
+                    if (html) {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    }
+                });
+            }
+        });
     </script>
 }

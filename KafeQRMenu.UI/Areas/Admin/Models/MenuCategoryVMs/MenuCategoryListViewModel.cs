@@ -16,5 +16,6 @@
         public Guid MenuCategoryId { get; set; }
         public Guid? ImageFileId { get; set; }
         public byte[] ImageFileBytes { get; set; }
+        public string? ImageFileBase64 { get; set; }
     }
 }

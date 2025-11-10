@@ -6,7 +6,11 @@
 <div class="menu-container">
     <!-- Cafe Header -->
     <header class="cafe-header">
+        <div class="header-overlay"></div>
         <div class="cafe-info">
+            <div class="cafe-logo">
+                <i class="bi bi-shop"></i>
+            </div>
             <h1 class="cafe-name">@Model.Cafe.CafeName</h1>
             @if (!string.IsNullOrEmpty(Model.Cafe.Description))
             {
@@ -18,21 +22,54 @@
                     <i class="bi bi-geo-alt-fill"></i> @Model.Cafe.Address
                 </p>
             }
+            <div class="header-wave">
+                <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+                    <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25"></path>
+                    <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5"></path>
+                    <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"></path>
+                </svg>
+            </div>
         </div>
     </header>
+
+    <!-- Search Bar -->
+    <div class="search-section">
+        <div class="search-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text"
+                   id="searchInput"
+                   class="search-input"
+                   placeholder="Ürün ara...">
+            <button class="search-clear" id="searchClear" style="display: none;">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    </div>
 
     <!-- Categories Navigation -->
     @if (Model.Categories != null && Model.Categories.Any())
     {
         <nav class="categories-nav" id="categoriesNav">
             <div class="categories-scroll">
-                <button class="category-btn active" data-category="all">
-                    <i class="bi bi-grid-fill"></i> Tümü
+                <button class="category-chip active" data-category="all">
+                    <i class="bi bi-grid-fill"></i>
+                    <span>Tümü</span>
+                    <span class="chip-badge">@Model.Products?.Count</span>
                 </button>
                 @foreach (var category in Model.Categories.OrderBy(c => c.SortOrder))
                 {
-                    <button class="category-btn" data-category="@category.MenuCategoryId">
-                        @category.MenuCategoryName
+                    var categoryItemCount = Model.Products?.Count(p => p.MenuCategoryId == category.MenuCategoryId) ?? 0;
+                    <button class="category-chip" data-category="@category.MenuCategoryId">
+                        @if (!string.IsNullOrEmpty(category.ImageFileBase64))
+                        {
+                            <img src="data:image/jpeg;base64,@category.ImageFileBase64" alt="@category.MenuCategoryName" class="chip-icon">
+                        }
+                        else
+                        {
+                            <i class="bi bi-bookmark-fill"></i>
+                        }
+                        <span>@category.MenuCategoryName</span>
+                        <span class="chip-badge">@categoryItemCount</span>
                     </button>
                 }
             </div>
@@ -44,32 +81,64 @@
         @if (Model.Products != null && Model.Products.Any())
         {
             <div class="items-grid" id="menuItems">
-                @foreach (var product in Model.Products)
+                @foreach (var product in Model.Products.OrderBy(p => p.SortOrder))
                 {
-                    <div class="menu-item" data-category="@product.MenuItemId">
-                        <div class="item-content">
-                            <div class="item-header">
-                                <h3 class="item-name">@product.MenuItemName</h3>
-                                <span class="item-price">₺@product.Price.ToString("N2")</span>
+                    <article class="menu-card" data-category="@product.MenuCategoryId" data-name="@product.MenuItemName.ToLower()" data-price="@product.Price">
+                        @if (!string.IsNullOrEmpty(product.ImageFileBase64))
+                        {
+                            <div class="card-image">
+                                <img src="data:image/jpeg;base64,@product.ImageFileBase64"
+                                     alt="@product.MenuItemName"
+                                     loading="lazy">
+                                <div class="image-overlay"></div>
+                            </div>
+                        }
+                        <div class="card-content">
+                            <div class="card-header">
+                                <h3 class="card-title">@product.MenuItemName</h3>
+                                <div class="card-price-badge">
+                                    <span class="price-currency">₺</span>
+                                    <span class="price-amount">@product.Price.ToString("N2")</span>
+                                </div>
                             </div>
                             @if (!string.IsNullOrEmpty(product.Description))
                             {
-                                <p class="item-description">@product.Description</p>
+                                <p class="card-description">@product.Description</p>
                             }
+                            <div class="card-footer">
+                                <span class="category-tag">
+                                    <i class="bi bi-tag-fill"></i>
+                                    @(Model.Categories?.FirstOrDefault(c => c.MenuCategoryId == product.MenuCategoryId)?.MenuCategoryName ?? "Genel")
+                                </span>
+                            </div>
                         </div>
-                    </div>
+                    </article>
                 }
+            </div>
+
+            <!-- No Results Message -->
+            <div class="no-results" id="noResults" style="display: none;">
+                <i class="bi bi-search"></i>
+                <h3>Sonuç bulunamadı</h3>
+                <p>Aradığınız kriterlere uygun ürün bulunamadı.</p>
             </div>
         }
         else
         {
             <div class="empty-state">
-                <i class="bi bi-inbox"></i>
+                <div class="empty-icon">
+                    <i class="bi bi-inbox"></i>
+                </div>
                 <h3>Henüz ürün eklenmemiş</h3>
                 <p>Menüde gösterilecek ürün bulunmuyor.</p>
             </div>
         }
     </main>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" style="display: none;">
+        <i class="bi bi-arrow-up"></i>
+    </button>
 </div>
 
 @section Styles {
@@ -81,148 +150,339 @@
         }
 
         :root {
-            --primary-color: #ff6b35;
-            --secondary-color: #f7931e;
-            --dark-color: #2c3e50;
-            --light-color: #ecf0f1;
-            --text-color: #333;
-            --border-color: #e0e0e0;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            --shadow-hover: 0 5px 20px rgba(0, 0, 0, 0.15);
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding-bottom: 2rem;
+            color: var(--dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .menu-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: white;
+            background: var(--light);
             min-height: 100vh;
+            position: relative;
         }
 
-        /* Cafe Header */
+        /* ========== Cafe Header ========== */
         .cafe-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            position: relative;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
-            padding: 2rem 1.5rem;
+            padding: 3rem 1.5rem 6rem;
             text-align: center;
-            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .header-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .cafe-info {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cafe-logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-lg);
+            animation: float 3s ease-in-out infinite;
         }
 
         .cafe-name {
             font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.02em;
         }
 
         .cafe-description {
             font-size: 1.1rem;
             opacity: 0.95;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .cafe-address {
-            font-size: 0.95rem;
+            font-size: 1rem;
             opacity: 0.9;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-wave {
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+        }
+
+            .header-wave svg {
+                position: relative;
+                display: block;
+                width: calc(100% + 1.3px);
+                height: 60px;
+            }
+
+            .header-wave path {
+                fill: var(--light);
+            }
+
+        /* ========== Search Section ========== */
+        .search-section {
+            padding: 1.5rem;
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .search-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            font-size: 1.2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 3rem 0.875rem 3rem;
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--light);
+        }
+
+            .search-input:focus {
+                outline: none;
+                border-color: var(--primary);
+                background: white;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            }
+
+        .search-clear {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--gray);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        /* Categories Navigation */
+            .search-clear:hover {
+                background: var(--dark);
+                transform: translateY(-50%) scale(1.1);
+            }
+
+        /* ========== Categories Navigation ========== */
         .categories-nav {
-            position: sticky;
-            top: 0;
             background: white;
             padding: 1rem 0;
-            box-shadow: var(--shadow);
-            z-index: 100;
+            position: sticky;
+            top: 81px;
+            z-index: 99;
+            border-bottom: 1px solid var(--border);
         }
 
         .categories-scroll {
             display: flex;
             gap: 0.75rem;
-            padding: 0 1rem;
+            padding: 0 1.5rem;
             overflow-x: auto;
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
 
             .categories-scroll::-webkit-scrollbar {
-                height: 6px;
+                display: none;
             }
 
-            .categories-scroll::-webkit-scrollbar-track {
-                background: var(--light-color);
-            }
-
-            .categories-scroll::-webkit-scrollbar-thumb {
-                background: var(--primary-color);
-                border-radius: 3px;
-            }
-
-        .category-btn {
+        .category-chip {
             flex-shrink: 0;
-            padding: 0.75rem 1.5rem;
-            background: var(--light-color);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: var(--light);
             border: 2px solid transparent;
-            border-radius: 25px;
-            font-size: 1rem;
+            border-radius: 50px;
+            font-size: 0.925rem;
             font-weight: 600;
-            color: var(--text-color);
+            color: var(--dark);
             cursor: pointer;
             transition: all 0.3s ease;
             white-space: nowrap;
         }
 
-            .category-btn:hover {
-                background: var(--primary-color);
-                color: white;
-                transform: translateY(-2px);
-                box-shadow: var(--shadow-hover);
+            .category-chip i {
+                font-size: 1rem;
             }
 
-            .category-btn.active {
-                background: var(--primary-color);
+        .chip-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .chip-badge {
+            background: rgba(0, 0, 0, 0.1);
+            color: var(--dark);
+            padding: 0.125rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .category-chip:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+            .category-chip:hover .chip-badge {
+                background: rgba(255, 255, 255, 0.25);
                 color: white;
-                border-color: var(--primary-color);
             }
 
-        /* Menu Items */
+        .category-chip.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: var(--shadow);
+        }
+
+            .category-chip.active .chip-badge {
+                background: rgba(255, 255, 255, 0.25);
+                color: white;
+            }
+
+        /* ========== Menu Items ========== */
         .menu-items {
-            padding: 2rem 1rem;
+            padding: 2rem 1.5rem 4rem;
         }
 
         .items-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1.5rem;
         }
 
-        .menu-item {
+        .menu-card {
             background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-            cursor: pointer;
+            border-radius: 16px;
+            overflow: hidden;
             box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
         }
 
-            .menu-item:hover {
-                transform: translateY(-5px);
-                box-shadow: var(--shadow-hover);
-                border-color: var(--primary-color);
+            .menu-card:hover {
+                transform: translateY(-8px);
+                box-shadow: var(--shadow-xl);
             }
 
-        .item-header {
+        .card-image {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
+
+            .card-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.5s ease;
+            }
+
+        .menu-card:hover .card-image img {
+            transform: scale(1.1);
+        }
+
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+        }
+
+        .card-content {
+            padding: 1.25rem;
+        }
+
+        .card-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -230,83 +490,140 @@
             margin-bottom: 0.75rem;
         }
 
-        .item-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--dark-color);
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+            line-height: 1.3;
             flex: 1;
         }
 
-        .item-price {
-            font-size: 1.4rem;
-            font-weight: bold;
-            color: var(--primary-color);
+        .card-price-badge {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 0.5rem 0.875rem;
+            border-radius: 50px;
+            font-weight: 700;
             white-space: nowrap;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: baseline;
+            gap: 0.125rem;
         }
 
-        .item-description {
-            color: #666;
+        .price-currency {
+            font-size: 0.875rem;
+        }
+
+        .price-amount {
+            font-size: 1.125rem;
+        }
+
+        .card-description {
+            color: var(--gray);
+            font-size: 0.925rem;
             line-height: 1.6;
-            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        /* Empty State */
-        .empty-state {
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--light);
+            color: var(--gray);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            border-radius: 50px;
+        }
+
+            .category-tag i {
+                font-size: 0.75rem;
+            }
+
+        /* ========== Empty States ========== */
+        .empty-state,
+        .no-results {
             text-align: center;
             padding: 4rem 2rem;
-            color: #999;
+            color: var(--gray);
         }
 
-            .empty-state i {
-                font-size: 4rem;
-                margin-bottom: 1rem;
-            }
-
-            .empty-state h3 {
-                font-size: 1.5rem;
-                margin-bottom: 0.5rem;
-                color: #666;
-            }
-
-        /* Responsive Design */
-        @@media (max-width: 768px) {
-            .cafe-name {
-                font-size: 2rem;
-            }
-
-            .items-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .category-btn {
-                padding: 0.6rem 1.2rem;
-                font-size: 0.9rem;
-            }
+        .empty-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--light);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
         }
 
-        @@media (max-width: 480px) {
-            .cafe-header {
-                padding: 1.5rem 1rem;
-            }
-
-            .cafe-name {
-                font-size: 1.75rem;
-            }
-
-            .item-name {
-                font-size: 1.1rem;
-            }
-
-            .item-price {
-                font-size: 1.2rem;
-            }
+        .empty-state i,
+        .no-results i {
+            font-size: 3.5rem;
+            color: var(--border);
         }
 
-        /* Loading Animation */
-        @@keyframes fadeIn {
+        .empty-state h3,
+        .no-results h3 {
+            font-size: 1.5rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p,
+        .no-results p {
+            font-size: 1rem;
+        }
+
+        /* ========== Back to Top Button ========== */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: var(--shadow-lg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 98;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+            .back-to-top:hover {
+                transform: translateY(-4px);
+                box-shadow: var(--shadow-xl);
+            }
+
+            .back-to-top:active {
+                transform: translateY(-2px);
+            }
+
+        /* ========== Animations ========== */
+        @@keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
 
             to {
@@ -315,68 +632,239 @@
             }
         }
 
-        .menu-item {
-            animation: fadeIn 0.5s ease forwards;
+        @@keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Stagger animation for cards */
+        .menu-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .menu-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .menu-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .menu-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .menu-card:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .menu-card:nth-child(6) {
+            animation-delay: 0.6s;
+        }
+
+        .menu-card:nth-child(n+7) {
+            animation-delay: 0.7s;
+        }
+
+        /* ========== Responsive Design ========== */
+        @@media (max-width: 1024px) {
+            .items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 1.25rem;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .cafe-name {
+                font-size: 2rem;
+            }
+
+            .cafe-header {
+                padding: 2rem 1rem 5rem;
+            }
+
+            .items-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .search-section {
+                padding: 1rem;
+            }
+
+            .categories-nav {
+                top: 73px;
+            }
+
+            .menu-items {
+                padding: 1.5rem 1rem 3rem;
+            }
+
+            .category-chip {
+                padding: 0.5rem 0.875rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .cafe-name {
+                font-size: 1.75rem;
+            }
+
+            .cafe-logo {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+
+            .card-title {
+                font-size: 1.125rem;
+            }
+
+            .card-image {
+                height: 180px;
+            }
+
+            .back-to-top {
+                width: 45px;
+                height: 45px;
+                bottom: 1.5rem;
+                right: 1.5rem;
+            }
         }
     </style>
 }
 
 @section Scripts {
     <script>
-        // Category filtering (basit versiyon - şimdilik tüm ürünleri gösterir)
         document.addEventListener('DOMContentLoaded', function() {
-            const categoryButtons = document.querySelectorAll('.category-btn');
+            const categoryButtons = document.querySelectorAll('.category-chip');
+            const menuCards = document.querySelectorAll('.menu-card');
+            const searchInput = document.getElementById('searchInput');
+            const searchClear = document.getElementById('searchClear');
+            const noResults = document.getElementById('noResults');
+            const backToTop = document.getElementById('backToTop');
 
+            // Category filtering
             categoryButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    // Aktif sınıfı değiştir
                     categoryButtons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
 
-                    // Şimdilik tüm ürünleri göster
-                    // İleride kategoriye göre filtreleme eklenebilir
                     const category = this.getAttribute('data-category');
-                    console.log('Seçilen kategori:', category);
+                    searchInput.value = '';
+                    searchClear.style.display = 'none';
+
+                    filterItems(category, '');
+                });
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                searchClear.style.display = searchTerm ? 'flex' : 'none';
+
+                // Reset category filter to "all"
+                categoryButtons.forEach(btn => btn.classList.remove('active'));
+                categoryButtons[0].classList.add('active');
+
+                filterItems('all', searchTerm);
+            });
+
+            searchClear.addEventListener('click', function() {
+                searchInput.value = '';
+                this.style.display = 'none';
+                filterItems('all', '');
+            });
+
+            // Filter function
+            function filterItems(category, searchTerm) {
+                let visibleCount = 0;
+
+                menuCards.forEach(card => {
+                    const cardCategory = card.getAttribute('data-category');
+                    const cardName = card.getAttribute('data-name');
+
+                    const categoryMatch = category === 'all' || cardCategory === category;
+                    const searchMatch = !searchTerm || cardName.includes(searchTerm);
+
+                    if (categoryMatch && searchMatch) {
+                        card.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            // Back to top button
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTop.style.display = 'flex';
+                } else {
+                    backToTop.style.display = 'none';
+                }
+            });
+
+            backToTop.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
                 });
             });
 
             // Smooth scroll for categories
-            const categoriesNav = document.getElementById('categoriesNav');
-            if (categoriesNav) {
-                let isDown = false;
-                let startX;
-                let scrollLeft;
+            const categoriesScroll = document.querySelector('.categories-scroll');
+            let isDown = false;
+            let startX;
+            let scrollLeft;
 
-                categoriesNav.addEventListener('mousedown', (e) => {
-                    isDown = true;
-                    startX = e.pageX - categoriesNav.offsetLeft;
-                    scrollLeft = categoriesNav.scrollLeft;
+            categoriesScroll.addEventListener('mousedown', (e) => {
+                isDown = true;
+                categoriesScroll.style.cursor = 'grabbing';
+                startX = e.pageX - categoriesScroll.offsetLeft;
+                scrollLeft = categoriesScroll.scrollLeft;
+            });
+
+            categoriesScroll.addEventListener('mouseleave', () => {
+                isDown = false;
+                categoriesScroll.style.cursor = 'grab';
+            });
+
+            categoriesScroll.addEventListener('mouseup', () => {
+                isDown = false;
+                categoriesScroll.style.cursor = 'grab';
+            });
+
+            categoriesScroll.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - categoriesScroll.offsetLeft;
+                const walk = (x - startX) * 2;
+                categoriesScroll.scrollLeft = scrollLeft - walk;
+            });
+
+            // Add animation observer
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                    }
                 });
+            }, {
+                threshold: 0.1
+            });
 
-                categoriesNav.addEventListener('mouseleave', () => {
-                    isDown = false;
-                });
-
-                categoriesNav.addEventListener('mouseup', () => {
-                    isDown = false;
-                });
-
-                categoriesNav.addEventListener('mousemove', (e) => {
-                    if (!isDown) return;
-                    e.preventDefault();
-                    const x = e.pageX - categoriesNav.offsetLeft;
-                    const walk = (x - startX) * 2;
-                    categoriesNav.scrollLeft = scrollLeft - walk;
-                });
-            }
-        });
-
-        // PWA Install Prompt
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            console.log('PWA kuruluma hazır');
+            menuCards.forEach(card => {
+                observer.observe(card);
+            });
         });
     </script>
 }

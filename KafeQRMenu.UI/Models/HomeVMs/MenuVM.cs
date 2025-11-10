@@ -6,8 +6,8 @@ namespace KafeQRMenu.UI.Models.HomeVMs
 {
     public class MenuVM
     {
-        public CafeVM Cafe { get; set; }
-        public List<MenuCategoryListVM> Categories { get; set; }
-        public List<MenuItemListVM> Products { get; set; }
+        public CafeVM Cafe { get; set; } = new();
+        public List<MenuCategoryListVM> Categories { get; set; } = new();
+        public List<MenuItemListVM> Products { get; set; } = new();
     }
 }
