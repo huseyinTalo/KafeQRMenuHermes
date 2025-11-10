@@ -1,0 +1,42 @@
+﻿@model KafeQRMenu.BLogic.DTOs.ImageFileDTOs.ImageFileDTO
+@{
+    ViewData["Title"] = "Resim Sil";
+    ViewData["BreadcrumbTitle"] = "Resim Sil";
+}
+
+<div class="fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Resim Silme Onayı</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Bu resmi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <img src="/Admin/ImageFile/GetImage/@Model.ImageId"
+                             alt="Image to delete"
+                             class="img-thumbnail"
+                             style="max-width: 300px; max-height: 300px;">
+                    </div>
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="ImageId" />
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger flex-fill">
+                                <i class="bi bi-trash me-2"></i>Evet, Sil
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary flex-fill">
+                                <i class="bi bi-x-circle me-2"></i>İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

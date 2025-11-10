@@ -1,12 +1,6 @@
-﻿using KafeQRMenu.BLogic.DTOs.MenuCategoryDTOs;
-using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
+﻿using Mapster;
 using KafeQRMenu.Data.Entities;
-using Mapster;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
 
 namespace KafeQRMenu.BLogic.MappingConfigs
 {
@@ -14,24 +8,48 @@ namespace KafeQRMenu.BLogic.MappingConfigs
     {
         public void Register(TypeAdapterConfig config)
         {
+            // MenuItem Entity -> MenuItemDTO
             config.NewConfig<MenuItem, MenuItemDTO>()
-             .Map(dest => dest.MenuItemId, src => src.Id)
-             .Map(dest => dest.MenuCategoryName, src => src.MenuCategory.MenuCategoryName)
-             .TwoWays();
+                .Map(dest => dest.MenuItemId, src => src.Id)
+                .Map(dest => dest.MenuCategoryName, src => src.MenuCategory.MenuCategoryName)
+                .Map(dest => dest.ImageFileId, src => src.MenuItemImageId)
+                .Map(dest => dest.CreatedTime, src => src.CreatedTime)
+                .Map(dest => dest.UpdatedTime, src => src.UpdatedTime)
+                .IgnoreNullValues(true);
 
+            // MenuItem Entity -> MenuItemListDTO
             config.NewConfig<MenuItem, MenuItemListDTO>()
                 .Map(dest => dest.MenuItemId, src => src.Id)
                 .Map(dest => dest.MenuCategoryName, src => src.MenuCategory.MenuCategoryName)
+                .Map(dest => dest.ImageFileId, src => src.MenuItemImage.Id)
+                .Map(dest => dest.CreatedTime, src => src.CreatedTime)
+                .Map(dest => dest.ImageFileBytes, src => src.MenuItemImage.ImageByteFile)
                 .TwoWays();
 
-            config.NewConfig<MenuItem, MenuItemUpdateDTO>()
-                .Map(dest => dest.MenuItemId, src => src.Id)
-                .Map(dest => dest.MenuCategoryName, src => src.MenuCategory.MenuCategoryName)
-                .TwoWays();
+            // MenuItemCreateDTO -> MenuItem Entity
+            config.NewConfig<MenuItemCreateDTO, MenuItem>()
+                .Map(dest => dest.MenuCategoryId, src => src.MenuCategoryId)
+                .Map(dest => dest.MenuItemImageId, src => src.ImageFileId)
+                .Ignore(dest => dest.Id)
+                .Ignore(dest => dest.MenuCategory)
+                .Ignore(dest => dest.MenuItemImage)
+                .Ignore(dest => dest.CreatedTime)
+                .Ignore(dest => dest.UpdatedTime)
+                .Ignore(dest => dest.DeletedTime);
 
-            config.NewConfig<MenuItem, MenuItemCreateDTO>()
-                .Map(dest => dest.MenuCategoryName, src => src.MenuCategory.MenuCategoryName)
-                .TwoWays();
+            // MenuItemUpdateDTO -> MenuItem Entity (for updating existing entity)
+            config.NewConfig<MenuItemUpdateDTO, MenuItem>()
+                .Map(dest => dest.MenuItemName, src => src.MenuItemName)
+                .Map(dest => dest.Description, src => src.Description)
+                .Map(dest => dest.Price, src => src.Price)
+                .Map(dest => dest.SortOrder, src => src.SortOrder)
+                .Map(dest => dest.MenuCategoryId, src => src.MenuCategoryId)
+                .Map(dest => dest.MenuItemImageId, src => src.ImageFileId)
+                .Ignore(dest => dest.Id)
+                .Ignore(dest => dest.MenuCategory)
+                .Ignore(dest => dest.MenuItemImage)
+                .Ignore(dest => dest.CreatedTime)
+                .Ignore(dest => dest.DeletedTime);
         }
     }
 }

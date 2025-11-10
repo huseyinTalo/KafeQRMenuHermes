@@ -1,0 +1,56 @@
+﻿@model KafeQRMenu.BLogic.DTOs.MenuItemDTOs.MenuItemDTO
+@{
+    ViewData["Title"] = "Ürün Sil";
+    ViewData["BreadcrumbTitle"] = "Ürün Sil";
+}
+
+<div class="fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Ürün Silme Onayı</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Uyarı!</strong> Bu ürünü silmek istediğinizden emin misiniz?
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Silinecek Ürün:</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">Ürün Adı:</dt>
+                            <dd class="col-sm-8"><strong>@Model.MenuItemName</strong></dd>
+
+                            <dt class="col-sm-4">Kategori:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-primary">@Model.MenuCategoryName</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Fiyat:</dt>
+                            <dd class="col-sm-8">
+                                <strong class="text-success">₺@Model.Price.ToString("F2")</strong>
+                            </dd>
+
+                            <dt class="col-sm-4">Açıklama:</dt>
+                            <dd class="col-sm-8">@(Model.Description ?? "Açıklama yok")</dd>
+                        </dl>
+                    </div>
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="MenuItemId" />
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger flex-fill">
+                                <i class="bi bi-trash me-2"></i>Evet, Sil
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary flex-fill">
+                                <i class="bi bi-x-circle me-2"></i>İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

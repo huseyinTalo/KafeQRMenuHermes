@@ -7,8 +7,8 @@ namespace KafeQRMenu.BLogic.Services.AdminServices
     {
         Task<IDataResult<List<AdminListDTO>>> GetAllAsync();
         Task<IDataResult<AdminDTO>> GetByIdAsync(Guid Id);
-        Task<IResult> UpdateAsync(AdminUpdateDTO adminUpdateDto);
-        Task<IResult> CreateAsync(AdminCreateDTO adminCreateDto);
+        Task<IResult> UpdateAsync(AdminUpdateDTO adminUpdateDto, byte[] newImageData = null);
+        Task<IResult> CreateAsync(AdminCreateDTO adminCreateDto, byte[] imageData = null);
         Task<IResult> DeleteAsync(AdminDTO adminDto);
     }
 }

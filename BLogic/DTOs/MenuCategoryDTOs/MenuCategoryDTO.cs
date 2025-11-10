@@ -14,5 +14,9 @@ namespace KafeQRMenu.BLogic.DTOs.MenuCategoryDTOs
         public int SortOrder { get; set; }
         public string CafeName { get; set; }
         public Guid CafeId { get; set; }
+        public Guid? ImageFileId { get; set; }
+        public byte[] ImageFileBytes { get; set; }
+        public DateTime CreatedTime { get; set; }
+        public DateTime? UpdatedTime { get; set; }
     }
 }

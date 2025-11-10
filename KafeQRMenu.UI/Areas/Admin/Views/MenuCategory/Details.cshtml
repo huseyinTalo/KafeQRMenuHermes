@@ -1,0 +1,82 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.Models.MenuCategoryVMs.MenuCategoryItemViewModel;
+@{
+    ViewData["Title"] = "Kategori Detayı";
+    ViewData["BreadcrumbTitle"] = "Kategori Detayı";
+}
+
+<div class="fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@Model.MenuCategoryName</h5>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@Model.MenuCategoryId" class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil"></i> Düzenle
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Kategori Resmi:</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.ImageFileId.HasValue)
+                            {
+                                @if (Model.ImageFileBytes != null && Model.ImageFileBytes.Length > 0)
+                                {
+                                    var base64 = Convert.ToBase64String(Model.ImageFileBytes);
+                                    var imgSrc = $"data:image/jpeg;base64,{base64}";
+                                    <img src="@imgSrc"
+                                         class="card-img-top category-image"
+                                         alt="@Model.MenuCategoryName" />
+                                }
+                                else
+                                {
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center category-image-placeholder">
+                                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center category-image-placeholder">
+                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-3">Kategori Adı:</dt>
+                        <dd class="col-sm-9">@Model.MenuCategoryName</dd>
+
+                        <dt class="col-sm-3">Açıklama:</dt>
+                        <dd class="col-sm-9">@(Model.Description ?? "Açıklama girilmemiş")</dd>
+
+                        <dt class="col-sm-3">Sıralama:</dt>
+                        <dd class="col-sm-9"><span class="badge bg-secondary">@Model.SortOrder</span></dd>
+
+                        <dt class="col-sm-3">Ürün Sayısı:</dt>
+                        <dd class="col-sm-9"><span class="badge bg-info">@Model.ItemCount ürün</span></dd>
+
+                        <dt class="col-sm-3">Oluşturulma:</dt>
+                        <dd class="col-sm-9">@Model.CreatedTime.ToString("dd.MM.yyyy HH:mm")</dd>
+
+                        @if (Model.UpdatedTime.HasValue)
+                        {
+                            <dt class="col-sm-3">Son Güncelleme:</dt>
+                            <dd class="col-sm-9">@Model.UpdatedTime.Value.ToString("dd.MM.yyyy HH:mm")</dd>
+                        }
+                    </dl>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Listeye Dön
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.MenuCategoryId" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Sil
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

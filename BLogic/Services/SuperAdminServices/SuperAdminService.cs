@@ -4,6 +4,7 @@ using KafeQRMenu.Data.Enums;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.Data.Utilities.Concretes;
 using KafeQRMenu.DataAccess.Repositories.SuperAdminRepositories;
+using KafeQRMenu.DataAccess.Repositories.ImageRepositories;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,20 +18,23 @@ namespace KafeQRMenu.BLogic.Services.SuperAdminServices
         private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<SuperAdminService> _logger;
+        private readonly IImageFileRepository _imageFileRepository;
 
         public SuperAdminService(
             ISuperAdminRepository superAdminRepository,
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ILogger<SuperAdminService> logger)
+            ILogger<SuperAdminService> logger,
+            IImageFileRepository imageFileRepository)
         {
             _superAdminRepository = superAdminRepository;
             _userManager = userManager;
             _roleManager = roleManager;
             _logger = logger;
+            _imageFileRepository = imageFileRepository;
         }
 
-        public async Task<IResult> CreateAsync(SuperAdminCreateDTO superAdminCreateDto)
+        public async Task<IResult> CreateAsync(SuperAdminCreateDTO superAdminCreateDto, byte[] imageData = null)
         {
             _logger.LogInformation("SuperAdmin oluşturma işlemi başlatıldı. Email: {Email}", superAdminCreateDto.Email);
             try
@@ -79,6 +83,34 @@ namespace KafeQRMenu.BLogic.Services.SuperAdminServices
                     var transactionScope = await _superAdminRepository.BeginTransactionAsync().ConfigureAwait(false);
                     try
                     {
+                        ImageFile createdImageFile = null;
+
+                        // Create ImageFile if image data is provided
+                        if (imageData != null && imageData.Length > 0)
+                        {
+                            _logger.LogDebug("ImageFile oluşturuluyor.");
+
+                            createdImageFile = new ImageFile
+                            {
+                                ImageByteFile = imageData,
+                                IsActive = true,
+                                ImageContentType = ImageContentType.Person,
+                                SuperAdminId = null // Will be set after SuperAdmin is created
+                            };
+
+                            await _imageFileRepository.AddAsync(createdImageFile);
+                            var imageResult = await _imageFileRepository.SaveChangeAsync();
+
+                            if (imageResult <= 0)
+                            {
+                                await transactionScope.RollbackAsync();
+                                _logger.LogError("ImageFile oluşturulamadı.");
+                                return new ErrorResult("Resim yüklenirken bir hata oluştu.");
+                            }
+
+                            _logger.LogInformation("ImageFile başarıyla oluşturuldu. ImageId: {ImageId}", createdImageFile.Id);
+                        }
+
                         // Create Identity User with password
                         _logger.LogDebug("Identity kullanıcısı oluşturuluyor. Email: {Email}", superAdminCreateDto.Email);
                         var identityUser = new IdentityUser
@@ -127,6 +159,24 @@ namespace KafeQRMenu.BLogic.Services.SuperAdminServices
 
                         _logger.LogInformation("SuperAdmin entity başarıyla oluşturuldu. SuperAdminId: {SuperAdminId}, IdentityId: {IdentityId}",
                             superAdmin.Id, identityUser.Id);
+
+                        // Update ImageFile with SuperAdminId if image was created
+                        if (createdImageFile != null)
+                        {
+                            _logger.LogDebug("ImageFile güncelleniyor. SuperAdminId ekleniyor.");
+                            createdImageFile.SuperAdminId = superAdmin.Id;
+                            await _imageFileRepository.UpdateAsync(createdImageFile);
+                            var updateImageResult = await _imageFileRepository.SaveChangeAsync();
+
+                            if (updateImageResult <= 0)
+                            {
+                                await transactionScope.RollbackAsync();
+                                _logger.LogError("ImageFile SuperAdminId ile güncellenemedi.");
+                                return new ErrorResult("Resim SuperAdmin ile ilişkilendirilemedi.");
+                            }
+
+                            _logger.LogInformation("ImageFile SuperAdminId ile güncellendi.");
+                        }
 
                         // Commit transaction
                         await transactionScope.CommitAsync();
@@ -188,6 +238,32 @@ namespace KafeQRMenu.BLogic.Services.SuperAdminServices
                     var transaction = await _superAdminRepository.BeginTransactionAsync().ConfigureAwait(false);
                     try
                     {
+                        // Delete associated ImageFile if exists
+                        _logger.LogDebug("İlişkili ImageFile kontrol ediliyor. SuperAdminId: {SuperAdminId}", superAdminDto.SuperAdminId);
+                        var imageFiles = await _imageFileRepository.GetAllAsync(
+                            img => img.SuperAdminId == superAdminDto.SuperAdminId && img.ImageContentType == ImageContentType.Person,
+                            tracking: true
+                        );
+
+                        if (imageFiles != null && imageFiles.Any())
+                        {
+                            foreach (var imageFile in imageFiles)
+                            {
+                                _logger.LogDebug("ImageFile siliniyor. ImageId: {ImageId}", imageFile.Id);
+                                await _imageFileRepository.DeleteAsync(imageFile);
+                            }
+
+                            var imageDeleteResult = await _imageFileRepository.SaveChangeAsync();
+                            if (imageDeleteResult <= 0)
+                            {
+                                await transaction.RollbackAsync();
+                                _logger.LogError("ImageFile(ler) silinemedi.");
+                                return new ErrorResult("SuperAdmin resmi silinirken bir hata oluştu.");
+                            }
+
+                            _logger.LogInformation("{Count} adet ImageFile başarıyla silindi.", imageFiles.Count());
+                        }
+
                         // Delete Identity User (this also deletes the password hash and role assignments)
                         _logger.LogDebug("Identity kullanıcısı siliniyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
                         var identityUser = await _userManager.FindByIdAsync(superAdmin.IdentityId);
@@ -265,7 +341,6 @@ namespace KafeQRMenu.BLogic.Services.SuperAdminServices
             }
         }
 
-
         public async Task<IDataResult<List<SuperAdminListDTO>>> GetAllAsync()
         {
             _logger.LogInformation("Tüm SuperAdminler listeleniyor.");
@@ -339,7 +414,7 @@ namespace KafeQRMenu.BLogic.Services.SuperAdminServices
             }
         }
 
-        public async Task<IResult> UpdateAsync(SuperAdminUpdateDTO superAdminUpdateDto)
+        public async Task<IResult> UpdateAsync(SuperAdminUpdateDTO superAdminUpdateDto, byte[] newImageData = null)
         {
             _logger.LogInformation("SuperAdmin güncelleme işlemi başlatıldı. SuperAdminId: {SuperAdminId}, Email: {Email}",
                 superAdminUpdateDto.SuperAdminId, superAdminUpdateDto.Email);
@@ -364,6 +439,61 @@ namespace KafeQRMenu.BLogic.Services.SuperAdminServices
                     var transaction = await _superAdminRepository.BeginTransactionAsync().ConfigureAwait(false);
                     try
                     {
+                        ImageFile newImageFile = null;
+
+                        // Handle new image if provided
+                        if (newImageData != null && newImageData.Length > 0)
+                        {
+                            _logger.LogDebug("Yeni ImageFile oluşturuluyor.");
+
+                            newImageFile = new ImageFile
+                            {
+                                ImageByteFile = newImageData,
+                                IsActive = true,
+                                ImageContentType = ImageContentType.Person,
+                                SuperAdminId = superAdminUpdateDto.SuperAdminId
+                            };
+
+                            await _imageFileRepository.AddAsync(newImageFile);
+                            var newImageResult = await _imageFileRepository.SaveChangeAsync();
+
+                            if (newImageResult <= 0)
+                            {
+                                await transaction.RollbackAsync();
+                                _logger.LogError("Yeni ImageFile oluşturulamadı.");
+                                return new ErrorResult("Yeni resim yüklenirken bir hata oluştu.");
+                            }
+
+                            _logger.LogInformation("Yeni ImageFile başarıyla oluşturuldu. ImageId: {ImageId}", newImageFile.Id);
+
+                            // Delete old images if exists
+                            _logger.LogDebug("Eski ImageFile(ler) siliniyor. SuperAdminId: {SuperAdminId}", superAdminUpdateDto.SuperAdminId);
+                            var oldImageFiles = await _imageFileRepository.GetAllAsync(
+                                img => img.SuperAdminId == superAdminUpdateDto.SuperAdminId &&
+                                                 img.ImageContentType == ImageContentType.Person &&
+                                                 img.Id != newImageFile.Id,
+                                tracking: true
+                            );
+
+                            if (oldImageFiles != null && oldImageFiles.Any())
+                            {
+                                foreach (var oldImageFile in oldImageFiles)
+                                {
+                                    await _imageFileRepository.DeleteAsync(oldImageFile);
+                                }
+
+                                var deleteOldImagesResult = await _imageFileRepository.SaveChangeAsync();
+                                if (deleteOldImagesResult <= 0)
+                                {
+                                    _logger.LogWarning("Eski ImageFile(ler) silinemedi, devam ediliyor.");
+                                }
+                                else
+                                {
+                                    _logger.LogInformation("Eski ImageFile(ler) başarıyla silindi. Sayı: {Count}", oldImageFiles.Count());
+                                }
+                            }
+                        }
+
                         // Update Identity User
                         _logger.LogDebug("Identity kullanıcısı getiriliyor. IdentityId: {IdentityId}", superAdmin.IdentityId);
                         var identityUser = await _userManager.FindByIdAsync(superAdmin.IdentityId);

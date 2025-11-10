@@ -31,6 +31,9 @@ namespace KafeQRMenu.DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AdminImageId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("CafeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -115,6 +118,9 @@ namespace KafeQRMenu.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("ImageFileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -127,6 +133,70 @@ namespace KafeQRMenu.DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Cafes");
+                });
+
+            modelBuilder.Entity("KafeQRMenu.Data.Entities.ImageFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CafeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("ImageByteFile")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("ImageContentType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("MenuCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MenuItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("SuperAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedTime")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminId");
+
+                    b.HasIndex("MenuItemId")
+                        .IsUnique()
+                        .HasFilter("[MenuItemId] IS NOT NULL");
+
+                    b.ToTable("ImageFiles");
                 });
 
             modelBuilder.Entity("KafeQRMenu.Data.Entities.MenuCategory", b =>
@@ -153,6 +223,9 @@ namespace KafeQRMenu.DataAccess.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("MenuCategoryImageId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("MenuCategoryName")
                         .IsRequired()
@@ -201,6 +274,9 @@ namespace KafeQRMenu.DataAccess.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("MenuCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MenuItemImageId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("MenuItemName")
@@ -270,6 +346,9 @@ namespace KafeQRMenu.DataAccess.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("SuperAdminImageId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -491,6 +570,22 @@ namespace KafeQRMenu.DataAccess.Migrations
                     b.Navigation("Cafe");
                 });
 
+            modelBuilder.Entity("KafeQRMenu.Data.Entities.ImageFile", b =>
+                {
+                    b.HasOne("KafeQRMenu.Data.Entities.Admin", "Admin")
+                        .WithMany()
+                        .HasForeignKey("AdminId");
+
+                    b.HasOne("KafeQRMenu.Data.Entities.MenuItem", "MenuItem")
+                        .WithOne("MenuItemImage")
+                        .HasForeignKey("KafeQRMenu.Data.Entities.ImageFile", "MenuItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Admin");
+
+                    b.Navigation("MenuItem");
+                });
+
             modelBuilder.Entity("KafeQRMenu.Data.Entities.MenuCategory", b =>
                 {
                     b.HasOne("KafeQRMenu.Data.Entities.Cafe", "Cafe")
@@ -574,6 +669,12 @@ namespace KafeQRMenu.DataAccess.Migrations
             modelBuilder.Entity("KafeQRMenu.Data.Entities.MenuCategory", b =>
                 {
                     b.Navigation("MenuItems");
+                });
+
+            modelBuilder.Entity("KafeQRMenu.Data.Entities.MenuItem", b =>
+                {
+                    b.Navigation("MenuItemImage")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

@@ -14,7 +14,7 @@ namespace KafeQRMenu.Data.Entities
         public string Email { get; set; }
         public string IdentityId { get; set; }
         public Guid CafeId { get; set; }
-
         public virtual Cafe Cafe { get; set; }
+        public Guid? AdminImageId { get; set; }
     }
 }

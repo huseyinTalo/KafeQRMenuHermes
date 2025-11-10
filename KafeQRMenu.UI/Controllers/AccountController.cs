@@ -70,7 +70,7 @@ namespace KafeQRMenu.UI.Controllers
                     }
                     else if (roles.Contains("Admin"))
                     {
-                        return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+                        return RedirectToAction("Index", "Home", new { area = "Admin" });
                     }
                     else
                     {
@@ -115,7 +115,7 @@ namespace KafeQRMenu.UI.Controllers
                 }
                 else if (roles.Contains("Admin"))
                 {
-                    return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+                    return RedirectToAction("Index", "Home", new { area = "Admin" });
                 }
             }
 

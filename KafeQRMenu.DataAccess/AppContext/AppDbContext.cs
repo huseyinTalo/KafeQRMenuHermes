@@ -30,6 +30,7 @@ namespace KafeQRMenu.DataAccess.AppContext
         public virtual DbSet<Cafe> Cafes { get; set; }
         public virtual DbSet<MenuCategory> MenuCategories { get; set; }
         public virtual DbSet<MenuItem> MenuItems { get; set; }
+        public virtual DbSet<ImageFile> ImageFiles { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(IEntityConfiguration).Assembly);
@@ -97,7 +98,12 @@ namespace KafeQRMenu.DataAccess.AppContext
 
         private string GetUserId()
         {
-            return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "SystemCreatedThee";
+            if (SuperAdmins.Count() > 0)
+            {
+                return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "SystemCreatedThee"; 
+            }
+
+            return "SystemCreatedThee";
         }
     }
 }

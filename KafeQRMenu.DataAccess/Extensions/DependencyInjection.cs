@@ -1,6 +1,7 @@
 ﻿using KafeQRMenu.DataAccess.AppContext;
 using KafeQRMenu.DataAccess.Repositories.AdminRepositories;
 using KafeQRMenu.DataAccess.Repositories.CafeRepositories;
+using KafeQRMenu.DataAccess.Repositories.ImageRepositories;
 using KafeQRMenu.DataAccess.Repositories.MenuCategoryRepositories;
 using KafeQRMenu.DataAccess.Repositories.MenuItemRepositories;
 using KafeQRMenu.DataAccess.Repositories.SuperAdminRepositories;
@@ -32,11 +33,12 @@ namespace KafeQRMenu.DataAccess.Extensions
             services.AddScoped<ICafeRepository, CafeRepository>();
             services.AddScoped<IMenuCategoryRepository, MenuCategoryRepository>();
             services.AddScoped<IMenuItemRepository, MenuItemRepository>();
+            services.AddScoped<IImageFileRepository, ImageFileRepository>();
             services.AddHttpContextAccessor();
             //IOC Containers
 
             //Disable after first starts
-            //SuperAdminSeed.SeedAsync(configuration).GetAwaiter().GetResult();
+            SuperAdminSeed.SeedAsync(configuration).GetAwaiter().GetResult();
 
             return services;
         }

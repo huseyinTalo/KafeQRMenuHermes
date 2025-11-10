@@ -1,5 +1,6 @@
 ﻿using KafeQRMenu.BLogic.Services.AdminServices;
 using KafeQRMenu.BLogic.Services.CafeServices;
+using KafeQRMenu.BLogic.Services.ImageServices;
 using KafeQRMenu.BLogic.Services.MenuCategoryServices;
 using KafeQRMenu.BLogic.Services.MenuItemServices;
 using KafeQRMenu.BLogic.Services.SuperAdminServices;
@@ -21,6 +22,7 @@ namespace KafeQRMenu.BLogic.Extensions
             services.AddScoped<ICafeService, CafeService>();
             services.AddScoped<IMenuCategoryService, MenuCategoryService>();
             services.AddScoped<IMenuItemService, MenuItemService>();
+            services.AddScoped<IImageFileService, ImageFileService>();
 
             return services;
         }

@@ -1,0 +1,66 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.Models.MenuCategoryVMs.MenuCategoryItemViewModel;
+@{
+    ViewData["Title"] = "Kategori Sil";
+    ViewData["BreadcrumbTitle"] = "Kategori Sil";
+}
+
+<div class="fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Kategori Silme Onayı</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Uyarı!</strong> Bu kategoriyi silmek istediğinizden emin misiniz?
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Silinecek Kategori:</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">Kategori Adı:</dt>
+                            <dd class="col-sm-8"><strong>@Model.MenuCategoryName</strong></dd>
+
+                            <dt class="col-sm-4">Açıklama:</dt>
+                            <dd class="col-sm-8">@(Model.Description ?? "Açıklama yok")</dd>
+
+                            @if (Model.ItemCount > 0)
+                            {
+                                <dt class="col-sm-4">Ürün Sayısı:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-danger">@Model.ItemCount ürün</span>
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+
+                    @if (Model.ItemCount > 0)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-octagon me-2"></i>
+                            Bu kategoride <strong>@Model.ItemCount</strong> ürün bulunmaktadır.
+                            Kategoriyi silmeden önce bu ürünleri başka bir kategoriye taşımanız veya silmeniz gerekmektedir.
+                        </div>
+                    }
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="MenuCategoryId" />
+                        <div class="d-flex gap-2">
+                            @if (Model.ItemCount == 0)
+                            {
+                                <button type="submit" class="btn btn-danger flex-fill">
+                                    <i class="bi bi-trash me-2"></i>Evet, Sil
+                                </button>
+                            }
+                            <a asp-action="Index" class="btn btn-secondary flex-fill">
+                                <i class="bi bi-x-circle me-2"></i>İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

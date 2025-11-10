@@ -1,0 +1,104 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.Models.MenuCategoryVMs.MenuCategoryEditViewModel
+@{
+    ViewData["Title"] = "Kategori Düzenle";
+    ViewData["BreadcrumbTitle"] = "Kategori Düzenle";
+}
+
+<div class="fade-in">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Kategori Düzenle: @Model.MenuCategoryName</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                        <input type="hidden" asp-for="MenuCategoryId" />
+                        <input type="hidden" asp-for="CafeId" />
+                        <input type="hidden" asp-for="ImageFileId" />
+
+                        <div class="mb-3">
+                            <label asp-for="MenuCategoryName" class="form-label"></label>
+                            <input asp-for="MenuCategoryName" class="form-control" />
+                            <span asp-validation-for="MenuCategoryName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SortOrder" class="form-label"></label>
+                            <input asp-for="SortOrder" type="number" class="form-control" min="1" max="1000" />
+                            <span asp-validation-for="SortOrder" class="text-danger"></span>
+                        </div>
+
+                        @* Display current image if exists *@
+                        @if (Model.ImageFileId.HasValue && Model.ImageFileBytes != null && Model.ImageFileBytes.Length > 0)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Mevcut Resim</label>
+                                <div class="border rounded p-3 text-center bg-light">
+                                    @{
+                                        var base64 = Convert.ToBase64String(Model.ImageFileBytes);
+                                        var imgSrc = $"data:image/jpeg;base64,{base64}";
+                                    }
+                                    <img src="@imgSrc" alt="@Model.MenuCategoryName" style="max-width: 100%; max-height: 200px;">
+                                </div>
+                            </div>
+                        }
+
+                        <div class="mb-4">
+                            <label asp-for="ImageFile" class="form-label"></label>
+                            <input asp-for="ImageFile" type="file" class="form-control" accept=".jpg,.jpeg" onchange="previewImage(this)" />
+                            <div class="form-text">
+                                @if (Model.ImageFileId.HasValue)
+                                {
+                                    <text>Yeni resim yüklerseniz mevcut resim değiştirilir - Sadece JPG formatı</text>
+                                }
+                                else
+                                {
+                                    <text>Kategori için görsel (opsiyonel) - Sadece JPG formatı</text>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="previewContainer" style="display: none;">
+                            <label class="form-label">Yeni Resim Önizleme</label>
+                            <div class="border rounded p-3 text-center bg-light">
+                                <img id="imagePreview" src="" alt="Preview" style="max-width: 100%; max-height: 200px;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Güncelle
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('previewContainer').style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

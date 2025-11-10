@@ -15,5 +15,7 @@ namespace KafeQRMenu.Data.Entities
         public Guid MenuCategoryId { get; set; }
         public virtual MenuCategory MenuCategory { get; set; }
         public int SortOrder { get; set; }
+        public Guid? MenuItemImageId { get; set; }
+        public virtual ImageFile MenuItemImage { get; set; }
     }
 }

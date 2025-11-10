@@ -7,8 +7,9 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
     {
         Task<IDataResult<List<MenuCategoryListDTO>>> GetAllAsync();
         Task<IDataResult<MenuCategoryDTO>> GetByIdAsync(Guid Id);
-        Task<IResult> UpdateAsync(MenuCategoryUpdateDTO menuCategoryUpdateDto);
-        Task<IResult> CreateAsync(MenuCategoryCreateDTO menuCategoryCreateDto);
+        Task<IResult> UpdateAsync(MenuCategoryUpdateDTO menuCategoryUpdateDto, byte[] newImageData = null);
+        Task<IDataResult<MenuCategoryDTO>> CreateAsync(MenuCategoryCreateDTO menuCategoryCreateDto, byte[] imageData = null);
         Task<IResult> DeleteAsync(MenuCategoryDTO menuCategoryDto);
+        Task<IDataResult<List<MenuCategoryListDTO>>> GetAllAsyncCafesCats(Guid CafeId);
     }
 }

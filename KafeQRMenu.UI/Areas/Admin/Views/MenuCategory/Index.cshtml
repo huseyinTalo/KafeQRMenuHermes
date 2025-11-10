@@ -1,0 +1,134 @@
+﻿@model List<KafeQRMenu.UI.Areas.Admin.Models.MenuCategoryVMs.MenuCategoryListViewModel>
+@{
+    ViewData["Title"] = "Kategoriler";
+    ViewData["BreadcrumbTitle"] = "Kategori Listesi";
+}
+
+<div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Menü Kategorileri</h4>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Yeni Kategori
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Henüz kategori eklenmemiş. <a asp-action="Create">Yeni kategori eklemek için tıklayın.</a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var category in Model.OrderBy(c => c.SortOrder))
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm hover-lift">
+                        @if (category.ImageFileId.HasValue)
+                        {
+                            @if (category.ImageFileBytes != null && category.ImageFileBytes.Length > 0)
+                            {
+                                var base64 = Convert.ToBase64String(category.ImageFileBytes);
+                                var imgSrc = $"data:image/jpeg;base64,{base64}";
+                                <img src="@imgSrc"
+                                     class="card-img-top category-image"
+                                     alt="@category.MenuCategoryName" />
+                            }
+                            else
+                            {
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center category-image-placeholder">
+                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center category-image-placeholder">
+                                <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                            </div>
+                        }
+
+                        <div class="card-body">
+                            <h5 class="card-title">@category.MenuCategoryName</h5>
+
+                            @if (!string.IsNullOrEmpty(category.Description))
+                            {
+                                <p class="card-text text-muted small">
+                                    @(category.Description.Length > 100
+                                        ? category.Description.Substring(0, 100) + "..."
+                                        : category.Description)
+                                </p>
+                            }
+
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-sort-numeric-up me-1"></i>Sıra: @category.SortOrder
+                                </small>
+                                <small class="text-muted">
+                                    <i class="bi bi-list-ul me-1"></i>@category.ItemCount ürün
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0">
+                            <div class="btn-group w-100" role="group">
+                                <a asp-action="Details" asp-route-id="@category.MenuCategoryId"
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-eye"></i> Detay
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@category.MenuCategoryId"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Düzenle
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@category.MenuCategoryId"
+                                   class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i> Sil
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .hover-lift {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+            .hover-lift:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            }
+
+        .category-image {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .category-image-placeholder {
+            height: 200px;
+        }
+    </style>
+}

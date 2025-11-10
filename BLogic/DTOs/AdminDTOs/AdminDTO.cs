@@ -14,5 +14,7 @@ namespace KafeQRMenu.BLogic.DTOs.AdminDTOs
         public string Email { get; set; }
         public string IdentityId { get; set; }
         public string CafeName { get; set; }
+        public Guid CafeId { get; set; }
+        public Guid? ImageFileId { get; set; }
     }
 }

@@ -1,0 +1,247 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.Models.DashboardVMs.DashboardViewModel;
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["BreadcrumbTitle"] = "Dashboard";
+}
+
+<div class="fade-in">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">Hoş Geldiniz, @Model.AdminName</h1>
+            <p class="text-muted mb-0">@Model.CafeName - Yönetim Paneli</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" onclick="location.href='/Admin/MenuItem/Create'">
+                <i class="bi bi-plus-circle me-2"></i>Yeni Ürün Ekle
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0">
+                <div class="card-body" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="text-white">
+                        <h6 class="text-white-50 mb-2">Toplam Kategori</h6>
+                        <h2 class="mb-3">@Model.TotalCategories</h2>
+                        <small class="text-white-50">
+                            <i class="bi bi-arrow-up me-1"></i>@Model.CategoriesThisMonth bu ay
+                        </small>
+                    </div>
+                    <i class="bi bi-grid-3x3-gap stat-icon text-white"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0">
+                <div class="card-body" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="text-white">
+                        <h6 class="text-white-50 mb-2">Toplam Ürün</h6>
+                        <h2 class="mb-3">@Model.TotalMenuItems</h2>
+                        <small class="text-white-50">
+                            <i class="bi bi-arrow-up me-1"></i>@Model.MenuItemsThisMonth bu ay
+                        </small>
+                    </div>
+                    <i class="bi bi-menu-button-wide stat-icon text-white"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0">
+                <div class="card-body" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="text-white">
+                        <h6 class="text-white-50 mb-2">Ortalama Fiyat</h6>
+                        <h2 class="mb-3">₺@Model.AveragePrice.ToString("F2")</h2>
+                        <small class="text-white-50">
+                            Tüm ürünler
+                        </small>
+                    </div>
+                    <i class="bi bi-currency-exchange stat-icon text-white"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0">
+                <div class="card-body" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="text-white">
+                        <h6 class="text-white-50 mb-2">QR Görüntülenme</h6>
+                        <h2 class="mb-3">@Model.QRViewsToday</h2>
+                        <small class="text-white-50">
+                            Bugün
+                        </small>
+                    </div>
+                    <i class="bi bi-qr-code-scan stat-icon text-white"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent Categories -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-white border-0 pt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Son Eklenen Kategoriler</h5>
+                        <a href="/Admin/MenuCategory/Index" class="btn btn-sm btn-outline-primary">
+                            Tümünü Gör
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentCategories.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var category in Model.RecentCategories)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">@category.MenuCategoryName</h6>
+                                            <small class="text-muted">@category.ItemCount ürün</small>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-primary-subtle text-primary">
+                                                @category.CreatedDate.ToString("dd MMM")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Henüz kategori eklenmemiş</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Menu Items -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-white border-0 pt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Son Eklenen Ürünler</h5>
+                        <a href="/Admin/MenuItem/Index" class="btn btn-sm btn-outline-primary">
+                            Tümünü Gör
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentMenuItems.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in Model.RecentMenuItems)
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">@item.MenuItemName</h6>
+                                            <small class="text-muted">@item.CategoryName</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <h6 class="mb-0 text-primary">₺@item.Price.ToString("F2")</h6>
+                                            <small class="text-muted">@item.CreatedDate.ToString("dd MMM")</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Henüz ürün eklenmemiş</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Distribution Chart -->
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="mb-0">Kategori Dağılımı</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Category Distribution Chart
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        const categoryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.CategoryNames)),
+                datasets: [{
+                    label: 'Ürün Sayısı',
+                    data: @Html.Raw(Json.Serialize(Model.CategoryItemCounts)),
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(245, 87, 108, 0.8)',
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(250, 112, 154, 0.8)',
+                        'rgba(254, 225, 64, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(102, 126, 234)',
+                        'rgb(245, 87, 108)',
+                        'rgb(79, 172, 254)',
+                        'rgb(250, 112, 154)',
+                        'rgb(254, 225, 64)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        // Auto refresh stats every 30 seconds
+        setInterval(function() {
+            fetch('/Admin/Home/GetLatestStats')
+                .then(response => response.json())
+                .then(data => {
+                    // Update stats if needed
+                    console.log('Stats refreshed');
+                });
+        }, 30000);
+    </script>
+}

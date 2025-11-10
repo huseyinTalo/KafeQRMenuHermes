@@ -15,5 +15,6 @@ namespace KafeQRMenu.BLogic.DTOs.MenuItemDTOs
         public int SortOrder { get; set; }
         public Guid MenuCategoryId { get; set; }
         public string MenuCategoryName { get; set; }
+        public Guid? ImageFileId { get; set; }
     }
 }
