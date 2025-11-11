@@ -12,5 +12,6 @@ namespace KafeQRMenu.DataAccess.Repositories.MenuRepositories
     {
         Task<Menu?> GetByIdWithCategoriesAsync(Guid menuId);
         Task<List<Menu>> GetAllWithDetailsAsync(Guid cafeId);
+        Task<List<Menu>> GetAllWithCafeAsync();
     }
 }

@@ -102,6 +102,15 @@ namespace KafeQRMenu.BLogic.Services.MenuService
                     }
                 }
 
+                foreach(var item in menuDto.Categories)
+                {
+                    if(item.ImageFileId.HasValue && item.ImageFileId != Guid.Empty)
+                    {
+                        var imageData = await _imageFileRepository.GetById(item.ImageFileId ?? Guid.Empty);
+                        item.ImageFileBytes = imageData.ImageByteFile;
+                    }
+                }
+
                 return new SuccessDataResult<MenuDTO>(menuDto, "Menü detayları getirildi.");
             }
             catch (Exception ex)
@@ -633,6 +642,191 @@ namespace KafeQRMenu.BLogic.Services.MenuService
             {
                 _logger.LogError(ex, "Menu silme işlemi başarısız oldu. MenuId: {MenuId}", menuDto.MenuId);
                 return new ErrorResult($"Beklenmeyen bir hata oluştu: {ex.Message}");
+            }
+        }
+
+        // MenuService.cs içine ekle
+
+        public async Task<IResult> AssignCategoryToMenuAsync(Guid menuId, Guid categoryId)
+        {
+            _logger.LogInformation("Menüye kategori atama işlemi başlatıldı. MenuId: {MenuId}, CategoryId: {CategoryId}",
+                menuId, categoryId);
+
+            try
+            {
+                if (menuId == Guid.Empty)
+                {
+                    _logger.LogWarning("Geçersiz MenuId.");
+                    return new ErrorResult("Geçersiz menü bilgisi.");
+                }
+
+                if (categoryId == Guid.Empty)
+                {
+                    _logger.LogWarning("Geçersiz CategoryId.");
+                    return new ErrorResult("Geçersiz kategori bilgisi.");
+                }
+
+                // Get Menu with categories
+                _logger.LogDebug("Menu getiriliyor. MenuId: {MenuId}", menuId);
+                var menu = await _menuRepository.GetByIdWithCategoriesAsync(menuId);
+
+                if (menu == null)
+                {
+                    _logger.LogWarning("Menu bulunamadı. MenuId: {MenuId}", menuId);
+                    return new ErrorResult("Menü bulunamadı.");
+                }
+
+                // Get Category
+                _logger.LogDebug("Category getiriliyor. CategoryId: {CategoryId}", categoryId);
+                var category = await _menuCategoryRepository.GetById(categoryId);
+
+                if (category == null)
+                {
+                    _logger.LogWarning("Kategori bulunamadı. CategoryId: {CategoryId}", categoryId);
+                    return new ErrorResult("Kategori bulunamadı.");
+                }
+
+                // Validate: Category must belong to same Cafe
+                if (category.CafeId != menu.CafeId)
+                {
+                    _logger.LogWarning("Kategori farklı bir cafe'ye ait. MenuCafeId: {MenuCafeId}, CategoryCafeId: {CategoryCafeId}",
+                        menu.CafeId, category.CafeId);
+                    return new ErrorResult("Bu kategori farklı bir cafe'ye aittir.");
+                }
+
+                // Check if already assigned
+                if (menu.CategoriesOfMenu.Any(c => c.Id == categoryId))
+                {
+                    _logger.LogWarning("Kategori zaten bu menüde mevcut. CategoryId: {CategoryId}", categoryId);
+                    return new ErrorResult("Bu kategori zaten menüde mevcut.");
+                }
+
+                // Add category to menu
+                _logger.LogDebug("Kategori menüye ekleniyor.");
+                menu.CategoriesOfMenu.Add(category);
+
+                await _menuRepository.UpdateAsync(menu);
+                var result = await _menuRepository.SaveChangeAsync();
+
+                if (result <= 0)
+                {
+                    _logger.LogError("Kategori menüye eklenemedi.");
+                    return new ErrorResult("Kategori menüye eklenirken bir hata oluştu.");
+                }
+
+                _logger.LogInformation("Kategori başarıyla menüye eklendi. MenuId: {MenuId}, CategoryId: {CategoryId}",
+                    menuId, categoryId);
+
+                return new SuccessResult("Kategori başarıyla menüye eklendi.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kategori menüye eklenirken hata oluştu. MenuId: {MenuId}, CategoryId: {CategoryId}",
+                    menuId, categoryId);
+                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
+            }
+        }
+
+        public async Task<IResult> RemoveCategoryFromMenuAsync(Guid menuId, Guid categoryId)
+        {
+            _logger.LogInformation("Menüden kategori çıkarma işlemi başlatıldı. MenuId: {MenuId}, CategoryId: {CategoryId}",
+                menuId, categoryId);
+
+            try
+            {
+                if (menuId == Guid.Empty)
+                {
+                    _logger.LogWarning("Geçersiz MenuId.");
+                    return new ErrorResult("Geçersiz menü bilgisi.");
+                }
+
+                if (categoryId == Guid.Empty)
+                {
+                    _logger.LogWarning("Geçersiz CategoryId.");
+                    return new ErrorResult("Geçersiz kategori bilgisi.");
+                }
+
+                // Get Menu with categories
+                _logger.LogDebug("Menu getiriliyor. MenuId: {MenuId}", menuId);
+                var menu = await _menuRepository.GetByIdWithCategoriesAsync(menuId);
+
+                if (menu == null)
+                {
+                    _logger.LogWarning("Menu bulunamadı. MenuId: {MenuId}", menuId);
+                    return new ErrorResult("Menü bulunamadı.");
+                }
+
+                // Find category in menu
+                var categoryToRemove = menu.CategoriesOfMenu.FirstOrDefault(c => c.Id == categoryId);
+
+                if (categoryToRemove == null)
+                {
+                    _logger.LogWarning("Kategori bu menüde bulunamadı. CategoryId: {CategoryId}", categoryId);
+                    return new ErrorResult("Bu kategori menüde bulunamadı.");
+                }
+
+                // Remove category from menu (only removes the relationship, not the category itself)
+                _logger.LogDebug("Kategori menüden çıkarılıyor.");
+                menu.CategoriesOfMenu.Remove(categoryToRemove);
+
+                await _menuRepository.UpdateAsync(menu);
+                var result = await _menuRepository.SaveChangeAsync();
+
+                if (result <= 0)
+                {
+                    _logger.LogError("Kategori menüden çıkarılamadı.");
+                    return new ErrorResult("Kategori menüden çıkarılırken bir hata oluştu.");
+                }
+
+                _logger.LogInformation("Kategori başarıyla menüden çıkarıldı (kategori silinmedi). MenuId: {MenuId}, CategoryId: {CategoryId}",
+                    menuId, categoryId);
+
+                return new SuccessResult("Kategori menüden çıkarıldı (kategori kendisi silinmedi).");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kategori menüden çıkarılırken hata oluştu. MenuId: {MenuId}, CategoryId: {CategoryId}",
+                    menuId, categoryId);
+                return new ErrorResult($"Bir hata oluştu: {ex.Message}");
+            }
+        }
+
+        public async Task<IDataResult<MenuDTO>> GetActiveByCafeIdAsync(Guid cafeId)
+        {
+            try
+            {
+                if (cafeId == Guid.Empty)
+                {
+                    return new ErrorDataResult<MenuDTO>(null, "Geçersiz Kafe Id.");
+                }
+
+                var activeMenu = await _menuRepository.GetAsync(
+                    x => x.CafeId == cafeId && x.IsActive == true
+                );
+
+                if (activeMenu == null)
+                {
+                    return new ErrorDataResult<MenuDTO>(null, "Aktif menü bulunamadı.");
+                }
+
+                var menuDto = activeMenu.Adapt<MenuDTO>();
+
+                // Load image bytes if exists
+                if (menuDto.ImageFileId.HasValue && menuDto.ImageFileId.Value != Guid.Empty)
+                {
+                    var imageFile = await _imageFileRepository.GetById(menuDto.ImageFileId.Value);
+                    if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                    {
+                        menuDto.ImageFileBytes = imageFile.ImageByteFile;
+                    }
+                }
+
+                return new SuccessDataResult<MenuDTO>(menuDto, "Aktif menü getirildi.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetActiveByCafeIdAsync metodunda hata oluştu. CafeId: {CafeId}", cafeId);
+                return new ErrorDataResult<MenuDTO>(null, $"Bir hata oluştu: {ex.Message}");
             }
         }
     }

@@ -1,0 +1,239 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.ViewModels.Menu.CategoryAddToMenuViewModel
+
+@{
+    ViewData["Title"] = "Kategori Ekle";
+    ViewData["BreadcrumbTitle"] = "Kategori Ekle";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="fade-in">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Menüler</a></li>
+            <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.MenuId">@Model.MenuName</a></li>
+            <li class="breadcrumb-item active">Kategori Ekle</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 pt-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle me-2 text-primary"></i>
+                        Menüye Kategori Ekle
+                    </h4>
+                    <p class="text-muted mb-0 mt-2">
+                        Mevcut kategorilerden birini seçin veya yeni bir kategori oluşturun
+                    </p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="AddCategory" method="post" enctype="multipart/form-data" id="addCategoryForm">
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.MenuId)
+                        @Html.HiddenFor(m => m.MenuName)
+                        @Html.HiddenFor(m => m.CafeId)
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-circle me-2"></i>
+                                <strong>Hata!</strong> Lütfen formu kontrol edin.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        <!-- OPTION 1: Select Existing Category -->
+                        <div class="card mb-4 option-card" id="existingCategoryOption">
+                            <div class="card-header bg-light">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="optionChoice" id="optionExisting" value="existing" checked>
+                                    <label class="form-check-label fw-bold" for="optionExisting">
+                                        <i class="bi bi-list-ul me-2"></i>Mevcut Kategorilerden Seç
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                @if (Model.AvailableCategories != null && Model.AvailableCategories.Any())
+                                {
+                                    <div class="form-group">
+                                        <label asp-for="SelectedExistingCategoryId" class="form-label">
+                                            Kategori Seçin
+                                        </label>
+                                        <select asp-for="SelectedExistingCategoryId"
+                                                asp-items="Model.AvailableCategories"
+                                                class="form-select form-select-lg">
+                                            <option value="">-- Kategori Seçin --</option>
+                                        </select>
+                                        <span asp-validation-for="SelectedExistingCategoryId" class="text-danger"></span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-info mb-0">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        Menüye eklenebilecek mevcut kategori bulunmamaktadır. Yeni kategori oluşturabilirsiniz.
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- OPTION 2: Create New Category -->
+                        <div class="card mb-4 option-card" id="newCategoryOption">
+                            <div class="card-header bg-light">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="optionChoice" id="optionNew" value="new">
+                                    <label class="form-check-label fw-bold" for="optionNew">
+                                        <i class="bi bi-plus-circle me-2"></i>Yeni Kategori Oluştur
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <label asp-for="NewCategoryName" class="form-label required">Kategori Adı</label>
+                                        <input asp-for="NewCategoryName" class="form-control" placeholder="Örn: İçecekler, Ana Yemekler...">
+                                        <span asp-validation-for="NewCategoryName" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label asp-for="NewCategoryDescription" class="form-label">Açıklama</label>
+                                        <textarea asp-for="NewCategoryDescription" class="form-control" rows="3"
+                                                  placeholder="Kategori hakkında kısa açıklama..."></textarea>
+                                        <span asp-validation-for="NewCategoryDescription" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label asp-for="NewCategorySortOrder" class="form-label">Sıra Numarası</label>
+                                        <input asp-for="NewCategorySortOrder" type="number" class="form-control" min="0" max="9999">
+                                        <span asp-validation-for="NewCategorySortOrder" class="text-danger"></span>
+                                        <small class="form-text text-muted">Kategorinin menüde görüneceği sıra</small>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label asp-for="ImageFile" class="form-label">Kategori Görseli</label>
+                                        <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" id="imageFileInput">
+                                        <span asp-validation-for="ImageFile" class="text-danger"></span>
+                                        <small class="form-text text-muted">JPG, PNG, GIF, WEBP (Max 5MB)</small>
+                                    </div>
+
+                                    <div class="col-md-12" id="imagePreviewContainer" style="display: none;">
+                                        <label class="form-label">Önizleme</label>
+                                        <div class="border rounded p-2">
+                                            <img id="imagePreview" src="#" alt="Preview" class="img-fluid rounded" style="max-height: 200px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Details" asp-route-id="@Model.MenuId" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Geri Dön
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Kategori Ekle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .option-card {
+            transition: all 0.3s ease;
+            border: 2px solid #dee2e6;
+        }
+
+            .option-card.active {
+                border-color: #667eea;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            }
+
+            .option-card .card-body {
+                transition: opacity 0.3s ease;
+            }
+
+            .option-card:not(.active) .card-body {
+                opacity: 0.5;
+                pointer-events: none;
+            }
+
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+    </style>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Option card toggle
+            $('input[name="optionChoice"]').on('change', function() {
+                $('.option-card').removeClass('active');
+                if ($(this).val() === 'existing') {
+                    $('#existingCategoryOption').addClass('active');
+                    // Clear new category fields
+                    $('#NewCategoryName').val('');
+                    $('#NewCategoryDescription').val('');
+                    $('#imageFileInput').val('');
+                    $('#imagePreviewContainer').hide();
+                } else {
+                    $('#newCategoryOption').addClass('active');
+                    // Clear existing selection
+                    $('#SelectedExistingCategoryId').val('');
+                }
+            });
+
+            // Initialize active option
+            $('#existingCategoryOption').addClass('active');
+
+            // Image preview
+            $('#imageFileInput').on('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#imagePreview').attr('src', e.target.result);
+                        $('#imagePreviewContainer').fadeIn();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#imagePreviewContainer').hide();
+                }
+            });
+
+            // Form validation before submit
+            $('#addCategoryForm').on('submit', function(e) {
+                const optionChoice = $('input[name="optionChoice"]:checked').val();
+
+                if (optionChoice === 'existing') {
+                    const selectedCategory = $('#SelectedExistingCategoryId').val();
+                    if (!selectedCategory) {
+                        e.preventDefault();
+                        alert('Lütfen bir kategori seçin veya yeni kategori oluşturun.');
+                        return false;
+                    }
+                } else if (optionChoice === 'new') {
+                    const newCategoryName = $('#NewCategoryName').val().trim();
+                    if (!newCategoryName) {
+                        e.preventDefault();
+                        alert('Lütfen yeni kategori adını girin.');
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
+}

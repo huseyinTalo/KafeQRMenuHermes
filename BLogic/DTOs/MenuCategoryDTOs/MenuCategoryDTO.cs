@@ -18,5 +18,6 @@ namespace KafeQRMenu.BLogic.DTOs.MenuCategoryDTOs
         public byte[] ImageFileBytes { get; set; }
         public DateTime CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
+        public int ItemCount { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 
 namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
 {
@@ -221,5 +222,89 @@ namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
         }
 
         public bool IsValid => ValidationErrors.Count == 0;
+    }
+
+    /// <summary>
+    /// ViewModel for adding a category to menu - either existing or new
+    /// </summary>
+    public class CategoryAddToMenuViewModel
+    {
+        // Navigation context
+        public Guid MenuId { get; set; }
+        public string MenuName { get; set; }
+        public Guid CafeId { get; set; }
+
+        // OPTION 1: Select existing category
+        [Display(Name = "Mevcut Kategorilerden Seç")]
+        public Guid? SelectedExistingCategoryId { get; set; }
+        public SelectList? AvailableCategories { get; set; }
+
+        // OPTION 2: Create new category
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Kategori adı 2-100 karakter arasında olmalıdır.")]
+        [Display(Name = "Yeni Kategori Adı")]
+        public string? NewCategoryName { get; set; }
+
+        [StringLength(500, ErrorMessage = "Açıklama en fazla 500 karakter olabilir.")]
+        [Display(Name = "Açıklama (Yeni Kategori İçin)")]
+        public string? NewCategoryDescription { get; set; }
+
+        [Range(0, 9999, ErrorMessage = "Sıra numarası 0-9999 arasında olmalıdır.")]
+        [Display(Name = "Sıra (Yeni Kategori İçin)")]
+        public int NewCategorySortOrder { get; set; } = 0;
+
+        [Display(Name = "Resim (Yeni Kategori İçin)")]
+        public IFormFile? ImageFile { get; set; }
+
+        // Navigation
+        public string Breadcrumb => $"Menüler / {MenuName} / Kategori Ekle";
+
+        // Validation
+        public List<string> ValidationErrors { get; set; } = new();
+
+        public void Validate()
+        {
+            ValidationErrors.Clear();
+
+            bool hasExistingSelection = SelectedExistingCategoryId.HasValue &&
+                                        SelectedExistingCategoryId.Value != Guid.Empty;
+            bool hasNewCategoryName = !string.IsNullOrWhiteSpace(NewCategoryName);
+
+            if (!hasExistingSelection && !hasNewCategoryName)
+            {
+                ValidationErrors.Add("Lütfen mevcut bir kategori seçin VEYA yeni kategori adı girin.");
+            }
+
+            if (hasExistingSelection && hasNewCategoryName)
+            {
+                ValidationErrors.Add("Hem mevcut kategori seçemez hem de yeni kategori yaratamazsınız. Birini seçin.");
+            }
+
+            if (hasNewCategoryName)
+            {
+                if (NewCategoryName.Length < 2)
+                {
+                    ValidationErrors.Add("Yeni kategori adı en az 2 karakter olmalıdır.");
+                }
+
+                if (ImageFile != null && ImageFile.Length > 5 * 1024 * 1024) // 5MB
+                {
+                    ValidationErrors.Add("Resim boyutu 5MB'dan küçük olmalıdır.");
+                }
+
+                if (ImageFile != null)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                    var extension = Path.GetExtension(ImageFile.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(extension))
+                    {
+                        ValidationErrors.Add("Sadece resim dosyaları yüklenebilir (jpg, jpeg, png, gif, webp).");
+                    }
+                }
+            }
+        }
+
+        public bool IsValid => ValidationErrors.Count == 0;
+        public bool IsCreatingNew => !string.IsNullOrWhiteSpace(NewCategoryName);
+        public bool IsSelectingExisting => SelectedExistingCategoryId.HasValue && SelectedExistingCategoryId.Value != Guid.Empty;
     }
 }

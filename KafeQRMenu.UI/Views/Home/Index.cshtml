@@ -3,142 +3,159 @@
     ViewData["Title"] = Model.Cafe?.CafeName ?? "Menü";
 }
 
-<div class="menu-container">
-    <!-- Cafe Header -->
-    <header class="cafe-header">
-        <div class="header-overlay"></div>
-        <div class="cafe-info">
-            <div class="cafe-logo">
-                <i class="bi bi-shop"></i>
+<div class="menu-wrapper">
+    <div class="menu-container">
+        <!-- Elegant Header -->
+        <header class="menu-header">
+            <div class="header-decoration"></div>
+            <div class="header-content">
+                <div class="restaurant-brand">
+                    <div class="restaurant-emblem">
+                        <i class="bi bi-cup-hot-fill"></i>
+                    </div>
+                    <h1 class="restaurant-name">@Model.Cafe.CafeName</h1>
+                    @if (!string.IsNullOrEmpty(Model.Cafe.Description))
+                    {
+                        <p class="restaurant-tagline">@Model.Cafe.Description</p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Cafe.Address))
+                    {
+                        <div class="restaurant-details">
+                            <span class="detail-item">
+                                <i class="bi bi-geo-alt"></i> @Model.Cafe.Address
+                            </span>
+                        </div>
+                    }
+                </div>
             </div>
-            <h1 class="cafe-name">@Model.Cafe.CafeName</h1>
-            @if (!string.IsNullOrEmpty(Model.Cafe.Description))
-            {
-                <p class="cafe-description">@Model.Cafe.Description</p>
-            }
-            @if (!string.IsNullOrEmpty(Model.Cafe.Address))
-            {
-                <p class="cafe-address">
-                    <i class="bi bi-geo-alt-fill"></i> @Model.Cafe.Address
-                </p>
-            }
-            <div class="header-wave">
-                <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25"></path>
-                    <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5"></path>
-                    <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"></path>
-                </svg>
+            <div class="header-divider">
+                <div class="divider-ornament"></div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Search Bar -->
-    <div class="search-section">
-        <div class="search-wrapper">
-            <i class="bi bi-search search-icon"></i>
-            <input type="text"
-                   id="searchInput"
-                   class="search-input"
-                   placeholder="Ürün ara...">
-            <button class="search-clear" id="searchClear" style="display: none;">
-                <i class="bi bi-x"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Categories Navigation -->
-    @if (Model.Categories != null && Model.Categories.Any())
-    {
-        <nav class="categories-nav" id="categoriesNav">
-            <div class="categories-scroll">
-                <button class="category-chip active" data-category="all">
-                    <i class="bi bi-grid-fill"></i>
-                    <span>Tümü</span>
-                    <span class="chip-badge">@Model.Products?.Count</span>
-                </button>
-                @foreach (var category in Model.Categories.OrderBy(c => c.SortOrder))
-                {
-                    var categoryItemCount = Model.Products?.Count(p => p.MenuCategoryId == category.MenuCategoryId) ?? 0;
-                    <button class="category-chip" data-category="@category.MenuCategoryId">
-                        @if (!string.IsNullOrEmpty(category.ImageFileBase64))
-                        {
-                            <img src="data:image/jpeg;base64,@category.ImageFileBase64" alt="@category.MenuCategoryName" class="chip-icon">
-                        }
-                        else
-                        {
-                            <i class="bi bi-bookmark-fill"></i>
-                        }
-                        <span>@category.MenuCategoryName</span>
-                        <span class="chip-badge">@categoryItemCount</span>
+        <!-- Search Bar -->
+        <div class="search-section">
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text"
+                           id="searchInput"
+                           placeholder="Menüde ara..."
+                           class="search-field">
+                    <button class="clear-search" id="clearSearch" style="display: none;">
+                        <i class="bi bi-x-circle"></i>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <nav class="category-tabs">
+            <div class="tabs-container">
+                @if (Model.Categories != null && Model.Categories.Any())
+                {
+                    @foreach (var category in Model.Categories.OrderBy(c => c.SortOrder))
+                    {
+                        <button class="tab-button" data-category="@category.MenuCategoryId">
+                            @category.MenuCategoryName
+                        </button>
+                    }
                 }
             </div>
         </nav>
-    }
 
-    <!-- Menu Items Grid -->
-    <main class="menu-items">
-        @if (Model.Products != null && Model.Products.Any())
-        {
-            <div class="items-grid" id="menuItems">
-                @foreach (var product in Model.Products.OrderBy(p => p.SortOrder))
+        <!-- Menu Content -->
+        <main class="menu-board">
+            @if (Model.Products != null && Model.Products.Any() && Model.Categories != null && Model.Categories.Any())
+            {
+                @foreach (var category in Model.Categories.OrderBy(c => c.SortOrder))
                 {
-                    <article class="menu-card" data-category="@product.MenuCategoryId" data-name="@product.MenuItemName.ToLower()" data-price="@product.Price">
-                        @if (!string.IsNullOrEmpty(product.ImageFileBase64))
-                        {
-                            <div class="card-image">
-                                <img src="data:image/jpeg;base64,@product.ImageFileBase64"
-                                     alt="@product.MenuItemName"
-                                     loading="lazy">
-                                <div class="image-overlay"></div>
-                            </div>
-                        }
-                        <div class="card-content">
-                            <div class="card-header">
-                                <h3 class="card-title">@product.MenuItemName</h3>
-                                <div class="card-price-badge">
-                                    <span class="price-currency">₺</span>
-                                    <span class="price-amount">@product.Price.ToString("N2")</span>
+                    var categoryItems = Model.Products
+                    .Where(p => p.MenuCategoryId == category.MenuCategoryId)
+                    .OrderBy(p => p.SortOrder)
+                    .ToList();
+
+                    @if (categoryItems.Any())
+                    {
+                        <section class="menu-category" id="category-@category.MenuCategoryId">
+                            <div class="category-header" data-category-id="@category.MenuCategoryId">
+                                <div class="category-title-wrapper">
+                                    <h2 class="category-name">
+                                        <span class="category-text">@category.MenuCategoryName</span>
+                                        <span class="category-line"></span>
+                                    </h2>
+                                    @if (!string.IsNullOrEmpty(category.Description))
+                                    {
+                                        <p class="category-subtitle">@category.Description</p>
+                                    }
                                 </div>
+                                <button class="category-toggle" aria-label="Toggle category">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
                             </div>
-                            @if (!string.IsNullOrEmpty(product.Description))
-                            {
-                                <p class="card-description">@product.Description</p>
-                            }
-                            <div class="card-footer">
-                                <span class="category-tag">
-                                    <i class="bi bi-tag-fill"></i>
-                                    @(Model.Categories?.FirstOrDefault(c => c.MenuCategoryId == product.MenuCategoryId)?.MenuCategoryName ?? "Genel")
-                                </span>
+
+                            <div class="menu-items">
+                                @foreach (var product in categoryItems)
+                                {
+                                    <article class="menu-entry" data-name="@product.MenuItemName.ToLower()">
+                                        <div class="entry-content">
+                                            @if (!string.IsNullOrEmpty(product.ImageFileBase64))
+                                            {
+                                                <div class="entry-image">
+                                                    <img src="data:image/jpeg;base64,@product.ImageFileBase64"
+                                                         alt="@product.MenuItemName"
+                                                         loading="lazy">
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="entry-image placeholder">
+                                                    <i class="bi bi-image"></i>
+                                                </div>
+                                            }
+
+                                            <div class="entry-details">
+                                                <h3 class="entry-title">@product.MenuItemName</h3>
+                                                @if (!string.IsNullOrEmpty(product.Description))
+                                                {
+                                                    <p class="entry-description">@product.Description</p>
+                                                }
+                                            </div>
+
+                                            <div class="entry-price">
+                                                <span class="price-dots"></span>
+                                                <span class="price-amount">₺@product.Price.ToString("N0")</span>
+                                            </div>
+                                        </div>
+                                    </article>
+                                }
                             </div>
-                        </div>
-                    </article>
+                        </section>
+                    }
                 }
-            </div>
 
-            <!-- No Results Message -->
-            <div class="no-results" id="noResults" style="display: none;">
-                <i class="bi bi-search"></i>
-                <h3>Sonuç bulunamadı</h3>
-                <p>Aradığınız kriterlere uygun ürün bulunamadı.</p>
-            </div>
-        }
-        else
-        {
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="bi bi-inbox"></i>
+                <!-- No Results -->
+                <div class="no-results" id="noResults" style="display: none;">
+                    <i class="bi bi-search"></i>
+                    <h3>Sonuç Bulunamadı</h3>
+                    <p>Aradığınız ürün menüde bulunmuyor</p>
                 </div>
-                <h3>Henüz ürün eklenmemiş</h3>
-                <p>Menüde gösterilecek ürün bulunmuyor.</p>
-            </div>
-        }
-    </main>
+            }
+            else
+            {
+                <div class="empty-menu">
+                    <i class="bi bi-journal-x"></i>
+                    <h3>Menü Hazırlanıyor</h3>
+                    <p>Yakında hizmetinizde olacağız</p>
+                </div>
+            }
+        </main>
 
-    <!-- Back to Top Button -->
-    <button class="back-to-top" id="backToTop" style="display: none;">
-        <i class="bi bi-arrow-up"></i>
-    </button>
+        <!-- Back to Top -->
+        <button class="scroll-top" id="scrollTop">
+            <i class="bi bi-arrow-up"></i>
+        </button>
+    </div>
 </div>
 
 @section Styles {
@@ -150,592 +167,704 @@
         }
 
         :root {
-            --primary: #667eea;
-            --primary-dark: #5568d3;
-            --secondary: #764ba2;
-            --accent: #f093fb;
-            --success: #4ade80;
-            --warning: #fbbf24;
-            --danger: #f87171;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --border: #e2e8f0;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            /* Restaurant Menu Colors */
+            --menu-primary: #8B4513; /* Saddle Brown */
+            --menu-secondary: #D2691E; /* Chocolate */
+            --menu-accent: #CD853F; /* Peru */
+            --menu-gold: #DAA520; /* Goldenrod */
+            /* Text Colors */
+            --text-primary: #2C1810;
+            --text-secondary: #5D4E37;
+            --text-muted: #8B7355;
+            /* Background Colors */
+            --bg-cream: #FFF8F0;
+            --bg-white: #FFFFFF;
+            --bg-light: #FAF6F2;
+            --bg-tan: #F5E6D3;
+            /* UI Colors */
+            --border-light: #E8DDD5;
+            --border-medium: #D4C4B0;
+            --shadow-color: rgba(139, 69, 19, 0.1);
+            /* Transitions */
+            --transition: all 0.3s ease;
+            --transition-fast: all 0.15s ease;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--dark);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg-cream);
+            color: var(--text-primary);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ========== Menu Container ========== */
+        .menu-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--bg-cream) 0%, var(--bg-light) 100%);
         }
 
         .menu-container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: var(--light);
-            min-height: 100vh;
-            position: relative;
+            background: var(--bg-white);
+            box-shadow: 0 0 50px var(--shadow-color);
         }
 
-        /* ========== Cafe Header ========== */
-        .cafe-header {
-            position: relative;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 3rem 1.5rem 6rem;
+        /* ========== Header ========== */
+        .menu-header {
+            background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-tan) 100%);
+            padding: 3rem 2rem 2rem;
             text-align: center;
-            overflow: hidden;
+            position: relative;
+            border-bottom: 3px double var(--border-medium);
         }
 
-        .header-overlay {
+        .header-decoration {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
+            height: 8px;
+            background: repeating-linear-gradient( 90deg, var(--menu-primary) 0px, var(--menu-primary) 10px, var(--menu-gold) 10px, var(--menu-gold) 20px );
         }
 
-        .cafe-info {
-            position: relative;
-            z-index: 1;
-        }
-
-        .cafe-logo {
+        .restaurant-emblem {
             width: 80px;
             height: 80px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            display: inline-flex;
+            margin: 0 auto 1rem;
+            background: var(--menu-primary);
+            border-radius: 50%;
+            display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--menu-gold);
             font-size: 2.5rem;
-            margin-bottom: 1rem;
-            box-shadow: var(--shadow-lg);
-            animation: float 3s ease-in-out infinite;
+            box-shadow: 0 4px 15px var(--shadow-color);
         }
 
-        .cafe-name {
+        .restaurant-name {
             font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.75rem;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            letter-spacing: -0.02em;
+            font-weight: 400;
+            color: var(--menu-primary);
+            margin-bottom: 0.5rem;
+            font-family: 'Playfair Display', 'Georgia', serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
-        .cafe-description {
-            font-size: 1.1rem;
-            opacity: 0.95;
-            margin-bottom: 0.75rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+        .restaurant-tagline {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 1.5rem;
         }
 
-        .cafe-address {
-            font-size: 1rem;
-            opacity: 0.9;
-            display: inline-flex;
+        .restaurant-details {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
         }
 
-        .header-wave {
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            overflow: hidden;
-            line-height: 0;
-        }
-
-            .header-wave svg {
-                position: relative;
-                display: block;
-                width: calc(100% + 1.3px);
-                height: 60px;
+            .detail-item i {
+                color: var(--menu-secondary);
             }
 
-            .header-wave path {
-                fill: var(--light);
+        .header-divider {
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        .divider-ornament {
+            width: 100px;
+            height: 2px;
+            background: var(--menu-primary);
+            margin: 0 auto;
+            position: relative;
+        }
+
+            .divider-ornament::before,
+            .divider-ornament::after {
+                content: '◆';
+                position: absolute;
+                top: -10px;
+                color: var(--menu-gold);
+                font-size: 1.25rem;
+            }
+
+            .divider-ornament::before {
+                left: -20px;
+            }
+
+            .divider-ornament::after {
+                right: -20px;
             }
 
         /* ========== Search Section ========== */
         .search-section {
+            background: var(--bg-white);
             padding: 1.5rem;
-            background: white;
+            border-bottom: 1px solid var(--border-light);
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: var(--shadow);
         }
 
-        .search-wrapper {
+        .search-container {
             max-width: 600px;
             margin: 0 auto;
+        }
+
+        .search-box {
             position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--bg-light);
+            border: 1px solid var(--border-light);
+            border-radius: 30px;
+            padding: 0.75rem 1.25rem;
+            transition: var(--transition);
         }
 
-        .search-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray);
-            font-size: 1.2rem;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.875rem 3rem 0.875rem 3rem;
-            border: 2px solid var(--border);
-            border-radius: 50px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: var(--light);
-        }
-
-            .search-input:focus {
-                outline: none;
-                border-color: var(--primary);
-                background: white;
-                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            .search-box:focus-within {
+                border-color: var(--menu-secondary);
+                box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
             }
 
-        .search-clear {
-            position: absolute;
-            right: 0.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--gray);
-            color: white;
+            .search-box i {
+                color: var(--text-muted);
+                margin-right: 0.75rem;
+            }
+
+        .search-field {
+            flex: 1;
             border: none;
+            background: transparent;
+            outline: none;
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .clear-search {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            transition: var(--transition-fast);
+        }
+
+            .clear-search:hover {
+                color: var(--menu-secondary);
+            }
+
+        /* ========== Category Tabs ========== */
+        .category-tabs {
+            background: var(--bg-light);
+            border-bottom: 2px solid var(--border-medium);
+            padding: 0 1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-medium) transparent;
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 0;
+            min-width: max-content;
+        }
+
+        .tab-button {
+            padding: 0.625rem 1.5rem;
+            background: transparent;
+            border: 2px solid transparent;
+            border-radius: 25px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+            .tab-button:hover {
+                background: var(--bg-white);
+                border-color: var(--menu-secondary);
+                color: var(--menu-primary);
+            }
+
+            .tab-button.active {
+                background: var(--menu-primary);
+                color: var(--bg-white);
+                border-color: var(--menu-primary);
+            }
+
+        /* ========== Menu Board ========== */
+        .menu-board {
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* ========== Menu Category ========== */
+        .menu-category {
+            margin-bottom: 3rem;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            cursor: pointer;
+            user-select: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: var(--transition-fast);
+        }
+
+            .category-header:hover {
+                background: var(--bg-light);
+            }
+
+        .category-title-wrapper {
+            flex: 1;
+        }
+
+        .category-toggle {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tan);
+            border: 1px solid var(--border-light);
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-            .search-clear:hover {
-                background: var(--dark);
-                transform: translateY(-50%) scale(1.1);
-            }
-
-        /* ========== Categories Navigation ========== */
-        .categories-nav {
-            background: white;
-            padding: 1rem 0;
-            position: sticky;
-            top: 81px;
-            z-index: 99;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .categories-scroll {
-            display: flex;
-            gap: 0.75rem;
-            padding: 0 1.5rem;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-            .categories-scroll::-webkit-scrollbar {
-                display: none;
-            }
-
-        .category-chip {
+            transition: var(--transition);
+            color: var(--text-secondary);
+            font-size: 1.125rem;
             flex-shrink: 0;
-            display: inline-flex;
+        }
+
+            .category-toggle:hover {
+                background: var(--menu-secondary);
+                color: var(--bg-white);
+            }
+
+            .category-toggle i {
+                transition: transform 0.3s ease;
+            }
+
+        .menu-category.collapsed .category-toggle i {
+            transform: rotate(-90deg);
+        }
+
+        .menu-category.collapsed .category-header {
+            background: var(--bg-tan);
+            margin-bottom: 0.5rem;
+        }
+
+        .category-name {
+            display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1rem;
-            background: var(--light);
-            border: 2px solid transparent;
-            border-radius: 50px;
-            font-size: 0.925rem;
-            font-weight: 600;
-            color: var(--dark);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            white-space: nowrap;
+            margin-bottom: 0.5rem;
+            position: relative;
         }
 
-            .category-chip i {
-                font-size: 1rem;
-            }
-
-        .chip-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            object-fit: cover;
+        .category-text {
+            font-size: 1.75rem;
+            font-weight: 400;
+            color: var(--menu-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Playfair Display', 'Georgia', serif;
         }
 
-        .chip-badge {
-            background: rgba(0, 0, 0, 0.1);
-            color: var(--dark);
-            padding: 0.125rem 0.5rem;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 700;
+        .category-line {
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, var(--menu-gold) 0%, transparent 100%);
+            margin-left: 1rem;
         }
 
-        .category-chip:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+        .category-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 0.5rem;
         }
-
-            .category-chip:hover .chip-badge {
-                background: rgba(255, 255, 255, 0.25);
-                color: white;
-            }
-
-        .category-chip.active {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border-color: transparent;
-            box-shadow: var(--shadow);
-        }
-
-            .category-chip.active .chip-badge {
-                background: rgba(255, 255, 255, 0.25);
-                color: white;
-            }
 
         /* ========== Menu Items ========== */
         .menu-items {
-            padding: 2rem 1.5rem 4rem;
-        }
-
-        .items-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .menu-card {
-            background: white;
-            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
             overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            animation: fadeInUp 0.6s ease forwards;
-            opacity: 0;
+            max-height: 3000px;
+            opacity: 1;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
         }
 
-            .menu-card:hover {
-                transform: translateY(-8px);
-                box-shadow: var(--shadow-xl);
+        .menu-category.collapsed .menu-items {
+            max-height: 0;
+            opacity: 0;
+            gap: 0;
+        }
+
+        /* ========== Menu Entry (Full Width Horizontal Layout) ========== */
+        .menu-entry {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            transition: var(--transition);
+            cursor: pointer;
+            width: 100%;
+            position: relative;
+        }
+
+            /* Subtle alternating backgrounds for better readability */
+            .menu-entry:nth-child(even) {
+                background: var(--bg-light);
             }
 
-        .card-image {
-            position: relative;
+            /* Add a subtle left border accent */
+            .menu-entry::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 4px;
+                background: transparent;
+                border-radius: 8px 0 0 8px;
+                transition: var(--transition);
+            }
+
+            .menu-entry:hover::before {
+                background: var(--menu-secondary);
+            }
+
+            .menu-entry:hover {
+                box-shadow: 0 4px 12px var(--shadow-color);
+                transform: translateY(-2px);
+                border-color: var(--menu-secondary);
+            }
+
+        .entry-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             width: 100%;
-            height: 200px;
-            overflow: hidden;
         }
 
-            .card-image img {
+        .entry-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+            .entry-image img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
-                transition: transform 0.5s ease;
+                transition: var(--transition);
             }
 
-        .menu-card:hover .card-image img {
+        .menu-entry:hover .entry-image img {
             transform: scale(1.1);
         }
 
-        .image-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
-        }
-
-        .card-content {
-            padding: 1.25rem;
-        }
-
-        .card-header {
+        .entry-image.placeholder {
+            background: var(--bg-tan);
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-            margin-bottom: 0.75rem;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 1.5rem;
         }
 
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--dark);
-            line-height: 1.3;
+        .entry-details {
             flex: 1;
+            min-width: 0;
+            padding-right: 1rem;
         }
 
-        .card-price-badge {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 0.5rem 0.875rem;
-            border-radius: 50px;
-            font-weight: 700;
-            white-space: nowrap;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: baseline;
-            gap: 0.125rem;
-        }
-
-        .price-currency {
-            font-size: 0.875rem;
-        }
-
-        .price-amount {
+        .entry-title {
             font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            font-family: 'Playfair Display', 'Georgia', serif;
         }
 
-        .card-description {
-            color: var(--gray);
-            font-size: 0.925rem;
-            line-height: 1.6;
-            margin-bottom: 1rem;
+        .entry-description {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
 
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .category-tag {
+        .popular-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.375rem;
-            padding: 0.375rem 0.75rem;
-            background: var(--light);
-            color: var(--gray);
-            font-size: 0.8125rem;
-            font-weight: 600;
-            border-radius: 50px;
+            gap: 0.25rem;
+            background: var(--menu-gold);
+            color: var(--bg-white);
+            padding: 0.125rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
         }
 
-            .category-tag i {
-                font-size: 0.75rem;
-            }
-
-        /* ========== Empty States ========== */
-        .empty-state,
-        .no-results {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--gray);
+        .entry-price {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+            margin-left: auto;
         }
 
-        .empty-icon {
+        .price-dots {
+            width: 60px;
+            height: 1px;
+            background-image: repeating-linear-gradient( to right, var(--border-medium) 0, var(--border-medium) 3px, transparent 3px, transparent 6px );
+            display: none; /* Hide on mobile, show on desktop */
+        }
+
+        @@media (min-width: 768px) {
+            .price-dots
+
+        {
+            display: block;
+        }
+
+        }
+
+        .price-amount {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--menu-primary);
+            min-width: max-content;
+        }
+
+        /* ========== Larger Screens - Keep Vertical Layout ========== */
+        @@media (min-width: 768px) {
+            .menu-entry
+
+        {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .entry-content {
+            gap: 1.25rem;
+        }
+
+        .entry-image {
+            width: 90px;
+            height: 90px;
+        }
+
+        .entry-title {
+            font-size: 1.25rem;
+        }
+
+        .entry-description {
+            font-size: 0.9375rem;
+        }
+
+        .price-amount {
+            font-size: 1.375rem;
+        }
+
+        }
+
+        @@media (min-width: 1024px) {
+            .menu-board
+
+        {
+            max-width: 900px;
+        }
+
+        .entry-image {
             width: 100px;
             height: 100px;
-            background: var(--light);
-            border-radius: 50%;
-            display: inline-flex;
+        }
+
+        .entry-content {
+            gap: 1.5rem;
+        }
+
+        }
+
+        /* ========== Mobile Responsive ========== */
+        @@media (max-width: 767px) {
+            .restaurant-name
+
+        {
+            font-size: 1.75rem;
+            letter-spacing: 1px;
+        }
+
+        .restaurant-details {
+            flex-direction: column;
+            gap: 0.75rem;
             align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
         }
 
-        .empty-state i,
-        .no-results i {
-            font-size: 3.5rem;
-            color: var(--border);
+        .category-text {
+            font-size: 1.375rem;
         }
 
-        .empty-state h3,
-        .no-results h3 {
-            font-size: 1.5rem;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
+        .menu-board {
+            padding: 1.5rem 1rem;
         }
 
-        .empty-state p,
-        .no-results p {
+        .menu-entry {
+            padding: 0.875rem;
+        }
+
+        .entry-content {
+            gap: 0.75rem;
+        }
+
+        .entry-image {
+            width: 70px;
+            height: 70px;
+        }
+
+        .entry-title {
             font-size: 1rem;
         }
 
-        /* ========== Back to Top Button ========== */
-        .back-to-top {
+        .entry-description {
+            font-size: 0.8125rem;
+            -webkit-line-clamp: 1; /* Show only 1 line on mobile to save space */
+        }
+
+        .price-amount {
+            font-size: 1.125rem;
+        }
+
+        .tabs-container {
+            padding: 0.75rem 0;
+        }
+
+        .tab-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        }
+
+        /* ========== Very Small Mobile ========== */
+        @@media (max-width: 420px) {
+            .entry-details
+
+        {
+            padding-right: 0.5rem;
+        }
+
+        .entry-price {
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .price-amount {
+            font-size: 1rem;
+        }
+
+        }
+
+        /* ========== Empty States ========== */
+        .no-results,
+        .empty-menu {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+            .no-results i,
+            .empty-menu i {
+                font-size: 3rem;
+                color: var(--border-medium);
+                margin-bottom: 1rem;
+            }
+
+            .no-results h3,
+            .empty-menu h3 {
+                font-size: 1.5rem;
+                color: var(--text-secondary);
+                margin-bottom: 0.5rem;
+            }
+
+        /* ========== Scroll Top Button ========== */
+        .scroll-top {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border: none;
+            background: var(--menu-primary);
+            color: var(--bg-white);
+            border: 2px solid var(--menu-gold);
             border-radius: 50%;
-            box-shadow: var(--shadow-lg);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            z-index: 98;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            z-index: 99;
         }
 
-            .back-to-top:hover {
-                transform: translateY(-4px);
-                box-shadow: var(--shadow-xl);
+            .scroll-top:hover {
+                background: var(--menu-secondary);
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px var(--shadow-color);
             }
 
-            .back-to-top:active {
-                transform: translateY(-2px);
+            .scroll-top.visible {
+                display: flex;
             }
 
-        /* ========== Animations ========== */
-        @@keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
+        /* ========== Print Styles ========== */
+        @@media print {
+            .search-section, .category-tabs, .scroll-top
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        {
+            display: none !important;
         }
 
-        @@keyframes float {
-            0%, 100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
+        .menu-entry {
+            break-inside: avoid;
         }
 
-        /* Stagger animation for cards */
-        .menu-card:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-
-        .menu-card:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .menu-card:nth-child(3) {
-            animation-delay: 0.3s;
-        }
-
-        .menu-card:nth-child(4) {
-            animation-delay: 0.4s;
-        }
-
-        .menu-card:nth-child(5) {
-            animation-delay: 0.5s;
-        }
-
-        .menu-card:nth-child(6) {
-            animation-delay: 0.6s;
-        }
-
-        .menu-card:nth-child(n+7) {
-            animation-delay: 0.7s;
-        }
-
-        /* ========== Responsive Design ========== */
-        @@media (max-width: 1024px) {
-            .items-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 1.25rem;
-            }
-        }
-
-        @@media (max-width: 768px) {
-            .cafe-name {
-                font-size: 2rem;
-            }
-
-            .cafe-header {
-                padding: 2rem 1rem 5rem;
-            }
-
-            .items-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .search-section {
-                padding: 1rem;
-            }
-
-            .categories-nav {
-                top: 73px;
-            }
-
-            .menu-items {
-                padding: 1.5rem 1rem 3rem;
-            }
-
-            .category-chip {
-                padding: 0.5rem 0.875rem;
-                font-size: 0.875rem;
-            }
-        }
-
-        @@media (max-width: 480px) {
-            .cafe-name {
-                font-size: 1.75rem;
-            }
-
-            .cafe-logo {
-                width: 60px;
-                height: 60px;
-                font-size: 2rem;
-            }
-
-            .card-title {
-                font-size: 1.125rem;
-            }
-
-            .card-image {
-                height: 180px;
-            }
-
-            .back-to-top {
-                width: 45px;
-                height: 45px;
-                bottom: 1.5rem;
-                right: 1.5rem;
-            }
         }
     </style>
 }
@@ -743,127 +872,160 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const categoryButtons = document.querySelectorAll('.category-chip');
-            const menuCards = document.querySelectorAll('.menu-card');
+            // Search functionality
             const searchInput = document.getElementById('searchInput');
-            const searchClear = document.getElementById('searchClear');
+            const clearSearch = document.getElementById('clearSearch');
             const noResults = document.getElementById('noResults');
-            const backToTop = document.getElementById('backToTop');
+            const scrollTop = document.getElementById('scrollTop');
 
-            // Category filtering
-            categoryButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    categoryButtons.forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
+            // Category collapse/expand functionality
+            const categoryHeaders = document.querySelectorAll('.category-header');
 
-                    const category = this.getAttribute('data-category');
-                    searchInput.value = '';
-                    searchClear.style.display = 'none';
+            categoryHeaders.forEach(header => {
+                header.addEventListener('click', function(e) {
+                    // Don't collapse if clicking on links
+                    if (e.target.closest('a')) return;
 
-                    filterItems(category, '');
+                    const category = this.closest('.menu-category');
+                    category.classList.toggle('collapsed');
+
+                    // Save state to localStorage
+                    const categoryId = this.dataset.categoryId;
+                    if (categoryId) {
+                        const collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories') || '[]');
+                        if (category.classList.contains('collapsed')) {
+                            if (!collapsedCategories.includes(categoryId)) {
+                                collapsedCategories.push(categoryId);
+                            }
+                        } else {
+                            const index = collapsedCategories.indexOf(categoryId);
+                            if (index > -1) {
+                                collapsedCategories.splice(index, 1);
+                            }
+                        }
+                        localStorage.setItem('collapsedCategories', JSON.stringify(collapsedCategories));
+                    }
                 });
             });
 
-            // Search functionality
+            // Restore collapsed state from localStorage
+            const restoreCollapsedState = () => {
+                const collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories') || '[]');
+                collapsedCategories.forEach(categoryId => {
+                    const category = document.getElementById('category-' + categoryId);
+                    if (category) {
+                        category.classList.add('collapsed');
+                    }
+                });
+            };
+
+            restoreCollapsedState();
+
             searchInput.addEventListener('input', function() {
                 const searchTerm = this.value.toLowerCase();
-                searchClear.style.display = searchTerm ? 'flex' : 'none';
+                clearSearch.style.display = searchTerm ? 'block' : 'none';
 
-                // Reset category filter to "all"
-                categoryButtons.forEach(btn => btn.classList.remove('active'));
-                categoryButtons[0].classList.add('active');
+                let hasResults = false;
+                const categories = document.querySelectorAll('.menu-category');
 
-                filterItems('all', searchTerm);
-            });
+                if (!searchTerm) {
+                    categories.forEach(cat => {
+                        cat.style.display = 'block';
+                        // Restore original collapse state
+                        restoreCollapsedState();
+                    });
+                    document.querySelectorAll('.menu-entry').forEach(item => item.style.display = 'block');
+                    noResults.style.display = 'none';
+                    return;
+                }
 
-            searchClear.addEventListener('click', function() {
-                searchInput.value = '';
-                this.style.display = 'none';
-                filterItems('all', '');
-            });
+                categories.forEach(category => {
+                    const items = category.querySelectorAll('.menu-entry');
+                    let hasVisibleItems = false;
 
-            // Filter function
-            function filterItems(category, searchTerm) {
-                let visibleCount = 0;
+                    items.forEach(item => {
+                        const itemName = item.getAttribute('data-name');
+                        if (itemName && itemName.includes(searchTerm)) {
+                            item.style.display = 'block';
+                            hasVisibleItems = true;
+                            hasResults = true;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
 
-                menuCards.forEach(card => {
-                    const cardCategory = card.getAttribute('data-category');
-                    const cardName = card.getAttribute('data-name');
-
-                    const categoryMatch = category === 'all' || cardCategory === category;
-                    const searchMatch = !searchTerm || cardName.includes(searchTerm);
-
-                    if (categoryMatch && searchMatch) {
-                        card.style.display = 'block';
-                        visibleCount++;
+                    if (hasVisibleItems) {
+                        category.style.display = 'block';
+                        // Auto-expand categories with results
+                        category.classList.remove('collapsed');
                     } else {
-                        card.style.display = 'none';
+                        category.style.display = 'none';
                     }
                 });
 
-                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-            }
-
-            // Back to top button
-            window.addEventListener('scroll', function() {
-                if (window.pageYOffset > 300) {
-                    backToTop.style.display = 'flex';
-                } else {
-                    backToTop.style.display = 'none';
-                }
+                noResults.style.display = hasResults ? 'none' : 'block';
             });
 
-            backToTop.addEventListener('click', function() {
+            clearSearch.addEventListener('click', function() {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            });
+
+            // Category tabs navigation
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const categoryId = this.getAttribute('data-category');
+                    const target = document.getElementById('category-' + categoryId);
+                    if (target) {
+                        const offset = target.offsetTop - 160;
+                        window.scrollTo({
+                            top: offset,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // Highlight active category on scroll
+            let scrollTimer = null;
+            window.addEventListener('scroll', function() {
+                if (scrollTimer) clearTimeout(scrollTimer);
+
+                scrollTimer = setTimeout(function() {
+                    const scrollPos = window.pageYOffset + 200;
+                    const categories = document.querySelectorAll('.menu-category');
+
+                    categories.forEach(category => {
+                        const top = category.offsetTop;
+                        const bottom = top + category.offsetHeight;
+
+                        if (scrollPos >= top && scrollPos < bottom) {
+                            const id = category.id.replace('category-', '');
+                            tabs.forEach(tab => {
+                                if (tab.getAttribute('data-category') === id) {
+                                    tabs.forEach(t => t.classList.remove('active'));
+                                    tab.classList.add('active');
+                                }
+                            });
+                        }
+                    });
+
+                    // Show/hide scroll to top button
+                    scrollTop.classList.toggle('visible', window.pageYOffset > 300);
+                }, 100);
+            });
+
+            // Scroll to top
+            scrollTop.addEventListener('click', function() {
                 window.scrollTo({
                     top: 0,
                     behavior: 'smooth'
                 });
-            });
-
-            // Smooth scroll for categories
-            const categoriesScroll = document.querySelector('.categories-scroll');
-            let isDown = false;
-            let startX;
-            let scrollLeft;
-
-            categoriesScroll.addEventListener('mousedown', (e) => {
-                isDown = true;
-                categoriesScroll.style.cursor = 'grabbing';
-                startX = e.pageX - categoriesScroll.offsetLeft;
-                scrollLeft = categoriesScroll.scrollLeft;
-            });
-
-            categoriesScroll.addEventListener('mouseleave', () => {
-                isDown = false;
-                categoriesScroll.style.cursor = 'grab';
-            });
-
-            categoriesScroll.addEventListener('mouseup', () => {
-                isDown = false;
-                categoriesScroll.style.cursor = 'grab';
-            });
-
-            categoriesScroll.addEventListener('mousemove', (e) => {
-                if (!isDown) return;
-                e.preventDefault();
-                const x = e.pageX - categoriesScroll.offsetLeft;
-                const walk = (x - startX) * 2;
-                categoriesScroll.scrollLeft = scrollLeft - walk;
-            });
-
-            // Add animation observer
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                    }
-                });
-            }, {
-                threshold: 0.1
-            });
-
-            menuCards.forEach(card => {
-                observer.observe(card);
             });
         });
     </script>

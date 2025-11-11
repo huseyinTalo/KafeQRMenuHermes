@@ -2,40 +2,106 @@
 using KafeQRMenu.BLogic.DTOs.MenuCategoryDTOs;
 using KafeQRMenu.BLogic.DTOs.MenuDTOs;
 using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
-using KafeQRMenu.BLogic.Services.CafeServices;
 using KafeQRMenu.BLogic.Services.MenuCategoryServices;
 using KafeQRMenu.BLogic.Services.MenuItemServices;
 using KafeQRMenu.BLogic.Services.MenuService;
 using KafeQRMenu.UI.Areas.Admin.ViewModels.Menu;
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace KafeQRMenu.UI.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize] // Add specific roles if needed: [Authorize(Roles = "Admin,SuperAdmin")]
+    [Authorize]
     public class MenuController : Controller
     {
         private readonly IMenuService _menuService;
         private readonly IMenuCategoryService _menuCategoryService;
         private readonly IMenuItemService _menuItemService;
-        private readonly ICafeService _cafeService;
         private readonly ILogger<MenuController> _logger;
 
         public MenuController(
             IMenuService menuService,
             IMenuCategoryService menuCategoryService,
             IMenuItemService menuItemService,
-            ICafeService cafeService,
             ILogger<MenuController> logger)
         {
             _menuService = menuService;
             _menuCategoryService = menuCategoryService;
             _menuItemService = menuItemService;
-            _cafeService = cafeService;
             _logger = logger;
         }
+
+        #region Helper Methods for Claims
+
+        /// <summary>
+        /// Gets the CafeId from the current user's claims
+        /// </summary>
+        private Guid GetUserCafeId()
+        {
+            var cafeIdClaim = User.FindFirst("CafeId")?.Value;
+
+            if (string.IsNullOrEmpty(cafeIdClaim))
+            {
+                _logger.LogWarning("CafeId claim not found for user: {UserId}", User.Identity?.Name);
+                return Guid.Empty;
+            }
+
+            if (Guid.TryParse(cafeIdClaim, out var cafeId))
+            {
+                return cafeId;
+            }
+
+            _logger.LogError("Invalid CafeId claim format for user: {UserId}, Value: {CafeId}",
+                User.Identity?.Name, cafeIdClaim);
+            return Guid.Empty;
+        }
+
+        /// <summary>
+        /// Gets the CafeName from the current user's claims
+        /// </summary>
+        private string GetUserCafeName()
+        {
+            var cafeName = User.FindFirst("CafeName")?.Value;
+
+            if (string.IsNullOrEmpty(cafeName))
+            {
+                _logger.LogWarning("CafeName claim not found for user: {UserId}", User.Identity?.Name);
+                return "Kafe";
+            }
+
+            return cafeName;
+        }
+
+        /// <summary>
+        /// Validates that the user has a valid CafeId claim and returns both CafeId and CafeName
+        /// </summary>
+        private bool ValidateUserCafeId(out Guid cafeId, out string cafeName)
+        {
+            cafeId = GetUserCafeId();
+            cafeName = GetUserCafeName();
+
+            if (cafeId == Guid.Empty)
+            {
+                TempData["Error"] = "Kullanıcı kafe bilgisi bulunamadı. Lütfen yeniden giriş yapın.";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Overload for when only CafeId is needed
+        /// </summary>
+        private bool ValidateUserCafeId(out Guid cafeId)
+        {
+            return ValidateUserCafeId(out cafeId, out _);
+        }
+
+        #endregion
 
         #region Menu CRUD
 
@@ -44,37 +110,30 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         {
             try
             {
-                var result = await _menuService.GetAllAsync();
-
-                if (!result.IsSuccess)
+                if (!ValidateUserCafeId(out var cafeId, out var cafeName))
                 {
-                    TempData["Error"] = result.Message;
+                    return View(new MenuIndexViewModel());
+                }
+                var userClaim = User.FindFirst("CafeId")?.Value;
+                Guid.TryParse(userClaim, out Guid CafeId);
+                var result = await _menuService.GetAllAsyncCafesCatsItems(CafeId);
+
+                if (!result.IsSuccess || result.Data == null)
+                {
+                    TempData["Error"] = result.Message ?? "Menüler yüklenirken bir hata oluştu.";
                     return View(new MenuIndexViewModel());
                 }
 
-                // Map to ViewModel
+
+                // Use Mapster for mapping
+                var menuViewModels = result.Data.Adapt<List<MenuListItemViewModel>>();
+
                 var viewModel = new MenuIndexViewModel
                 {
-                    Menus = result.Data?.Select(m => new MenuListItemViewModel
-                    {
-                        MenuId = m.MenuId,
-                        MenuName = m.MenuName,
-                        IsActive = m.IsActive,
-                        ImageFileId = m.ImageFileId,
-                        ImageFileBytes = m.ImageFileBytes,
-                        CafeId = m.CafeId,
-                        CafeName = "Kafe", // TODO: Get from cafe service if needed
-                        CategoryCount = 0, // TODO: Add if needed
-                        CreatedTime = DateTime.Now, // TODO: Add to DTO
-                        CanEdit = true,
-                        CanDelete = true,
-                        CanViewDetails = true,
-                        CanToggleActive = true
-                    }).ToList() ?? new List<MenuListItemViewModel>(),
+                    Menus = menuViewModels,
                     CanCreate = true,
-                    TotalCount = result.Data?.Count ?? 0
+                    TotalCount = menuViewModels.Count
                 };
-
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -96,6 +155,11 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                if (!ValidateUserCafeId(out var userCafeId, out var cafeName))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var menuResult = await _menuService.GetByIdAsync(id);
 
                 if (!menuResult.IsSuccess || menuResult.Data == null)
@@ -104,8 +168,30 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Security check: Ensure menu belongs to user's cafe
+                if (menuResult.Data.CafeId != userCafeId)
+                {
+                    _logger.LogWarning("User attempted to view menu from different cafe. UserId: {UserId}, MenuCafeId: {MenuCafeId}, UserCafeId: {UserCafeId}",
+                        User.Identity?.Name, menuResult.Data.CafeId, userCafeId);
+                    TempData["Error"] = "Bu menüyü görüntüleme yetkiniz yok.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Get categories for this menu's cafe
                 var categoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(menuResult.Data.CafeId);
+
+                // Map assigned categories
+                var assignedCategories = menuResult.Data.Categories?
+                    .Adapt<List<CategoryListItemViewModel>>() ?? new List<CategoryListItemViewModel>();
+
+                assignedCategories.ForEach(c => c.IsAssignedToMenu = true);
+
+                // Map available categories
+                var availableCategories = categoriesResult.Data?
+                    .Where(c => !(menuResult.Data.CategoryIds?.Contains(c.MenuCategoryId) ?? false))
+                    .Adapt<List<CategoryListItemViewModel>>() ?? new List<CategoryListItemViewModel>();
+
+                availableCategories.ForEach(c => c.IsAssignedToMenu = false);
 
                 // Map to ViewModel
                 var viewModel = new MenuDetailsViewModel
@@ -116,39 +202,11 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     ImageFileId = menuResult.Data.ImageFileId,
                     ImageFileBytes = menuResult.Data.ImageFileBytes,
                     CafeId = menuResult.Data.CafeId,
-                    CafeName = "Kafe", // TODO: Get from menu result if available
-                    CreatedTime = DateTime.Now, // TODO: Add to DTO
+                    CafeName = cafeName,
+                    CreatedTime = DateTime.Now,
                     UpdatedTime = null,
-                    AssignedCategories = menuResult.Data.Categories?.Select(c => new CategoryListItemViewModel
-                    {
-                        CategoryId = c.MenuCategoryId,
-                        CategoryName = c.MenuCategoryName,
-                        Description = c.Description,
-                        SortOrder = c.SortOrder,
-                        ImageFileId = c.ImageFileId,
-                        ImageFileBytes = c.ImageFileBytes,
-                        ItemCount = 0, // TODO: Get from service if needed
-                        IsAssignedToMenu = true,
-                        CanEdit = true,
-                        CanDelete = true,
-                        CanViewDetails = true
-                    }).ToList() ?? new List<CategoryListItemViewModel>(),
-                    AvailableCategories = categoriesResult.Data?.Where(c =>
-                        !menuResult.Data.CategoryIds?.Contains(c.MenuCategoryId) ?? true
-                    ).Select(c => new CategoryListItemViewModel
-                    {
-                        CategoryId = c.MenuCategoryId,
-                        CategoryName = c.MenuCategoryName,
-                        Description = c.Description,
-                        SortOrder = c.SortOrder,
-                        ImageFileId = c.ImageFileId,
-                        ImageFileBytes = c.ImageFileBytes,
-                        ItemCount = 0,
-                        IsAssignedToMenu = false,
-                        CanEdit = true,
-                        CanDelete = true,
-                        CanViewDetails = true
-                    }).ToList() ?? new List<CategoryListItemViewModel>(),
+                    AssignedCategories = assignedCategories,
+                    AvailableCategories = availableCategories,
                     CanEdit = true,
                     CanDelete = true,
                     CanManageCategories = true,
@@ -170,12 +228,19 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         {
             try
             {
+                if (!ValidateUserCafeId(out var cafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var viewModel = new MenuCreateViewModel
                 {
-                    IsActive = true
+                    IsActive = true,
+                    CafeId = cafeId
                 };
 
-                await LoadCafesForViewModel(viewModel);
+                await LoadCategoriesForViewModel(viewModel, cafeId);
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -193,6 +258,14 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         {
             try
             {
+                // Always override with user's CafeId for security
+                if (!ValidateUserCafeId(out var cafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                viewModel.CafeId = cafeId;
+
                 // Custom validation
                 viewModel.Validate();
 
@@ -206,7 +279,7 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    await LoadCafesForViewModel(viewModel);
+                    await LoadCategoriesForViewModel(viewModel, cafeId);
                     return View(viewModel);
                 }
 
@@ -215,7 +288,7 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                 {
                     MenuName = viewModel.MenuName,
                     IsActive = viewModel.IsActive,
-                    CafeId = viewModel.CafeId,
+                    CafeId = cafeId,
                     CategoryIds = viewModel.CategoryIds
                 };
 
@@ -239,14 +312,19 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                 }
 
                 ModelState.AddModelError("", result.Message);
-                await LoadCafesForViewModel(viewModel);
+                await LoadCategoriesForViewModel(viewModel, cafeId);
                 return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating menu");
                 ModelState.AddModelError("", "Menü oluşturulurken bir hata oluştu.");
-                await LoadCafesForViewModel(viewModel);
+
+                if (ValidateUserCafeId(out var cafeId))
+                {
+                    await LoadCategoriesForViewModel(viewModel, cafeId);
+                }
+
                 return View(viewModel);
             }
         }
@@ -262,6 +340,11 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var result = await _menuService.GetByIdAsync(id);
 
                 if (!result.IsSuccess || result.Data == null)
@@ -270,19 +353,18 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Map to ViewModel
-                var viewModel = new MenuEditViewModel
+                // Security check: Ensure menu belongs to user's cafe
+                if (result.Data.CafeId != userCafeId)
                 {
-                    MenuId = result.Data.MenuId,
-                    MenuName = result.Data.MenuName,
-                    IsActive = result.Data.IsActive,
-                    CafeId = result.Data.CafeId,
-                    ImageFileId = result.Data.ImageFileId,
-                    CategoryIds = result.Data.CategoryIds,
-                    CurrentImageBytes = result.Data.ImageFileBytes
-                };
+                    _logger.LogWarning("User attempted to edit menu from different cafe. UserId: {UserId}, MenuCafeId: {MenuCafeId}, UserCafeId: {UserCafeId}",
+                        User.Identity?.Name, result.Data.CafeId, userCafeId);
+                    TempData["Error"] = "Bu menüyü düzenleme yetkiniz yok.";
+                    return RedirectToAction(nameof(Index));
+                }
 
-                await LoadCafesForViewModel(viewModel);
+                // Use Mapster for mapping
+                var viewModel = result.Data.Adapt<MenuEditViewModel>();
+
                 await LoadCategoriesForViewModel(viewModel, result.Data.CafeId);
 
                 return View(viewModel);
@@ -302,6 +384,21 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         {
             try
             {
+                // Validate and enforce user's CafeId
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Security check: Ensure the menu being edited belongs to user's cafe
+                if (viewModel.CafeId != userCafeId)
+                {
+                    _logger.LogWarning("User attempted to edit menu from different cafe via POST. UserId: {UserId}",
+                        User.Identity?.Name);
+                    TempData["Error"] = "Bu menüyü düzenleme yetkiniz yok.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Custom validation
                 viewModel.Validate();
 
@@ -315,7 +412,6 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    await LoadCafesForViewModel(viewModel);
                     await LoadCategoriesForViewModel(viewModel, viewModel.CafeId);
                     return View(viewModel);
                 }
@@ -326,7 +422,7 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     MenuId = viewModel.MenuId,
                     MenuName = viewModel.MenuName,
                     IsActive = viewModel.IsActive,
-                    CafeId = viewModel.CafeId,
+                    CafeId = userCafeId,
                     ImageFileId = viewModel.ImageFileId,
                     CategoryIds = viewModel.CategoryIds
                 };
@@ -351,7 +447,6 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                 }
 
                 ModelState.AddModelError("", result.Message);
-                await LoadCafesForViewModel(viewModel);
                 await LoadCategoriesForViewModel(viewModel, viewModel.CafeId);
                 return View(viewModel);
             }
@@ -359,8 +454,12 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
             {
                 _logger.LogError(ex, "Error updating menu ID: {MenuId}", viewModel.MenuId);
                 ModelState.AddModelError("", "Menü güncellenirken bir hata oluştu.");
-                await LoadCafesForViewModel(viewModel);
-                await LoadCategoriesForViewModel(viewModel, viewModel.CafeId);
+
+                if (ValidateUserCafeId(out var cafeId))
+                {
+                    await LoadCategoriesForViewModel(viewModel, cafeId);
+                }
+
                 return View(viewModel);
             }
         }
@@ -378,11 +477,25 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var menuResult = await _menuService.GetByIdAsync(id);
 
                 if (!menuResult.IsSuccess || menuResult.Data == null)
                 {
                     TempData["Error"] = menuResult.Message;
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Security check: Ensure menu belongs to user's cafe
+                if (menuResult.Data.CafeId != userCafeId)
+                {
+                    _logger.LogWarning("User attempted to delete menu from different cafe. UserId: {UserId}",
+                        User.Identity?.Name);
+                    TempData["Error"] = "Bu menüyü silme yetkiniz yok.";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -423,6 +536,11 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return Json(new { success = false, message = "Geçersiz menü ID." });
                 }
 
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return Json(new { success = false, message = "Kullanıcı kafe bilgisi bulunamadı." });
+                }
+
                 var menuResult = await _menuService.GetByIdAsync(id);
 
                 if (!menuResult.IsSuccess || menuResult.Data == null)
@@ -430,12 +548,20 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return Json(new { success = false, message = menuResult.Message });
                 }
 
+                // Security check: Ensure menu belongs to user's cafe
+                if (menuResult.Data.CafeId != userCafeId)
+                {
+                    _logger.LogWarning("User attempted to toggle menu from different cafe. UserId: {UserId}",
+                        User.Identity?.Name);
+                    return Json(new { success = false, message = "Bu menü üzerinde işlem yapma yetkiniz yok." });
+                }
+
                 var updateDto = new MenuUpdateDTO
                 {
                     MenuId = menuResult.Data.MenuId,
                     MenuName = menuResult.Data.MenuName,
-                    IsActive = !menuResult.Data.IsActive, // Toggle
-                    CafeId = menuResult.Data.CafeId,
+                    IsActive = !menuResult.Data.IsActive,
+                    CafeId = userCafeId,
                     ImageFileId = menuResult.Data.ImageFileId,
                     CategoryIds = menuResult.Data.CategoryIds
                 };
@@ -458,8 +584,343 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
 
         #endregion
 
-        #region Category CRUD (within Menu context)
+        #region Category Sorting
 
+        // POST: Admin/Menu/UpdateCategoryOrder
+        [HttpPost]
+        public async Task<IActionResult> UpdateCategoryOrder([FromBody] CategoryOrderUpdateRequest request)
+        {
+            try
+            {
+                if (request == null || request.MenuId == Guid.Empty || request.Categories == null || !request.Categories.Any())
+                {
+                    return Json(new { success = false, message = "Geçersiz istek." });
+                }
+
+                _logger.LogInformation("Kategori sıralaması güncelleniyor. MenuId: {MenuId}, Count: {Count}",
+                    request.MenuId, request.Categories.Count);
+
+                // Update each category's sort order
+                foreach (var categoryOrder in request.Categories)
+                {
+                    var categoryResult = await _menuCategoryService.GetByIdAsync(categoryOrder.CategoryId);
+
+                    if (categoryResult.IsSuccess && categoryResult.Data != null)
+                    {
+                        var updateDto = new MenuCategoryUpdateDTO
+                        {
+                            MenuCategoryId = categoryResult.Data.MenuCategoryId,
+                            MenuCategoryName = categoryResult.Data.MenuCategoryName,
+                            Description = categoryResult.Data.Description,
+                            SortOrder = categoryOrder.SortOrder,
+                            CafeId = categoryResult.Data.CafeId,
+                            CafeName = categoryResult.Data.CafeName,
+                            ImageFileId = categoryResult.Data.ImageFileId,
+                            CreatedTime = categoryResult.Data.CreatedTime,
+                            UpdatedTime = categoryResult.Data.UpdatedTime
+                        };
+
+                        var result = await _menuCategoryService.UpdateAsync(updateDto);
+
+                        if (!result.IsSuccess)
+                        {
+                            _logger.LogWarning("Kategori sıralaması güncellenemedi. CategoryId: {CategoryId}",
+                                categoryOrder.CategoryId);
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Kategori sıralaması başarıyla güncellendi. MenuId: {MenuId}", request.MenuId);
+                return Json(new { success = true, message = "Kategori sıralaması başarıyla güncellendi." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kategori sıralaması güncellenirken hata oluştu. MenuId: {MenuId}",
+                    request?.MenuId);
+                return Json(new { success = false, message = "Sıralama güncellenirken bir hata oluştu." });
+            }
+        }
+
+        // Helper class for category order update
+        public class CategoryOrderUpdateRequest
+        {
+            public Guid MenuId { get; set; }
+            public List<CategoryOrderItem> Categories { get; set; }
+        }
+
+        public class CategoryOrderItem
+        {
+            public Guid CategoryId { get; set; }
+            public int SortOrder { get; set; }
+        }
+
+        #endregion
+
+        #region Category CRUD (within Menu context)
+        // Eski CreateCategory metodunu şununla DEĞİŞTİR:
+        // GET: Admin/Menu/AddCategory?menuId={menuId}
+        public async Task<IActionResult> AddCategory(Guid menuId)
+        {
+            try
+            {
+                if (menuId == Guid.Empty)
+                {
+                    TempData["Error"] = "Geçersiz menü ID.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var menuResult = await _menuService.GetByIdAsync(menuId);
+
+                if (!menuResult.IsSuccess || menuResult.Data == null)
+                {
+                    TempData["Error"] = menuResult.Message;
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Security check
+                if (menuResult.Data.CafeId != userCafeId)
+                {
+                    TempData["Error"] = "Bu menüye kategori ekleme yetkiniz yok.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Kafenin TÜM kategorilerini getir
+                var allCategoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(userCafeId);
+
+                // Bu menüde OLMAYAN kategorileri filtrele
+                var existingCategoryIds = menuResult.Data.CategoryIds ?? new List<Guid>();
+                var availableCategories = allCategoriesResult.Data?
+                    .Where(c => !existingCategoryIds.Contains(c.MenuCategoryId))
+                    .ToList() ?? new List<MenuCategoryListDTO>();
+
+                var viewModel = new CategoryAddToMenuViewModel
+                {
+                    MenuId = menuId,
+                    MenuName = menuResult.Data.MenuName,
+                    CafeId = userCafeId,
+                    AvailableCategories = new SelectList(availableCategories, "MenuCategoryId", "MenuCategoryName"),
+                    NewCategorySortOrder = 0
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading AddCategory page for MenuId: {MenuId}", menuId);
+                TempData["Error"] = "Sayfa yüklenirken bir hata oluştu.";
+                return RedirectToAction(nameof(Details), new { id = menuId });
+            }
+        }
+
+        // POST: Admin/Menu/AddCategory
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddCategory(CategoryAddToMenuViewModel viewModel)
+        {
+            try
+            {
+                // Validate and enforce user's CafeId
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Security check
+                if (viewModel.CafeId != userCafeId)
+                {
+                    TempData["Error"] = "Güvenlik hatası.";
+                    return RedirectToAction(nameof(Details), new { id = viewModel.MenuId });
+                }
+
+                // Custom validation
+                viewModel.Validate();
+
+                if (!viewModel.IsValid)
+                {
+                    foreach (var error in viewModel.ValidationErrors)
+                    {
+                        ModelState.AddModelError("", error);
+                    }
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    // Reload available categories
+                    var allCategoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(userCafeId);
+                    var menuResult = await _menuService.GetByIdAsync(viewModel.MenuId);
+                    var existingCategoryIds = menuResult.Data?.CategoryIds ?? new List<Guid>();
+                    var availableCategories = allCategoriesResult.Data?
+                        .Where(c => !existingCategoryIds.Contains(c.MenuCategoryId))
+                        .ToList() ?? new List<MenuCategoryListDTO>();
+
+                    viewModel.AvailableCategories = new SelectList(availableCategories, "MenuCategoryId", "MenuCategoryName");
+                    return View(viewModel);
+                }
+
+                // SENARYO 1: Mevcut kategori seçildi
+                if (viewModel.IsSelectingExisting)
+                {
+                    var assignResult = await _menuService.AssignCategoryToMenuAsync(
+                        viewModel.MenuId,
+                        viewModel.SelectedExistingCategoryId!.Value);
+
+                    if (assignResult.IsSuccess)
+                    {
+                        TempData["Success"] = "Kategori menüye başarıyla eklendi.";
+                        return RedirectToAction(nameof(Details), new { id = viewModel.MenuId });
+                    }
+
+                    ModelState.AddModelError("", assignResult.Message);
+
+                    // Reload categories
+                    var allCategoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(userCafeId);
+                    var menuResult = await _menuService.GetByIdAsync(viewModel.MenuId);
+                    var existingCategoryIds = menuResult.Data?.CategoryIds ?? new List<Guid>();
+                    var availableCategories = allCategoriesResult.Data?
+                        .Where(c => !existingCategoryIds.Contains(c.MenuCategoryId))
+                        .ToList() ?? new List<MenuCategoryListDTO>();
+
+                    viewModel.AvailableCategories = new SelectList(availableCategories, "MenuCategoryId", "MenuCategoryName");
+                    return View(viewModel);
+                }
+
+                // SENARYO 2: Yeni kategori yaratılacak
+                if (viewModel.IsCreatingNew)
+                {
+                    var categoryCreateDto = new MenuCategoryCreateDTO
+                    {
+                        MenuCategoryName = viewModel.NewCategoryName!,
+                        Description = viewModel.NewCategoryDescription,
+                        SortOrder = viewModel.NewCategorySortOrder,
+                        CafeId = userCafeId,
+                        CafeName = ""
+                    };
+
+                    byte[]? imageData = null;
+                    if (viewModel.ImageFile != null && viewModel.ImageFile.Length > 0)
+                    {
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await viewModel.ImageFile.CopyToAsync(memoryStream);
+                            imageData = memoryStream.ToArray();
+                        }
+                    }
+
+                    var createResult = await _menuCategoryService.CreateAsync(categoryCreateDto, imageData);
+
+                    if (createResult.IsSuccess && createResult.Data != null)
+                    {
+                        // Yeni yaratılan kategoriyi menüye ata
+                        var assignResult = await _menuService.AssignCategoryToMenuAsync(
+                            viewModel.MenuId,
+                            createResult.Data.MenuCategoryId);
+
+                        if (assignResult.IsSuccess)
+                        {
+                            TempData["Success"] = "Yeni kategori yaratıldı ve menüye eklendi.";
+                            return RedirectToAction(nameof(Details), new { id = viewModel.MenuId });
+                        }
+
+                        TempData["Warning"] = "Kategori yaratıldı ama menüye eklenemedi: " + assignResult.Message;
+                        return RedirectToAction(nameof(Details), new { id = viewModel.MenuId });
+                    }
+
+                    ModelState.AddModelError("", createResult.Message);
+
+                    // Reload categories
+                    var allCategoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(userCafeId);
+                    var menuResult = await _menuService.GetByIdAsync(viewModel.MenuId);
+                    var existingCategoryIds = menuResult.Data?.CategoryIds ?? new List<Guid>();
+                    var availableCategories = allCategoriesResult.Data?
+                        .Where(c => !existingCategoryIds.Contains(c.MenuCategoryId))
+                        .ToList() ?? new List<MenuCategoryListDTO>();
+
+                    viewModel.AvailableCategories = new SelectList(availableCategories, "MenuCategoryId", "MenuCategoryName");
+                    return View(viewModel);
+                }
+
+                ModelState.AddModelError("", "Lütfen mevcut bir kategori seçin veya yeni kategori adı girin.");
+
+                // Reload categories
+                var allCats = await _menuCategoryService.GetAllAsyncCafesCats(userCafeId);
+                var menu = await _menuService.GetByIdAsync(viewModel.MenuId);
+                var existingIds = menu.Data?.CategoryIds ?? new List<Guid>();
+                var available = allCats.Data?
+                    .Where(c => !existingIds.Contains(c.MenuCategoryId))
+                    .ToList() ?? new List<MenuCategoryListDTO>();
+
+                viewModel.AvailableCategories = new SelectList(available, "MenuCategoryId", "MenuCategoryName");
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding category for MenuId: {MenuId}", viewModel.MenuId);
+                ModelState.AddModelError("", "Kategori eklenirken bir hata oluştu.");
+                return View(viewModel);
+            }
+        }
+
+        // ESKİ DeleteCategory metodunu şununla DEĞİŞTİR:
+        // POST: Admin/Menu/RemoveCategoryFromMenu
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveCategoryFromMenu(Guid menuId, Guid categoryId)
+        {
+            try
+            {
+                if (menuId == Guid.Empty || categoryId == Guid.Empty)
+                {
+                    TempData["Error"] = "Geçersiz ID.";
+                    return RedirectToAction(nameof(Details), new { id = menuId });
+                }
+
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var menuResult = await _menuService.GetByIdAsync(menuId);
+
+                if (!menuResult.IsSuccess || menuResult.Data == null)
+                {
+                    TempData["Error"] = "Menü bulunamadı.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Security check
+                if (menuResult.Data.CafeId != userCafeId)
+                {
+                    TempData["Error"] = "Bu menü üzerinde işlem yapma yetkiniz yok.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Sadece menü-kategori ilişkisini kaldır, kategoriyi silme!
+                var result = await _menuService.RemoveCategoryFromMenuAsync(menuId, categoryId);
+
+                if (result.IsSuccess)
+                {
+                    TempData["Success"] = result.Message;
+                }
+                else
+                {
+                    TempData["Error"] = result.Message;
+                }
+
+                return RedirectToAction(nameof(Details), new { id = menuId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing category from menu. MenuId: {MenuId}, CategoryId: {CategoryId}",
+                    menuId, categoryId);
+                TempData["Error"] = "Kategori menüden çıkarılırken bir hata oluştu.";
+                return RedirectToAction(nameof(Details), new { id = menuId });
+            }
+        }
         // GET: Admin/Menu/CategoryDetails?menuId={menuId}&categoryId={categoryId}
         public async Task<IActionResult> CategoryDetails(Guid menuId, Guid categoryId)
         {
@@ -471,12 +932,37 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Details), new { id = menuId });
                 }
 
+                if (!ValidateUserCafeId(out var userCafeId, out var cafeName))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var menuResult = await _menuService.GetByIdAsync(menuId);
                 var categoryResult = await _menuCategoryService.GetByIdAsync(categoryId);
+
+                if (!menuResult.IsSuccess || menuResult.Data == null)
+                {
+                    TempData["Error"] = "Menü bulunamadı.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Security check: Ensure menu belongs to user's cafe
+                if (menuResult.Data.CafeId != userCafeId)
+                {
+                    TempData["Error"] = "Bu menüye erişim yetkiniz yok.";
+                    return RedirectToAction(nameof(Index));
+                }
 
                 if (!categoryResult.IsSuccess || categoryResult.Data == null)
                 {
                     TempData["Error"] = categoryResult.Message;
+                    return RedirectToAction(nameof(Details), new { id = menuId });
+                }
+
+                // Security check: Ensure category belongs to user's cafe
+                if (categoryResult.Data.CafeId != userCafeId)
+                {
+                    TempData["Error"] = "Bu kategoriye erişim yetkiniz yok.";
                     return RedirectToAction(nameof(Details), new { id = menuId });
                 }
 
@@ -489,34 +975,25 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     .OrderBy(i => i.SortOrder)
                     .ToList() ?? new List<MenuItemListDTO>();
 
+                // Use Mapster for mapping items
+                var itemViewModels = categoryItems.Adapt<List<ItemListItemViewModel>>();
+
                 // Map to ViewModel
                 var viewModel = new CategoryDetailsViewModel
                 {
                     MenuId = menuId,
-                    MenuName = menuResult.Data?.MenuName ?? "Menü",
+                    MenuName = menuResult.Data.MenuName,
                     CategoryId = categoryResult.Data.MenuCategoryId,
                     CategoryName = categoryResult.Data.MenuCategoryName,
                     Description = categoryResult.Data.Description,
                     SortOrder = categoryResult.Data.SortOrder,
                     CafeId = categoryResult.Data.CafeId,
-                    CafeName = categoryResult.Data.CafeName,
+                    CafeName = cafeName,
                     ImageFileId = categoryResult.Data.ImageFileId,
                     ImageFileBytes = categoryResult.Data.ImageFileBytes,
                     CreatedTime = categoryResult.Data.CreatedTime,
                     UpdatedTime = categoryResult.Data.UpdatedTime,
-                    Items = categoryItems.Select(i => new ItemListItemViewModel
-                    {
-                        ItemId = i.MenuItemId,
-                        ItemName = i.MenuItemName,
-                        Description = i.Description,
-                        Price = i.Price,
-                        SortOrder = i.SortOrder,
-                        ImageFileId = i.ImageFileId,
-                        ImageFileBytes = i.ImageFileBytes,
-                        CreatedTime = i.CreatedTime,
-                        CanEdit = true,
-                        CanDelete = true
-                    }).ToList(),
+                    Items = itemViewModels,
                     CanEdit = true,
                     CanDelete = true,
                     CanManageItems = true,
@@ -544,6 +1021,11 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var menuResult = await _menuService.GetByIdAsync(menuId);
 
                 if (!menuResult.IsSuccess || menuResult.Data == null)
@@ -552,11 +1034,18 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Security check
+                if (menuResult.Data.CafeId != userCafeId)
+                {
+                    TempData["Error"] = "Bu menüye kategori ekleme yetkiniz yok.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var viewModel = new CategoryCreateViewModel
                 {
                     MenuId = menuId,
                     MenuName = menuResult.Data.MenuName,
-                    CafeId = menuResult.Data.CafeId,
+                    CafeId = userCafeId,
                     SortOrder = 0
                 };
 
@@ -577,6 +1066,19 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         {
             try
             {
+                // Validate and enforce user's CafeId
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Security check
+                if (viewModel.CafeId != userCafeId)
+                {
+                    TempData["Error"] = "Güvenlik hatası: CafeId uyuşmazlığı.";
+                    return RedirectToAction(nameof(Details), new { id = viewModel.MenuId });
+                }
+
                 // Custom validation
                 viewModel.Validate();
 
@@ -599,8 +1101,8 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     MenuCategoryName = viewModel.CategoryName,
                     Description = viewModel.Description,
                     SortOrder = viewModel.SortOrder,
-                    CafeId = viewModel.CafeId,
-                    CafeName = "" // Will be populated by service
+                    CafeId = userCafeId,
+                    CafeName = ""
                 };
 
                 byte[]? imageData = null;
@@ -653,20 +1155,12 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Details), new { id = menuId });
                 }
 
-                var viewModel = new CategoryEditViewModel
-                {
-                    MenuId = menuId,
-                    MenuName = menuResult.Data?.MenuName ?? "Menü",
-                    CategoryId = categoryResult.Data.MenuCategoryId,
-                    CategoryName = categoryResult.Data.MenuCategoryName,
-                    Description = categoryResult.Data.Description,
-                    SortOrder = categoryResult.Data.SortOrder,
-                    CafeId = categoryResult.Data.CafeId,
-                    ImageFileId = categoryResult.Data.ImageFileId,
-                    CurrentImageBytes = categoryResult.Data.ImageFileBytes,
-                    CreatedTime = categoryResult.Data.CreatedTime,
-                    UpdatedTime = categoryResult.Data.UpdatedTime
-                };
+                // Use Mapster for mapping
+                var viewModel = categoryResult.Data.Adapt<CategoryEditViewModel>();
+
+                // Set menu-specific properties
+                viewModel.MenuId = menuId;
+                viewModel.MenuName = menuResult.Data?.MenuName ?? "Menü";
 
                 return View(viewModel);
             }
@@ -709,7 +1203,7 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     Description = viewModel.Description,
                     SortOrder = viewModel.SortOrder,
                     CafeId = viewModel.CafeId,
-                    CafeName = "", // Will be populated by service
+                    CafeName = "",
                     ImageFileId = viewModel.ImageFileId,
                     CreatedTime = viewModel.CreatedTime,
                     UpdatedTime = viewModel.UpdatedTime
@@ -929,23 +1423,14 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return RedirectToAction(nameof(CategoryDetails), new { menuId, categoryId });
                 }
 
-                var viewModel = new ItemEditViewModel
-                {
-                    MenuId = menuId,
-                    MenuName = menuResult.Data?.MenuName ?? "Menü",
-                    CategoryId = categoryId,
-                    CategoryName = categoryResult.Data?.MenuCategoryName ?? "Kategori",
-                    ItemId = itemResult.Data.MenuItemId,
-                    ItemName = itemResult.Data.MenuItemName,
-                    Description = itemResult.Data.Description,
-                    Price = itemResult.Data.Price,
-                    OriginalPrice = itemResult.Data.Price, // For tracking changes
-                    SortOrder = itemResult.Data.SortOrder,
-                    ImageFileId = itemResult.Data.ImageFileId,
-                    CurrentImageBytes = itemResult.Data.ImageFileBytes,
-                    CreatedTime = itemResult.Data.CreatedTime,
-                    UpdatedTime = itemResult.Data.UpdatedTime
-                };
+                // Use Mapster for mapping
+                var viewModel = itemResult.Data.Adapt<ItemEditViewModel>();
+
+                // Set menu and category specific properties
+                viewModel.MenuId = menuId;
+                viewModel.MenuName = menuResult.Data?.MenuName ?? "Menü";
+                viewModel.CategoryId = categoryId;
+                viewModel.CategoryName = categoryResult.Data?.MenuCategoryName ?? "Kategori";
 
                 return View(viewModel);
             }
@@ -1083,23 +1568,78 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
 
         #endregion
 
+        #region Item Sorting
+
+        // POST: Admin/Menu/UpdateItemOrder
+        [HttpPost]
+        public async Task<IActionResult> UpdateItemOrder([FromBody] ItemOrderUpdateRequest request)
+        {
+            try
+            {
+                if (request == null || request.CategoryId == Guid.Empty || request.Items == null || !request.Items.Any())
+                {
+                    return Json(new { success = false, message = "Geçersiz istek." });
+                }
+
+                _logger.LogInformation("Ürün sıralaması güncelleniyor. CategoryId: {CategoryId}, Count: {Count}",
+                    request.CategoryId, request.Items.Count);
+
+                // Update each item's sort order
+                foreach (var itemOrder in request.Items)
+                {
+                    var itemResult = await _menuItemService.GetByIdAsync(itemOrder.ItemId);
+
+                    if (itemResult.IsSuccess && itemResult.Data != null)
+                    {
+                        var updateDto = new MenuItemUpdateDTO
+                        {
+                            MenuItemId = itemResult.Data.MenuItemId,
+                            MenuItemName = itemResult.Data.MenuItemName,
+                            Description = itemResult.Data.Description,
+                            Price = itemResult.Data.Price,
+                            SortOrder = itemOrder.SortOrder,
+                            MenuCategoryId = itemResult.Data.MenuCategoryId,
+                            MenuCategoryName = itemResult.Data.MenuCategoryName,
+                            ImageFileId = itemResult.Data.ImageFileId
+                        };
+
+                        var result = await _menuItemService.UpdateAsync(updateDto);
+
+                        if (!result.IsSuccess)
+                        {
+                            _logger.LogWarning("Ürün sıralaması güncellenemedi. ItemId: {ItemId}",
+                                itemOrder.ItemId);
+                        }
+                    }
+                }
+
+                _logger.LogInformation("Ürün sıralaması başarıyla güncellendi. CategoryId: {CategoryId}", request.CategoryId);
+                return Json(new { success = true, message = "Ürün sıralaması başarıyla güncellendi." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ürün sıralaması güncellenirken hata oluştu. CategoryId: {CategoryId}",
+                    request?.CategoryId);
+                return Json(new { success = false, message = "Sıralama güncellenirken bir hata oluştu." });
+            }
+        }
+
+        // Helper class for item order update
+        public class ItemOrderUpdateRequest
+        {
+            public Guid CategoryId { get; set; }
+            public List<ItemOrderItem> Items { get; set; }
+        }
+
+        public class ItemOrderItem
+        {
+            public Guid ItemId { get; set; }
+            public int SortOrder { get; set; }
+        }
+
+        #endregion
+
         #region Helper Methods
-
-        private async Task LoadCafesForViewModel(MenuCreateViewModel viewModel)
-        {
-            var cafesResult = await _cafeService.GetAllAsync();
-            viewModel.Cafes = cafesResult.IsSuccess && cafesResult.Data != null
-                ? new SelectList(cafesResult.Data, "Id", "CafeName")
-                : new SelectList(Enumerable.Empty<CafeListDTO>());
-        }
-
-        private async Task LoadCafesForViewModel(MenuEditViewModel viewModel)
-        {
-            var cafesResult = await _cafeService.GetAllAsync();
-            viewModel.Cafes = cafesResult.IsSuccess && cafesResult.Data != null
-                ? new SelectList(cafesResult.Data, "Id", "CafeName", viewModel.CafeId)
-                : new SelectList(Enumerable.Empty<CafeListDTO>());
-        }
 
         private async Task LoadCategoriesForViewModel(MenuCreateViewModel viewModel, Guid cafeId)
         {

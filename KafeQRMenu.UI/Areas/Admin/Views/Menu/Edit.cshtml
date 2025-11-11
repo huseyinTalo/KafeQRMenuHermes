@@ -1,0 +1,395 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.ViewModels.Menu.MenuEditViewModel
+
+@{
+    ViewData["Title"] = "Menü Düzenle";
+    ViewData["BreadcrumbTitle"] = "Menü Düzenle";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="fade-in">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Menüler</a></li>
+            <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.MenuId">@Model.MenuName</a></li>
+            <li class="breadcrumb-item active">Düzenle</li>
+        </ol>
+    </nav>
+
+    <!-- Alert Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-1">
+                <i class="bi bi-pencil me-2 text-primary"></i>Menü Düzenle
+            </h1>
+            <p class="text-muted mb-0">@Model.MenuName güncelleniyor</p>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" id="menuForm">
+        @Html.AntiForgeryToken()
+
+        <!-- Hidden fields -->
+        <input type="hidden" asp-for="MenuId" />
+        <input type="hidden" asp-for="CafeId" />
+        <input type="hidden" asp-for="ImageFileId" />
+
+        <div class="row g-4">
+            <!-- Left Column - Form Fields -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2 text-primary"></i>Menü Bilgileri
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Menu Name -->
+                        <div class="mb-4">
+                            <label asp-for="MenuName" class="form-label fw-semibold">
+                                <i class="bi bi-book me-2"></i>Menü Adı
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="MenuName"
+                                   class="form-control form-control-lg"
+                                   placeholder="örn: Ana Menü, Kahvaltı Menüsü, Özel İçecekler..."
+                                   autofocus />
+                            <span asp-validation-for="MenuName" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Categories Selection -->
+                        <div class="mb-4">
+                            <label asp-for="CategoryIds" class="form-label fw-semibold">
+                                <i class="bi bi-tags me-2"></i>Kategoriler
+                                <span class="text-muted small">(Opsiyonel)</span>
+                            </label>
+                            <select asp-for="CategoryIds"
+                                    asp-items="Model.Categories"
+                                    class="form-select"
+                                    multiple
+                                    size="6"
+                                    id="categorySelect">
+                            </select>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Ctrl/Cmd tuşu ile birden fazla kategori seçebilirsiniz
+                            </div>
+                            <div id="selectedCategories" class="mt-2"></div>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="mb-4">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <i class="bi bi-eye me-2"></i>Durum
+                                            </h6>
+                                            <small class="text-muted">
+                                                Menü aktif olduğunda müşteriler görebilir
+                                            </small>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input asp-for="IsActive"
+                                                   class="form-check-input"
+                                                   type="checkbox"
+                                                   role="switch"
+                                                   id="activeSwitch"
+                                                   style="width: 3rem; height: 1.5rem; cursor: pointer;">
+                                            <label class="form-check-label ms-2" for="activeSwitch">
+                                                <span id="statusText">@(Model.IsActive ? "Aktif" : "Pasif")</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Image Upload -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-image me-2 text-primary"></i>Menü Görseli
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Current/New Image Preview -->
+                        <div class="mb-3">
+                            <div class="image-preview-container border rounded" style="aspect-ratio: 4/3; overflow: hidden; background: #f8f9fa;">
+                                <img id="imagePreview"
+                                     src="@Model.CurrentImageDataUrl"
+                                     alt="Preview"
+                                     class="w-100 h-100"
+                                     style="object-fit: cover;" />
+                            </div>
+                        </div>
+
+                        @if (Model.HasCurrentImage)
+                        {
+                            <div class="alert alert-success mb-3">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Mevcut görsel var
+                            </div>
+                        }
+
+                        <!-- File Input -->
+                        <div class="mb-3">
+                            <label asp-for="NewImageFile" class="form-label fw-semibold">
+                                <i class="bi bi-cloud-upload me-2"></i>Yeni Görsel Yükle
+                            </label>
+                            <input asp-for="NewImageFile"
+                                   type="file"
+                                   class="form-control"
+                                   accept="image/*"
+                                   id="imageInput" />
+                            <span asp-validation-for="NewImageFile" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Yeni görsel yüklerseniz mevcut görsel değiştirilir
+                            </div>
+                        </div>
+
+                        <!-- Image Info -->
+                        <div class="alert alert-info mb-0">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-info-circle fs-5"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="alert-heading mb-2">Görsel Gereksinimleri</h6>
+                                    <ul class="mb-0 small ps-3">
+                                        <li>Maksimum boyut: 5 MB</li>
+                                        <li>Formatlar: JPG, PNG, GIF, WebP</li>
+                                        <li>Önerilen boyut: 1200x900 piksel</li>
+                                        <li>En-boy oranı: 4:3 ideal</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <a asp-action="Details" asp-route-id="@Model.MenuId" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="bi bi-check-circle me-2"></i>Değişiklikleri Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <style>
+        .image-preview-container {
+            transition: all 0.3s ease;
+        }
+
+            .image-preview-container:hover {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+        #imagePreview {
+            transition: transform 0.3s ease;
+        }
+
+        .image-preview-container:hover #imagePreview {
+            transform: scale(1.02);
+        }
+
+        .sticky-top {
+            z-index: 1020;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+
+        .form-check-input:checked {
+            background-color: #43e97b;
+            border-color: #43e97b;
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 233, 123, 0.25);
+        }
+
+        #categorySelect option {
+            padding: 8px;
+            margin-bottom: 4px;
+        }
+
+            #categorySelect option:hover {
+                background-color: #e7f5ff;
+            }
+
+        .selected-category-badge {
+            display: inline-block;
+            padding: 0.5rem 0.75rem;
+            margin: 0.25rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+            .selected-category-badge:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+            }
+
+            .selected-category-badge i {
+                cursor: pointer;
+                margin-left: 0.5rem;
+            }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Auto-dismiss alerts
+            setTimeout(function () {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+
+            // Active switch handler
+            $('#activeSwitch').on('change', function () {
+                const isActive = $(this).is(':checked');
+                $('#statusText').text(isActive ? 'Aktif' : 'Pasif');
+            });
+
+            // Category selection visual feedback
+            $('#categorySelect').on('change', function () {
+                const selectedOptions = $(this).find('option:selected');
+                const container = $('#selectedCategories');
+                container.empty();
+
+                if (selectedOptions.length > 0) {
+                    container.html('<small class="text-muted mb-2 d-block"><i class="bi bi-check-circle me-1"></i>Seçili kategoriler:</small>');
+                    selectedOptions.each(function () {
+                        const badge = $('<span class="selected-category-badge">')
+                            .html($(this).text() + ' <i class="bi bi-x-circle"></i>')
+                            .data('value', $(this).val());
+
+                        badge.find('i').on('click', function (e) {
+                            e.stopPropagation();
+                            const value = badge.data('value');
+                            $(`#categorySelect option[value="${value}"]`).prop('selected', false);
+                            badge.remove();
+                            $('#categorySelect').trigger('change');
+                        });
+
+                        container.append(badge);
+                    });
+                }
+            });
+
+            // Trigger initial category display
+            $('#categorySelect').trigger('change');
+
+            // Image preview functionality
+            $('#imageInput').on('change', function (e) {
+                const file = e.target.files[0];
+
+                if (file) {
+                    // Validate file size (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Dosya Çok Büyük',
+                            text: 'Görsel boyutu 5 MB\'dan küçük olmalıdır.',
+                            confirmButtonColor: '#667eea'
+                        });
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Validate file type
+                    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!validTypes.includes(file.type)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Geçersiz Dosya Formatı',
+                            text: 'Sadece JPG, PNG, GIF ve WebP formatları desteklenmektedir.',
+                            confirmButtonColor: '#667eea'
+                        });
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#imagePreview').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Form submission with loading state
+            $('#menuForm').on('submit', function (e) {
+                const $submitBtn = $('#submitBtn');
+                $submitBtn.prop('disabled', true);
+                $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Kaydediliyor...');
+            });
+        });
+    </script>
+}

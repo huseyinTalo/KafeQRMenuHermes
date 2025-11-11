@@ -17,5 +17,8 @@ namespace KafeQRMenu.BLogic.Services.MenuService
         Task<IResult> CreateAsync(MenuCreateDTO menuCreateDto, byte[] imageData = null);
         Task<IResult> DeleteAsync(MenuDTO menuItemDto);
         Task<IDataResult<List<MenuDTO>>> GetAllAsyncCafesCatsItems(Guid CafeId);
+        Task<IResult> AssignCategoryToMenuAsync(Guid menuId, Guid categoryId);
+        Task<IResult> RemoveCategoryFromMenuAsync(Guid menuId, Guid categoryId);
+        Task<IDataResult<MenuDTO>> GetActiveByCafeIdAsync(Guid cafeId);
     }
 }

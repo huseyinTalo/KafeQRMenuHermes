@@ -3,6 +3,7 @@ using KafeQRMenu.BLogic.Services.MenuItemServices;
 using KafeQRMenu.UI.Areas.Admin.Models.MenuPreviewVMs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using KafeQRMenu.BLogic.Services.MenuService;
 
 namespace KafeQRMenu.Web.Areas.Admin.Controllers
 {
@@ -10,15 +11,18 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
     [Authorize(Roles = "Admin")]
     public class MenuPreviewController : Controller
     {
+        private readonly IMenuService _menuService;
         private readonly IMenuCategoryService _menuCategoryService;
         private readonly IMenuItemService _menuItemService;
         private readonly ILogger<MenuPreviewController> _logger;
 
         public MenuPreviewController(
+            IMenuService menuService,
             IMenuCategoryService menuCategoryService,
             IMenuItemService menuItemService,
             ILogger<MenuPreviewController> logger)
         {
+            _menuService = menuService;
             _menuCategoryService = menuCategoryService;
             _menuItemService = menuItemService;
             _logger = logger;
@@ -37,20 +41,46 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                // Get all categories for this cafe
-                var categoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(cafeId);
-                if (!categoriesResult.IsSuccess || categoriesResult.Data == null)
+                var cafeName = User.FindFirst("CafeName")?.Value ?? "Menü";
+
+                // Get active menu for this cafe
+                var activeMenuResult = await _menuService.GetActiveByCafeIdAsync(cafeId);
+
+                if (!activeMenuResult.IsSuccess || activeMenuResult.Data == null)
                 {
-                    TempData["WarningMessage"] = "Henüz kategori eklenmemiş.";
-                    return View(new MenuPreviewViewModel());
+                    TempData["WarningMessage"] = "Henüz aktif bir menü bulunmuyor. Lütfen bir menü oluşturun ve aktif hale getirin.";
+                    return View(new MenuPreviewViewModel
+                    {
+                        CafeName = cafeName,
+                        MenuName = "Aktif Menü Yok"
+                    });
                 }
 
-                // Get all menu items for this cafe
-                var itemsResult = await _menuItemService.GetAllAsyncCafesCatsItems(cafeId);
+                var activeMenu = activeMenuResult.Data;
+                _logger.LogInformation("Aktif menü önizlemesi yükleniyor. MenuId: {MenuId}, MenuName: {MenuName}",
+                    activeMenu.MenuId, activeMenu.MenuName);
+
+                // Get categories for the active menu
+                var categoriesResult = await _menuCategoryService.GetAllAsyncByMenuId(activeMenu.MenuId);
+
+                if (!categoriesResult.IsSuccess || categoriesResult.Data == null || !categoriesResult.Data.Any())
+                {
+                    TempData["WarningMessage"] = "Aktif menüde henüz kategori bulunmuyor.";
+                    return View(new MenuPreviewViewModel
+                    {
+                        CafeName = cafeName,
+                        MenuName = activeMenu.MenuName
+                    });
+                }
+
+                // Get menu items for the categories
+                var categoryIds = categoriesResult.Data.Select(c => c.MenuCategoryId).ToList();
+                var itemsResult = await _menuItemService.GetAllAsyncByCategoryIds(categoryIds);
 
                 var viewModel = new MenuPreviewViewModel
                 {
-                    CafeName = User.FindFirst("CafeName")?.Value ?? "Menü",
+                    CafeName = cafeName,
+                    MenuName = activeMenu.MenuName,
                     Categories = categoriesResult.Data
                         .OrderBy(c => c.SortOrder)
                         .Select(c => new MenuPreviewCategoryVM

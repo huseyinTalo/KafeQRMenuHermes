@@ -139,8 +139,6 @@ namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
         [Display(Name = "Resim")]
         public IFormFile? ImageFile { get; set; }
 
-        // Dropdown data
-        public SelectList? Cafes { get; set; }
         public MultiSelectList? Categories { get; set; }
 
         // Validation
@@ -206,8 +204,6 @@ namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
         [Display(Name = "Mevcut Resmi Sil")]
         public bool RemoveCurrentImage { get; set; }
 
-        // Dropdown data
-        public SelectList? Cafes { get; set; }
         public MultiSelectList? Categories { get; set; }
 
         // UI helpers

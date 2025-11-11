@@ -1,0 +1,497 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.ViewModels.Menu.MenuDetailsViewModel
+
+@{
+    ViewData["Title"] = Model.MenuName;
+    ViewData["BreadcrumbTitle"] = "Menü Detayları";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="fade-in">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Menüler</a></li>
+            <li class="breadcrumb-item active">@Model.MenuName</li>
+        </ol>
+    </nav>
+
+    <!-- Alert Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Header Section with Menu Info -->
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <img src="@Model.ImageDataUrl"
+                     class="card-img-top"
+                     alt="@Model.MenuName"
+                     style="height: 300px; object-fit: cover;">
+                <div class="card-body">
+                    <h3 class="card-title mb-3">@Model.MenuName</h3>
+
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="me-2"><strong>Durum:</strong></span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Aktif
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Pasif
+                            </span>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">
+                            <i class="bi bi-shop me-2"></i>@Model.CafeName
+                        </small>
+                        <small class="text-muted d-block mb-1">
+                            <i class="bi bi-calendar3 me-2"></i>
+                            @Model.CreatedTime.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
+                        </small>
+                        @if (Model.UpdatedTime.HasValue)
+                        {
+                            <small class="text-muted d-block">
+                                <i class="bi bi-pencil me-2"></i>
+                                @Model.UpdatedTime.Value.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
+                            </small>
+                        }
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        @if (Model.CanEdit)
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.MenuId" class="btn btn-outline-info">
+                                <i class="bi bi-pencil me-2"></i>Menüyü Düzenle
+                            </a>
+                        }
+                        @if (Model.CanDelete)
+                        {
+                            <button type="button" class="btn btn-outline-danger delete-menu-btn"
+                                    data-menu-id="@Model.MenuId"
+                                    data-menu-name="@Model.MenuName">
+                                <i class="bi bi-trash me-2"></i>Menüyü Sil
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Categories Section -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 pt-4 pb-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <h5 class="mb-1">Menü Kategorileri</h5>
+                            <p class="text-muted mb-0 small">Bu menüye ait kategoriler ve içerikleri</p>
+                        </div>
+                        <div class="btn-group">
+                            @if (Model.AssignedCategories.Any() && Model.CanManageCategories)
+                            {
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#sortCategoriesModal">
+                                    <i class="bi bi-arrow-down-up me-1"></i>Sıralama
+                                </button>
+                            }
+                            @if (Model.CanCreateCategory)
+                            {
+                                <!-- DEĞİŞTİRİLDİ: CreateCategory -> AddCategory -->
+                                <a asp-action="AddCategory" asp-route-menuId="@Model.MenuId" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>Kategori Ekle
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.AssignedCategories.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var category in Model.AssignedCategories.OrderBy(c => c.SortOrder))
+                            {
+                                <div class="col-md-6">
+                                    <div class="card h-100 border category-card">
+                                        <div class="row g-0">
+                                            <div class="col-4">
+                                                <img src="@category.ImageDataUrl"
+                                                     class="img-fluid rounded-start"
+                                                     alt="@category.CategoryName"
+                                                     style="height: 100%; object-fit: cover; min-height: 150px;">
+                                            </div>
+                                            <div class="col-8">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h6 class="card-title mb-0">
+                                                            @category.CategoryName
+                                                        </h6>
+                                                        <span class="badge bg-light text-dark">#@category.SortOrder</span>
+                                                    </div>
+
+                                                    @if (!string.IsNullOrEmpty(category.Description))
+                                                    {
+                                                        <p class="card-text small text-muted mb-2">
+                                                            @(category.Description.Length > 60 ? category.Description.Substring(0, 60) + "..." : category.Description)
+                                                        </p>
+                                                    }
+
+                                                    <p class="card-text mb-3">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-grid-3x3-gap me-1"></i>
+                                                            @category.ItemCount Ürün
+                                                        </small>
+                                                    </p>
+
+                                                    <div class="d-grid gap-1">
+                                                        @if (category.CanViewDetails)
+                                                        {
+                                                            <a asp-action="CategoryDetails"
+                                                               asp-route-menuId="@Model.MenuId"
+                                                               asp-route-categoryId="@category.CategoryId"
+                                                               class="btn btn-outline-primary btn-sm">
+                                                                <i class="bi bi-eye me-1"></i>Detaylar ve Ürünler
+                                                            </a>
+                                                        }
+                                                        <div class="btn-group btn-group-sm">
+                                                            @if (category.CanEdit)
+                                                            {
+                                                                <a asp-action="EditCategory"
+                                                                   asp-route-menuId="@Model.MenuId"
+                                                                   asp-route-categoryId="@category.CategoryId"
+                                                                   class="btn btn-outline-info">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </a>
+                                                            }
+                                                            @if (category.CanDelete)
+                                                            {
+                                                                <!-- DEĞİŞTİRİLDİ: Mesaj ve class ismi -->
+                                                                <button type="button"
+                                                                        class="btn btn-outline-danger remove-category-btn"
+                                                                        data-category-id="@category.CategoryId"
+                                                                        data-category-name="@category.CategoryName">
+                                                                    <i class="bi bi-x-circle"></i>
+                                                                </button>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Empty State -->
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                            <p class="text-muted mt-3 mb-2">Bu menüde henüz kategori bulunmuyor</p>
+                            @if (Model.CanCreateCategory)
+                            {
+                                <!-- DEĞİŞTİRİLDİ: CreateCategory -> AddCategory -->
+                                <a asp-action="AddCategory" asp-route-menuId="@Model.MenuId" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>İlk Kategoriyi Ekle
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Drag & Drop Sort Categories Modal -->
+<div class="modal fade" id="sortCategoriesModal" tabindex="-1" aria-labelledby="sortCategoriesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sortCategoriesModalLabel">
+                    <i class="bi bi-arrow-down-up me-2"></i>Kategori Sıralaması
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Kategorileri sürükleyip bırakarak sıralamayı değiştirebilirsiniz
+                </p>
+                <ul id="sortable-categories" class="list-group">
+                    @foreach (var category in Model.AssignedCategories.OrderBy(c => c.SortOrder))
+                    {
+                        <li class="list-group-item d-flex align-items-center sortable-item" data-category-id="@category.CategoryId" data-sort-order="@category.SortOrder">
+                            <div class="drag-handle me-3">
+                                <i class="bi bi-grip-vertical fs-4 text-muted"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center">
+                                    <img src="@category.ImageDataUrl"
+                                         alt="@category.CategoryName"
+                                         class="rounded me-3"
+                                         style="width: 50px; height: 50px; object-fit: cover;">
+                                    <div>
+                                        <h6 class="mb-0">@category.CategoryName</h6>
+                                        <small class="text-muted">@category.ItemCount ürün</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="badge bg-light text-dark sort-number">#@category.SortOrder</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>İptal
+                </button>
+                <button type="button" class="btn btn-primary" id="saveSortOrder">
+                    <i class="bi bi-check-circle me-2"></i>Sıralamayı Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Forms -->
+<form id="deleteMenuForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- DEĞİŞTİRİLDİ: Form action ve hidden field isimleri -->
+<form id="removeCategoryForm" asp-action="RemoveCategoryFromMenu" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="menuId" value="@Model.MenuId" />
+    <input type="hidden" name="categoryId" id="removeCategoryId" />
+</form>
+
+@section Styles {
+    <style>
+        .category-card {
+            transition: all 0.3s ease;
+        }
+
+            .category-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+        .sortable-item {
+            cursor: move;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+            .sortable-item:hover {
+                background-color: #f8f9fa;
+            }
+
+            .sortable-item.sortable-ghost {
+                opacity: 0.4;
+                background-color: #e7f5ff;
+            }
+
+            .sortable-item.sortable-chosen {
+                background-color: #e7f5ff;
+            }
+
+            .sortable-item.sortable-drag {
+                opacity: 1;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            }
+
+        .drag-handle {
+            cursor: grab;
+        }
+
+            .drag-handle:active {
+                cursor: grabbing;
+            }
+
+        .sort-number {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            min-width: 45px;
+            text-align: center;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SortableJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Auto-dismiss alerts
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+
+            // Initialize SortableJS
+            const sortableList = document.getElementById('sortable-categories');
+            if (sortableList) {
+                const sortable = new Sortable(sortableList, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    onEnd: function(evt) {
+                        updateSortNumbers();
+                    }
+                });
+            }
+
+            function updateSortNumbers() {
+                $('#sortable-categories .sortable-item').each(function(index) {
+                    $(this).find('.sort-number').text('#' + (index + 1));
+                    $(this).attr('data-new-order', index + 1);
+                });
+            }
+
+            $('#saveSortOrder').on('click', function() {
+                const sortData = [];
+                $('#sortable-categories .sortable-item').each(function(index) {
+                    sortData.push({
+                        categoryId: $(this).data('category-id'),
+                        sortOrder: index + 1
+                    });
+                });
+
+                Swal.fire({
+                    title: 'Kaydediliyor...',
+                    html: '<div class="spinner-border text-primary" role="status"></div>',
+                    allowOutsideClick: false,
+                    showConfirmButton: false
+                });
+
+                $.ajax({
+                    url: '@Url.Action("UpdateCategoryOrder", "Menu")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        menuId: '@Model.MenuId',
+                        categories: sortData
+                    }),
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Başarılı!',
+                                text: response.message || 'Kategori sıralaması güncellendi',
+                                confirmButtonColor: '#667eea',
+                                timer: 2000
+                            }).then(() => {
+                                $('#sortCategoriesModal').modal('hide');
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Hata',
+                                text: response.message || 'Sıralama kaydedilemedi',
+                                confirmButtonColor: '#667eea'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Bağlantı Hatası',
+                            text: 'Sıralama kaydedilirken bir hata oluştu',
+                            confirmButtonColor: '#667eea'
+                        });
+                    }
+                });
+            });
+
+            $('.delete-menu-btn').on('click', function() {
+                const menuId = $(this).data('menu-id');
+                const menuName = $(this).data('menu-name');
+
+                Swal.fire({
+                    title: 'Emin misiniz?',
+                    html: `<strong>${menuName}</strong> menüsünü silmek istediğinizden emin misiniz?<br><br>` +
+                          `<span class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Menü tamamen silinecektir!</span>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-trash me-2"></i>Evet, Sil!',
+                    cancelButtonText: 'İptal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = $('#deleteMenuForm');
+                        form.attr('action', '@Url.Action("Delete", "Menu")/' + menuId);
+                        form.submit();
+                    }
+                });
+            });
+
+            // DEĞİŞTİRİLDİ: Remove category button handler
+            $('.remove-category-btn').on('click', function() {
+                const categoryId = $(this).data('category-id');
+                const categoryName = $(this).data('category-name');
+
+                Swal.fire({
+                    title: 'Kategoriyi Menüden Çıkar?',
+                    html: `<strong>${categoryName}</strong> kategorisini bu menüden çıkarmak istediğinizden emin misiniz?<br><br>` +
+                          `<div class="alert alert-info text-start mb-0">` +
+                          `<i class="bi bi-info-circle me-2"></i>` +
+                          `<strong>Not:</strong> Kategori sadece bu menüden çıkarılacak, tamamen silinmeyecektir. ` +
+                          `Kategorinin kendisi ve içindeki ürünler diğer menülerde kullanılmaya devam edebilir.` +
+                          `</div>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f39c12',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-x-circle me-2"></i>Evet, Çıkar',
+                    cancelButtonText: 'İptal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#removeCategoryId').val(categoryId);
+                        $('#removeCategoryForm').submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

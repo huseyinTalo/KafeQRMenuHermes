@@ -9,6 +9,7 @@ using KafeQRMenu.BLogic.Services.CafeServices;
 using KafeQRMenu.BLogic.Services.MenuCategoryServices;
 using KafeQRMenu.BLogic.Services.MenuItemServices;
 using Mapster;
+using KafeQRMenu.BLogic.Services.MenuService;
 
 namespace KafeQRMenu.UI.Controllers;
 
@@ -16,17 +17,20 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
     private readonly ICafeService _cafeService;
+    private readonly IMenuService _menuService;
     private readonly IMenuCategoryService _menuCategoryService;
     private readonly IMenuItemService _menuItemService;
 
     public HomeController(
         ILogger<HomeController> logger,
         ICafeService cafeService,
+        IMenuService menuService,
         IMenuCategoryService menuCategoryService,
         IMenuItemService menuItemService)
     {
         _logger = logger;
         _cafeService = cafeService;
+        _menuService = menuService;
         _menuCategoryService = menuCategoryService;
         _menuItemService = menuItemService;
     }
@@ -48,33 +52,32 @@ public class HomeController : Controller
             }
             else
             {
-                
                 var cafesResult = await _cafeService.GetAllAsync();
                 if (cafesResult.IsSuccess && cafesResult.Data != null && cafesResult.Data.Any())
                 {
-                    //TODO find a better logic for this for production
-                    //we can hide the cafe ID or name or location or anything in urls but any changes in the db would mean changing all of the physical qr codes
-                    //we can make the user choose but that would mean they would be exposed to unnecessary info
-                    var cafeINameClaim = User.FindFirst("CafeName")?.Value;
-                    var adminLoggedCafe = cafesResult.Data.FirstOrDefault(x => x.CafeName == cafeINameClaim);
-                    menuVM.Cafe = adminLoggedCafe.Adapt<CafeVM>();
-                    cafeId = adminLoggedCafe.Id;
-                }
-                else
-                {
-                    var cafesOfAll = await _cafeService.GetAllAsync();
-                    foreach(var item in cafesOfAll.Data)
+                    var cafeNameClaim = User.FindFirst("CafeName")?.Value;
+                    var adminLoggedCafe = cafesResult.Data.FirstOrDefault(x => x.CafeName == cafeNameClaim);
+
+                    if (adminLoggedCafe != null)
                     {
-                        if(item.CafeName == "PiGo")
+                        menuVM.Cafe = adminLoggedCafe.Adapt<CafeVM>();
+                        cafeId = adminLoggedCafe.Id;
+                    }
+                    else
+                    {
+                        // Fallback to PiGo cafe
+                        var piGoCafe = cafesResult.Data.FirstOrDefault(x => x.CafeName == "PiGo");
+                        if (piGoCafe != null)
                         {
-                            cafeId = item.Id;
+                            menuVM.Cafe = piGoCafe.Adapt<CafeVM>();
+                            cafeId = piGoCafe.Id;
                         }
                     }
                 }
             }
 
             // If still no cafe found, show welcome message
-            if (menuVM.Cafe == null)
+            if (menuVM.Cafe == null || !cafeId.HasValue)
             {
                 _logger.LogWarning("Hiç kafe bulunamadı.");
                 menuVM.Cafe = new CafeVM
@@ -87,8 +90,24 @@ public class HomeController : Controller
                 return View(menuVM);
             }
 
-            // Get categories for this cafe with images
-            var categoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(cafeId.Value);
+            // Get active menu for this cafe
+            var activeMenuResult = await _menuService.GetActiveByCafeIdAsync(cafeId.Value);
+
+            if (!activeMenuResult.IsSuccess || activeMenuResult.Data == null)
+            {
+                _logger.LogWarning("Kafe için aktif menü bulunamadı. CafeId: {CafeId}", cafeId.Value);
+                menuVM.Cafe.Description = "Henüz aktif bir menü bulunmuyor.";
+                menuVM.Categories = new List<MenuCategoryListVM>();
+                menuVM.Products = new List<MenuItemListVM>();
+                return View(menuVM);
+            }
+
+            var activeMenu = activeMenuResult.Data;
+            _logger.LogInformation("Aktif menü bulundu. MenuId: {MenuId}, MenuName: {MenuName}",
+                activeMenu.MenuId, activeMenu.MenuName);
+
+            // Get categories for the active menu with images
+            var categoriesResult = await _menuCategoryService.GetAllAsyncByMenuId(activeMenu.MenuId);
             if (categoriesResult.IsSuccess && categoriesResult.Data != null)
             {
                 menuVM.Categories = categoriesResult.Data
@@ -111,27 +130,36 @@ public class HomeController : Controller
                 menuVM.Categories = new List<MenuCategoryListVM>();
             }
 
-            // Get menu items for this cafe with images
-            var productsResult = await _menuItemService.GetAllAsyncCafesCatsItems(cafeId.Value);
-            if (productsResult.IsSuccess && productsResult.Data != null)
+            // Get menu items for the active menu's categories with images
+            if (menuVM.Categories.Any())
             {
-                menuVM.Products = productsResult.Data
-                    .OrderBy(p => p.SortOrder)
-                    .Select(p => new MenuItemListVM
-                    {
-                        MenuItemId = p.MenuItemId,
-                        MenuItemName = p.MenuItemName,
-                        Description = p.Description,
-                        Price = p.Price,
-                        SortOrder = p.SortOrder,
-                        MenuCategoryId = p.MenuCategoryId,
-                        MenuCategoryName = p.MenuCategoryName,
-                        ImageFileId = p.ImageFileId,
-                        ImageFileBase64 = p.ImageFileBytes != null && p.ImageFileBytes.Length > 0
-                            ? Convert.ToBase64String(p.ImageFileBytes)
-                            : null
-                    })
-                    .ToList();
+                var categoryIds = menuVM.Categories.Select(c => c.MenuCategoryId).ToList();
+                var productsResult = await _menuItemService.GetAllAsyncByCategoryIds(categoryIds);
+
+                if (productsResult.IsSuccess && productsResult.Data != null)
+                {
+                    menuVM.Products = productsResult.Data
+                        .OrderBy(p => p.SortOrder)
+                        .Select(p => new MenuItemListVM
+                        {
+                            MenuItemId = p.MenuItemId,
+                            MenuItemName = p.MenuItemName,
+                            Description = p.Description,
+                            Price = p.Price,
+                            SortOrder = p.SortOrder,
+                            MenuCategoryId = p.MenuCategoryId,
+                            MenuCategoryName = p.MenuCategoryName,
+                            ImageFileId = p.ImageFileId,
+                            ImageFileBase64 = p.ImageFileBytes != null && p.ImageFileBytes.Length > 0
+                                ? Convert.ToBase64String(p.ImageFileBytes)
+                                : null
+                        })
+                        .ToList();
+                }
+                else
+                {
+                    menuVM.Products = new List<MenuItemListVM>();
+                }
             }
             else
             {

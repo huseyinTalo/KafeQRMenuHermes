@@ -2,24 +2,34 @@
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Kafe QR Menü</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>@ViewData["Title"] - QR Menü</title>
 
     <!-- PWA Meta Tags -->
-    <meta name="description" content="QR kod ile erişilebilen dijital restoran menüsü">
-    <meta name="theme-color" content="#ff6b35">
+    <meta name="description" content="Dijital QR menü - Hızlı, temassız ve modern menü deneyimi">
+    <meta name="theme-color" content="#FF6B6B">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="QR Menü">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-TileColor" content="#FF6B6B">
+
+    <!-- Prevent zoom on input focus -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
 
     <!-- PWA Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="/images/icons/icon-192x192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/icons/icon-72x72.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/icons/icon-72x72.png">
+    <link rel="mask-icon" href="/images/icons/safari-pinned-tab.svg" color="#FF6B6B">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
+
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
     <!-- CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -29,34 +39,71 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Menü yükleniyor...</p>
+        </div>
+    </div>
+
     <main role="main">
         @RenderBody()
     </main>
 
-    <!-- Install PWA Banner -->
-    <div id="installBanner" class="install-banner" style="display: none;">
-        <div class="install-content">
+    <!-- Modern Install Prompt -->
+    <div id="installPrompt" class="install-prompt" style="display: none;">
+        <button class="install-close" id="installClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="install-icon-wrapper">
             <div class="install-icon">
-                <i class="bi bi-phone"></i>
+                <i class="bi bi-download"></i>
             </div>
-            <div class="install-text">
-                <h3>Ana Ekrana Ekle</h3>
-                <p>Daha hızlı erişim için uygulamayı yükleyin</p>
+            <div class="install-pulse"></div>
+        </div>
+        <h3>Uygulamayı Yükle</h3>
+        <p>Daha hızlı erişim için ana ekranınıza ekleyin</p>
+        <div class="install-benefits">
+            <div class="benefit">
+                <i class="bi bi-lightning-charge-fill"></i>
+                <span>Hızlı Açılış</span>
             </div>
-            <div class="install-actions">
-                <button id="installBtn" class="btn btn-primary">
-                    <i class="bi bi-download"></i> Yükle
-                </button>
-                <button id="dismissBtn" class="btn btn-secondary">
-                    <i class="bi bi-x"></i>
-                </button>
+            <div class="benefit">
+                <i class="bi bi-wifi-off"></i>
+                <span>Offline Çalışma</span>
+            </div>
+            <div class="benefit">
+                <i class="bi bi-phone-fill"></i>
+                <span>Uygulama Deneyimi</span>
             </div>
         </div>
+        <button id="installBtn" class="install-button">
+            <i class="bi bi-plus-circle-fill"></i>
+            Ana Ekrana Ekle
+        </button>
+        <button id="installLater" class="install-later">
+            Daha Sonra Hatırlat
+        </button>
     </div>
 
-    <!-- Offline Indicator -->
-    <div id="offlineIndicator" class="offline-indicator" style="display: none;">
-        <i class="bi bi-wifi-off"></i> Çevrimdışı Mod
+    <!-- Offline Toast -->
+    <div id="offlineToast" class="toast-notification offline-toast" style="display: none;">
+        <i class="bi bi-wifi-off"></i>
+        <span>İnternet bağlantısı yok - Offline modda</span>
+    </div>
+
+    <!-- Online Toast -->
+    <div id="onlineToast" class="toast-notification online-toast" style="display: none;">
+        <i class="bi bi-wifi"></i>
+        <span>Bağlantı yeniden kuruldu</span>
+    </div>
+
+    <!-- Update Available Toast -->
+    <div id="updateToast" class="toast-notification update-toast" style="display: none;">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Yeni güncelleme mevcut</span>
+        <button id="updateBtn" class="update-button">Güncelle</button>
     </div>
 
     <!-- Scripts -->
@@ -64,220 +111,542 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    <!-- PWA Registration Script -->
+    <!-- Enhanced PWA Script -->
     <script>
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registered successfully:', registration.scope);
+        // Loading screen
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('fade-out');
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                }, 300);
+            }, 500);
+        });
 
-                        // Check for updates
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // New service worker available, show update notification
-                                    if (confirm('Yeni versiyon mevcut! Sayfayı yenilemek ister misiniz?')) {
-                                        window.location.reload();
-                                    }
-                                }
-                            });
+        // Service Worker Registration with Update Management
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered');
+
+                    // Check for updates every 5 minutes
+                    setInterval(() => {
+                        registration.update();
+                    }, 300000);
+
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // Show update toast
+                                showToast('updateToast');
+                            }
                         });
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
                     });
-            });
+                })
+                .catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
         }
 
-        // PWA Install Prompt
+        // Update button handler
+        document.getElementById('updateBtn')?.addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        // Enhanced Install Prompt
         let deferredPrompt;
-        const installBanner = document.getElementById('installBanner');
+        let installPromptShown = false;
+        const installPrompt = document.getElementById('installPrompt');
         const installBtn = document.getElementById('installBtn');
-        const dismissBtn = document.getElementById('dismissBtn');
+        const installLater = document.getElementById('installLater');
+        const installClose = document.getElementById('installClose');
+
+        // Check if app is already installed
+        const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
+                          window.navigator.standalone ||
+                          document.referrer.includes('android-app://');
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
 
-            // Don't show banner if already dismissed
-            if (!localStorage.getItem('installBannerDismissed')) {
-                installBanner.style.display = 'block';
+            // Show install prompt after user interaction or delay
+            if (!isInstalled && !localStorage.getItem('installPromptDismissed')) {
+                setTimeout(() => {
+                    if (!installPromptShown) {
+                        showInstallPrompt();
+                    }
+                }, 3000);
             }
         });
 
-        if (installBtn) {
-            installBtn.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log(`User response: ${outcome}`);
-                    deferredPrompt = null;
-                    installBanner.style.display = 'none';
+        function showInstallPrompt() {
+            installPrompt.style.display = 'flex';
+            installPrompt.classList.add('slide-up');
+            installPromptShown = true;
+        }
+
+        function hideInstallPrompt() {
+            installPrompt.classList.add('slide-down');
+            setTimeout(() => {
+                installPrompt.style.display = 'none';
+                installPrompt.classList.remove('slide-up', 'slide-down');
+            }, 300);
+        }
+
+        installBtn?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+
+                if (outcome === 'accepted') {
+                    console.log('PWA installed');
+                    // Track installation
+                    localStorage.setItem('appInstalled', 'true');
                 }
-            });
-        }
 
-        if (dismissBtn) {
-            dismissBtn.addEventListener('click', () => {
-                installBanner.style.display = 'none';
-                localStorage.setItem('installBannerDismissed', 'true');
-            });
-        }
-
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA installed successfully');
-            installBanner.style.display = 'none';
+                deferredPrompt = null;
+                hideInstallPrompt();
+            }
         });
 
-        // Online/Offline Detection
-        const offlineIndicator = document.getElementById('offlineIndicator');
+        installLater?.addEventListener('click', () => {
+            hideInstallPrompt();
+            // Remind after 7 days
+            const remindDate = new Date();
+            remindDate.setDate(remindDate.getDate() + 7);
+            localStorage.setItem('installRemindDate', remindDate.toISOString());
+        });
+
+        installClose?.addEventListener('click', () => {
+            hideInstallPrompt();
+            localStorage.setItem('installPromptDismissed', 'true');
+        });
+
+        // Network status handling
+        function showToast(toastId) {
+            const toast = document.getElementById(toastId);
+            toast.style.display = 'flex';
+            toast.classList.add('show');
+
+            if (toastId !== 'updateToast') {
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                    }, 300);
+                }, 3000);
+            }
+        }
 
         window.addEventListener('online', () => {
-            offlineIndicator.style.display = 'none';
-            console.log('Back online');
+            showToast('onlineToast');
         });
 
         window.addEventListener('offline', () => {
-            offlineIndicator.style.display = 'flex';
-            console.log('Connection lost');
+            showToast('offlineToast');
         });
 
-        // Check initial connection status
-        if (!navigator.onLine) {
-            offlineIndicator.style.display = 'flex';
+        // iOS specific install instructions
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !isInstalled) {
+            // Check if it's Safari
+            const isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS|mercury/.test(navigator.userAgent);
+
+            if (isSafari && !localStorage.getItem('iosInstallShown')) {
+                setTimeout(() => {
+                    // You could show iOS specific instructions here
+                    console.log('iOS Safari detected - Show install instructions');
+                }, 5000);
+            }
         }
+
+        // Prevent pull-to-refresh on mobile
+        let lastTouchY = 0;
+        let preventPullToRefresh = false;
+
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            lastTouchY = e.touches[0].clientY;
+            preventPullToRefresh = window.pageYOffset === 0;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const touchYDelta = touchY - lastTouchY;
+            lastTouchY = touchY;
+
+            if (preventPullToRefresh && touchYDelta > 0) {
+                e.preventDefault();
+                return false;
+            }
+        }, { passive: false });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
     <style>
-        /* Install Banner Styles */
-        .install-banner {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-            color: white;
-            padding: 1rem;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            animation: slideUp 0.5s ease;
-        }
-
-        .install-content {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .install-icon {
-            font-size: 2rem;
-        }
-
-        .install-text {
-            flex: 1;
-        }
-
-        .install-text h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .install-text p {
-            margin: 0;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .install-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .install-actions .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .install-actions .btn-primary {
-            background: white;
-            color: #ff6b35;
-        }
-
-        .install-actions .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .install-actions .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .install-actions .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Offline Indicator */
-        .offline-indicator {
+        /* Loading Screen */
+        .loading-screen {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: #e74c3c;
-            color: white;
-            padding: 0.75rem;
+            bottom: 0;
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.3s ease;
+        }
+
+            .loading-screen.fade-out {
+                opacity: 0;
+            }
+
+        .loading-content {
             text-align: center;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        .loading-content p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* Modern Install Prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 2rem;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+            .install-prompt.slide-up {
+                animation: slideUp 0.3s ease-out;
+            }
+
+            .install-prompt.slide-down {
+                animation: slideDown 0.3s ease-out;
+            }
+
+        .install-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #f0f0f0;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s ease;
+        }
+
+            .install-close:hover {
+                background: #e0e0e0;
+            }
+
+        .install-icon-wrapper {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .install-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .install-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 107, 107, 0.3);
+            border-radius: 20px;
+            animation: pulse 2s ease-out infinite;
+        }
+
+        .install-prompt h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2C3E50;
+            margin-bottom: 0.5rem;
+        }
+
+        .install-prompt p {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .install-benefits {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .benefit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .benefit i {
+                font-size: 1.5rem;
+                color: #FF6B6B;
+            }
+
+            .benefit span {
+                font-size: 0.75rem;
+                color: #666;
+            }
+
+        .install-button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
             font-weight: 600;
-            z-index: 1001;
+            cursor: pointer;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 0.75rem;
+        }
+
+            .install-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+            }
+
+        .install-later {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: color 0.2s ease;
+        }
+
+            .install-later:hover {
+                color: #666;
+            }
+
+        /* Toast Notifications */
+        .toast-notification {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 9998;
+            min-width: 250px;
+            transition: transform 0.3s ease;
+        }
+
+            .toast-notification.show {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            .toast-notification i {
+                font-size: 1.25rem;
+            }
+
+        .offline-toast {
+            background: #E74C3C;
+            color: white;
+        }
+
+        .online-toast {
+            background: #27AE60;
+            color: white;
+        }
+
+        .update-toast {
+            background: #3498DB;
+            color: white;
+        }
+
+        .update-button {
+            margin-left: auto;
+            background: white;
+            color: #3498DB;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+            .update-button:hover {
+                transform: scale(1.05);
+            }
+
+        /* Animations */
+        @@keyframes spin {
+            to
+
+        {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        @@keyframes pulse {
+            0%
+
+        {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.5;
+        }
+
+        100% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 0;
+        }
+
         }
 
         @@keyframes slideUp {
-            from {
-                transform: translateY(100%);
-            }
-            to {
-                transform: translateY(0);
-            }
+            from
+
+        {
+            transform: translateY(100%);
+            opacity: 0;
         }
 
-        @@media (max-width: 768px) {
-            .install-content {
-                flex-wrap: wrap;
-            }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
 
-            .install-text h3 {
-                font-size: 1rem;
-            }
+        }
 
-            .install-text p {
-                font-size: 0.85rem;
-            }
+        @@keyframes slideDown {
+            from
 
-            .install-actions {
-                width: 100%;
-                justify-content: stretch;
-            }
+        {
+            transform: translateY(0);
+            opacity: 1;
+        }
 
-            .install-actions .btn {
-                flex: 1;
-            }
+        to {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        }
+
+        /* iOS Safe Area Support */
+        @@supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .install-prompt
+
+        {
+            padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+        }
+
+        .toast-notification {
+            bottom: calc(2rem + env(safe-area-inset-bottom));
+        }
+
+        }
+
+        /* Reduced Motion Support */
+        @@media (prefers-reduced-motion: reduce) {
+            .loading-spinner, .install-pulse
+
+        {
+            animation: none;
+        }
+
+        .toast-notification,
+        .install-prompt {
+            transition: none;
+        }
+
+        }
+
+        /* Dark Mode Support */
+        @@media (prefers-color-scheme: dark) {
+            .install-prompt
+
+        {
+            background: #2a2a2a;
+            color: #f0f0f0;
+        }
+
+        .install-prompt h3 {
+            color: #f0f0f0;
+        }
+
+        .install-prompt p,
+        .benefit span {
+            color: #aaa;
+        }
+
+        .install-close {
+            background: #3a3a3a;
+            color: #aaa;
+        }
+
+        .toast-notification:not(.offline-toast):not(.online-toast):not(.update-toast) {
+            background: #2a2a2a;
+            color: #f0f0f0;
+        }
+
         }
     </style>
 </body>

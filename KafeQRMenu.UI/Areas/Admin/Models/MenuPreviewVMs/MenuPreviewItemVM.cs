@@ -7,5 +7,6 @@
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public string? ImageBase64 { get; set; }
+        public int SortOrder { get; set; }
     }
 }

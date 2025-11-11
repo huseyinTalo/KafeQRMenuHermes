@@ -1,0 +1,367 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.ViewModels.Menu.CategoryEditViewModel
+
+@{
+    ViewData["Title"] = "Kategori Düzenle";
+    ViewData["BreadcrumbTitle"] = "Kategoriyi Düzenle";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="fade-in">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Menüler</a></li>
+            <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.MenuId">@Model.MenuName</a></li>
+            <li class="breadcrumb-item"><a asp-action="CategoryDetails" asp-route-menuId="@Model.MenuId" asp-route-categoryId="@Model.CategoryId">@Model.CategoryName</a></li>
+            <li class="breadcrumb-item active">Düzenle</li>
+        </ol>
+    </nav>
+
+    <!-- Alert Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-1">
+                <i class="bi bi-pencil me-2 text-info"></i>Kategoriyi Düzenle
+            </h1>
+            <p class="text-muted mb-0">@Model.CategoryName kategorisini güncelleyin</p>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form asp-action="EditCategory" method="post" enctype="multipart/form-data" id="categoryForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="MenuId" />
+        <input type="hidden" asp-for="CategoryId" />
+        <input type="hidden" asp-for="CafeId" />
+        <input type="hidden" asp-for="ImageFileId" />
+        <input type="hidden" asp-for="CreatedTime" />
+        <input type="hidden" asp-for="UpdatedTime" />
+
+        <div class="row g-4">
+            <!-- Left Column - Form Fields -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2 text-info"></i>Kategori Bilgileri
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Category Name -->
+                        <div class="mb-4">
+                            <label asp-for="CategoryName" class="form-label fw-semibold">
+                                <i class="bi bi-tag me-2"></i>Kategori Adı
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="CategoryName"
+                                   class="form-control form-control-lg"
+                                   placeholder="örn: Ana Yemekler, İçecekler, Tatlılar..."
+                                   autofocus />
+                            <span asp-validation-for="CategoryName" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-semibold">
+                                <i class="bi bi-text-paragraph me-2"></i>Açıklama
+                                <span class="text-muted small">(Opsiyonel)</span>
+                            </label>
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Kategori hakkında kısa açıklama..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Sort Order -->
+                        <div class="mb-4">
+                            <label asp-for="SortOrder" class="form-label fw-semibold">
+                                <i class="bi bi-arrow-down-up me-2"></i>Sıralama
+                            </label>
+                            <input asp-for="SortOrder"
+                                   type="number"
+                                   class="form-control"
+                                   min="0"
+                                   max="9999" />
+                            <span asp-validation-for="SortOrder" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Metadata -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="alert alert-light mb-0">
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-calendar-plus me-2"></i>
+                                        <strong>Oluşturulma:</strong> @Model.CreatedTime.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR"))
+                                    </small>
+                                </div>
+                            </div>
+                            @if (Model.UpdatedTime.HasValue)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="alert alert-light mb-0">
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-calendar-check me-2"></i>
+                                            <strong>Son Güncelleme:</strong> @Model.UpdatedTime.Value.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR"))
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Image Upload -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h5 class="mb-0">
+                            <i class="bi bi-image me-2 text-info"></i>Kategori Görseli
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Current Image Badge -->
+                        @if (Model.HasCurrentImage)
+                        {
+                            <div class="alert alert-success mb-3">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <small>Mevcut görsel yüklü</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning mb-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <small>Görsel yüklenmemiş</small>
+                            </div>
+                        }
+
+                        <!-- Image Preview -->
+                        <div class="mb-3">
+                            <div class="image-preview-container border rounded" style="aspect-ratio: 4/3; overflow: hidden; background: #f8f9fa;">
+                                <img id="imagePreview"
+                                     src="@Model.CurrentImageDataUrl"
+                                     alt="@Model.CategoryName"
+                                     class="w-100 h-100"
+                                     style="object-fit: cover;" />
+                            </div>
+                        </div>
+
+                        <!-- File Input -->
+                        <div class="mb-3">
+                            <label asp-for="NewImageFile" class="form-label fw-semibold">
+                                <i class="bi bi-cloud-upload me-2"></i>Yeni Görsel Yükle
+                            </label>
+                            <input asp-for="NewImageFile"
+                                   type="file"
+                                   class="form-control"
+                                   accept="image/*"
+                                   id="imageInput" />
+                            <span asp-validation-for="NewImageFile" class="text-danger small"></span>
+                            @if (Model.WillUploadNewImage)
+                            {
+                                <div class="form-text text-success">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Yeni görsel yüklenecek
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Remove Image Checkbox -->
+                        @if (Model.HasCurrentImage)
+                        {
+                            <div class="form-check mb-3">
+                                <input asp-for="RemoveCurrentImage"
+                                       class="form-check-input"
+                                       type="checkbox"
+                                       id="removeImageCheck" />
+                                <label class="form-check-label" for="removeImageCheck">
+                                    <i class="bi bi-trash me-2 text-danger"></i>Mevcut görseli kaldır
+                                </label>
+                            </div>
+                        }
+
+                        <!-- Image Info -->
+                        <div class="alert alert-info mb-0">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-info-circle fs-5"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="alert-heading mb-2">Görsel Gereksinimleri</h6>
+                                    <ul class="mb-0 small ps-3">
+                                        <li>Maksimum boyut: 5 MB</li>
+                                        <li>Formatlar: JPG, PNG, GIF, WebP</li>
+                                        <li>Önerilen boyut: 800x600 piksel</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <a asp-action="CategoryDetails" asp-route-menuId="@Model.MenuId" asp-route-categoryId="@Model.CategoryId" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-info btn-lg text-white" id="submitBtn">
+                                <i class="bi bi-check-circle me-2"></i>Değişiklikleri Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <style>
+        .image-preview-container {
+            transition: all 0.3s ease;
+        }
+
+            .image-preview-container:hover {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+        #imagePreview {
+            transition: transform 0.3s ease;
+        }
+
+        .image-preview-container:hover #imagePreview {
+            transform: scale(1.02);
+        }
+
+        .sticky-top {
+            z-index: 1020;
+        }
+
+        .form-control:focus {
+            border-color: #17a2b8;
+            box-shadow: 0 0 0 0.25rem rgba(23, 162, 184, 0.25);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+        }
+
+            .btn-info:hover {
+                background: linear-gradient(135deg, #138496 0%, #17a2b8 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+            }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Auto-dismiss alerts
+            setTimeout(function () {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+
+            // Image preview functionality
+            $('#imageInput').on('change', function (e) {
+                const file = e.target.files[0];
+
+                if (file) {
+                    // Validate file size (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Dosya Çok Büyük',
+                            text: 'Görsel boyutu 5 MB\'dan küçük olmalıdır.',
+                            confirmButtonColor: '#17a2b8'
+                        });
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Validate file type
+                    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!validTypes.includes(file.type)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Geçersiz Dosya Formatı',
+                            text: 'Sadece JPG, PNG, GIF ve WebP formatları desteklenmektedir.',
+                            confirmButtonColor: '#17a2b8'
+                        });
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#imagePreview').attr('src', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+
+                    // Uncheck remove image if new image is selected
+                    $('#removeImageCheck').prop('checked', false);
+                }
+            });
+
+            // Remove image checkbox handler
+            $('#removeImageCheck').on('change', function () {
+                if ($(this).is(':checked')) {
+                    $('#imageInput').val('');
+                    const placeholderSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23e7f5ff'/%3E%3Ctext x='50%25' y='45%25' font-family='Arial, sans-serif' font-size='64' fill='%23339af0' text-anchor='middle' dominant-baseline='middle'%3E🏷%3C/text%3E%3Ctext x='50%25' y='65%25' font-family='Arial, sans-serif' font-size='18' fill='%2374c0fc' text-anchor='middle' dominant-baseline='middle'%3EGörsel Kaldırılacak%3C/text%3E%3C/svg%3E";
+                    $('#imagePreview').attr('src', placeholderSvg);
+                }
+            });
+
+            // Form submission with loading state
+            $('#categoryForm').on('submit', function (e) {
+                const $submitBtn = $('#submitBtn');
+                $submitBtn.prop('disabled', true);
+                $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Kaydediliyor...');
+            });
+        });
+    </script>
+}

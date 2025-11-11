@@ -35,5 +35,14 @@ namespace KafeQRMenu.DataAccess.Repositories.MenuRepositories
                 .Where(m => m.CafeId == cafeId && m.Status != Status.Deleted)
                 .ToListAsync();
         }
+
+        public async Task<List<Menu>> GetAllWithCafeAsync()
+        {
+            return await _table
+                .Include(m => m.Cafe) // ← ADD THIS
+                .Where(m => m.Status != Status.Deleted)
+                .OrderByDescending(m => m.CreatedTime)
+                .ToListAsync();
+        }
     }
 }

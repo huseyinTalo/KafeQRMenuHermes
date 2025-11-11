@@ -237,10 +237,6 @@
     }
 </div>
 
-<!-- Delete Form (Hidden) -->
-<form id="deleteForm" method="post" style="display: none;">
-    @Html.AntiForgeryToken()
-</form>
 
 @section Styles {
     <style>
@@ -397,41 +393,43 @@
                 });
             });
 
-            // Delete Menu with SweetAlert confirmation
-            $('.delete-menu-btn').on('click', function() {
-                const menuId = $(this).data('menu-id');
-                const menuName = $(this).data('menu-name');
+        
+        // Delete Menu with SweetAlert confirmation
+        $('.delete-menu-btn').on('click', function() {
+            const menuId = $(this).data('menu-id');
+            const menuName = $(this).data('menu-name');
 
-                Swal.fire({
-                    title: 'Emin misiniz?',
-                    html: `<strong>${menuName}</strong> menüsünü silmek istediğinizden emin misiniz?<br><br>` +
-                          `<span class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Bu işlem geri alınamaz!</span>`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74c3c',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-trash me-2"></i>Evet, Sil!',
-                    cancelButtonText: 'İptal',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Show loading
-                        Swal.fire({
-                            title: 'Siliniyor...',
-                            html: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div>',
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            showConfirmButton: false
-                        });
-
-                        // Submit delete form
-                        const form = $('#deleteForm');
-                        form.attr('action', '@Url.Action("Delete", "Menu")/' + menuId);
-                        form.submit();
-                    }
-                });
+            Swal.fire({
+                title: 'Emin misiniz?',
+                html: `<strong>${menuName}</strong> menüsünü silmek istediğinizden emin misiniz?<br><br>` +
+                      `<span class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Bu işlem geri alınamaz!</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-trash me-2"></i>Evet, Sil!',
+                cancelButtonText: 'İptal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Just POST directly with AJAX
+                    $.ajax({
+                        url: `/Admin/Menu/Delete/${menuId}`,
+                        type: 'POST',
+                        data: {
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(response) {
+                            location.reload(); // Refresh page
+                        },
+                        error: function() {
+                            Swal.fire('Hata!', 'Silme işlemi başarısız.', 'error');
+                        }
+                    });
+                }
             });
         });
+    });
     </script>
 }

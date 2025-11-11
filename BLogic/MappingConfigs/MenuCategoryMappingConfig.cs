@@ -18,14 +18,16 @@ namespace KafeQRMenu.BLogic.MappingConfigs
             config.NewConfig<MenuCategory, MenuCategoryDTO>()
                 .Map(dest => dest.MenuCategoryId, src => src.Id)
                 .Map(dest => dest.CafeName, src => src.Cafe.CafeName)
-                .Map(dest => dest.ImageFileId, src => src.MenuCategoryImageId)  // ✅ ImageFileId mapping
+                .Map(dest => dest.ImageFileId, src => src.MenuCategoryImageId)
+                .Map(dest => dest.ItemCount, src => src.MenuItems.Count)
                 .TwoWays();
 
             // MenuCategory → MenuCategoryListDTO
             config.NewConfig<MenuCategory, MenuCategoryListDTO>()
                 .Map(dest => dest.MenuCategoryId, src => src.Id)
                 .Map(dest => dest.CafeName, src => src.Cafe.CafeName)
-                .Map(dest => dest.ImageFileId, src => src.MenuCategoryImageId)  // ✅ ImageFileId mapping
+                .Map(dest => dest.ImageFileId, src => src.MenuCategoryImageId)
+                .Map(dest => dest.ItemCount, src => src.MenuItems.Count) // ✅ ImageFileId mapping
                 .TwoWays();
 
             // MenuCategory → MenuCategoryUpdateDTO

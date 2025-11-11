@@ -373,7 +373,7 @@
                 <a href="/Admin/MenuCategory/Index" class="menu-link @(controller == "MenuCategory" ? "active" : "")">
                     <i class="bi bi-grid-3x3-gap"></i>
                     <span>Kategoriler</span>
-                    <span class="menu-badge" id="categoryCount">0</span>
+                   @*  <span class="menu-badge" id="categoryCount">0</span> *@
                 </a>
             </div>
 
@@ -381,7 +381,7 @@
                 <a href="/Admin/MenuItem/Index" class="menu-link @(controller == "MenuItem" ? "active" : "")">
                     <i class="bi bi-menu-button-wide"></i>
                     <span>Menü Öğeleri</span>
-                    <span class="menu-badge" id="menuItemCount">0</span>
+                   @*  <span class="menu-badge" id="menuItemCount">0</span> *@
                 </a>
             </div>
             <div class="menu-item">
@@ -392,27 +392,27 @@
                 </a>
             </div>
             <div class="menu-item">
-                <a href="/Admin/Cafe/Settings" class="menu-link @(controller == "Cafe" ? "active" : "")">
+                <a href="/Admin/Menu/Index" class="menu-link @(controller == "Menu" ? "active" : "")">
                     <i class="bi bi-gear"></i>
-                    <span>Kafe Ayarları</span>
+                    <span>Menu yonetimi</span>
                 </a>
             </div>
-
-            <div class="menu-item">
+ 
+            @* <div class="menu-item">
                 <a href="/Admin/QRCode/Index" class="menu-link @(controller == "QRCode" ? "active" : "")">
                     <i class="bi bi-qr-code"></i>
                     <span>QR Kod</span>
                 </a>
-            </div>
+            </div> *@
 
             <hr class="my-3 border-secondary opacity-25">
 
-            <div class="menu-item">
+           @*  <div class="menu-item">
                 <a href="/Admin/Account/Profile" class="menu-link @(controller == "Account" && action == "Profile" ? "active" : "")">
                     <i class="bi bi-person-circle"></i>
                     <span>Profilim</span>
                 </a>
-            </div>
+            </div> *@
 
             <div class="menu-item">
                 <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="m-0">
@@ -505,26 +505,6 @@
             // Update counts
             updateMenuCounts();
         });
-
-        // Menu counts güncelle
-        async function updateMenuCounts() {
-            try {
-                const categoryCount = await fetch('/Admin/Api/GetCategoryCount');
-                const menuItemCount = await fetch('/Admin/Api/GetMenuItemCount');
-
-                if (categoryCount.ok) {
-                    const count = await categoryCount.json();
-                    document.getElementById('categoryCount').textContent = count;
-                }
-
-                if (menuItemCount.ok) {
-                    const count = await menuItemCount.json();
-                    document.getElementById('menuItemCount').textContent = count;
-                }
-            } catch (error) {
-                console.error('Count update error:', error);
-            }
-        }
 
         // Toast Notification System
         function showToast(message, type = 'info', duration = 3000) {
