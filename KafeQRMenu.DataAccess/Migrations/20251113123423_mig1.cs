@@ -59,6 +59,7 @@ namespace KafeQRMenu.DataAccess.Migrations
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DomainName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -257,6 +258,34 @@ namespace KafeQRMenu.DataAccess.Migrations
                         column: x => x.CafeId,
                         principalTable: "Cafes",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Menus",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MenuName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    ImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CafeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeletedTime = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Menus", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Menus_Cafes_CafeId",
+                        column: x => x.CafeId,
+                        principalTable: "Cafes",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -291,6 +320,30 @@ namespace KafeQRMenu.DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MenuMenuCategories",
+                columns: table => new
+                {
+                    CategoriesOfMenuId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MenusId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MenuMenuCategories", x => new { x.CategoriesOfMenuId, x.MenusId });
+                    table.ForeignKey(
+                        name: "FK_MenuMenuCategories_MenuCategories_CategoriesOfMenuId",
+                        column: x => x.CategoriesOfMenuId,
+                        principalTable: "MenuCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MenuMenuCategories_Menus_MenusId",
+                        column: x => x.MenusId,
+                        principalTable: "Menus",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ImageFiles",
                 columns: table => new
                 {
@@ -302,6 +355,7 @@ namespace KafeQRMenu.DataAccess.Migrations
                     AdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     SuperAdminId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CafeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    MenuId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ImageContentType = table.Column<int>(type: "int", nullable: false),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -392,6 +446,16 @@ namespace KafeQRMenu.DataAccess.Migrations
                 name: "IX_MenuItems_MenuCategoryId",
                 table: "MenuItems",
                 column: "MenuCategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MenuMenuCategories_MenusId",
+                table: "MenuMenuCategories",
+                column: "MenusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Menus_CafeId",
+                table: "Menus",
+                column: "CafeId");
         }
 
         /// <inheritdoc />
@@ -416,6 +480,9 @@ namespace KafeQRMenu.DataAccess.Migrations
                 name: "ImageFiles");
 
             migrationBuilder.DropTable(
+                name: "MenuMenuCategories");
+
+            migrationBuilder.DropTable(
                 name: "SuperAdmins");
 
             migrationBuilder.DropTable(
@@ -429,6 +496,9 @@ namespace KafeQRMenu.DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "MenuItems");
+
+            migrationBuilder.DropTable(
+                name: "Menus");
 
             migrationBuilder.DropTable(
                 name: "MenuCategories");

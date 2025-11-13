@@ -366,3 +366,4 @@ FodyWeavers.xsd
 # Exclude sensitive seed data
 **/Seeds/SuperAdminSeed.cs
 Seeds/SuperAdminSeed.cs
+/KafeQRMenu.UI/appsettings.json

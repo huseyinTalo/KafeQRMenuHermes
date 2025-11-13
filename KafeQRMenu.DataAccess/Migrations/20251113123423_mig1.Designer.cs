@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KafeQRMenu.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251113075353_mig3")]
-    partial class mig3
+    [Migration("20251113123423_mig1")]
+    partial class mig1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
