@@ -128,6 +128,43 @@ public class CafeService : ICafeService
         }
     }
 
+    public async Task<IDataResult<List<CafeListDTO>>> GetAllAsync(bool tracking)
+    {
+        try
+        {
+            // Tüm aktif cafe'leri getir
+            var cafes = await _cafeRepository.GetAllAsync(
+                orderBy: x => x.CreatedTime,
+                orderByDescending: true,
+                tracking
+            );
+
+            if (cafes == null || !cafes.Any())
+            {
+                return new SuccessDataResult<List<CafeListDTO>>(
+                    new List<CafeListDTO>(),
+                    "Kayıt bulunamadı."
+                );
+            }
+
+            // Entity'lerden DTO'lara Mapster ile mapping
+            var cafeDtoList = cafes.Adapt<List<CafeListDTO>>();
+
+            return new SuccessDataResult<List<CafeListDTO>>(
+                cafeDtoList,
+                $"{cafeDtoList.Count} adet cafe listelendi."
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetAllAsync metodunda hata oluştu.");
+            return new ErrorDataResult<List<CafeListDTO>>(
+                null,
+                $"Bir hata oluştu: {ex.Message}"
+            );
+        }
+    }
+
     public async Task<IDataResult<CafeDTO>> GetByIdAsync(Guid Id)
     {
         try
@@ -140,6 +177,39 @@ public class CafeService : ICafeService
 
             // Cafe'yi bul
             var cafeEntity = await _cafeRepository.GetById(Id);
+
+            if (cafeEntity == null)
+            {
+                return new ErrorDataResult<CafeDTO>(null, "Cafe bulunamadı.");
+            }
+
+            // Entity'den DTO'ya Mapster ile mapping
+            var cafeDto = cafeEntity.Adapt<CafeDTO>();
+
+            return new SuccessDataResult<CafeDTO>(cafeDto, "Cafe detayları getirildi.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetByIdAsync metodunda hata oluştu. Id: {Id}", Id);
+            return new ErrorDataResult<CafeDTO>(
+                null,
+                $"Bir hata oluştu: {ex.Message}"
+            );
+        }
+    }
+
+    public async Task<IDataResult<CafeDTO>> GetByIdAsync(Guid Id, bool tracking)
+    {
+        try
+        {
+            // Validation
+            if (Id == Guid.Empty)
+            {
+                return new ErrorDataResult<CafeDTO>(null, "Geçersiz Id.");
+            }
+
+            // Cafe'yi bul
+            var cafeEntity = await _cafeRepository.GetById(Id, tracking);
 
             if (cafeEntity == null)
             {
@@ -216,7 +286,8 @@ public class CafeService : ICafeService
 
             // Use GetAsync - returns single entity by expression
             var cafeEntity = await _cafeRepository.GetAsync(
-                c => c.DomainName.ToLower() == normalizedDomain
+                c => c.DomainName.ToLower() == normalizedDomain,
+                tracking: false
             );
 
             if (cafeEntity == null)

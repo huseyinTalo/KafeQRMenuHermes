@@ -20,5 +20,6 @@ namespace KafeQRMenu.BLogic.Services.MenuService
         Task<IResult> AssignCategoryToMenuAsync(Guid menuId, Guid categoryId);
         Task<IResult> RemoveCategoryFromMenuAsync(Guid menuId, Guid categoryId);
         Task<IDataResult<MenuDTO>> GetActiveByCafeIdAsync(Guid cafeId);
+        Task<IDataResult<MenuDTO>> GetActiveByCafeIdAsync(Guid cafeId, bool tracking);
     }
 }

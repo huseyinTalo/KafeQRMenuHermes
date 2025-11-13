@@ -5,6 +5,7 @@ using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
 using KafeQRMenu.BLogic.Services.MenuCategoryServices;
 using KafeQRMenu.BLogic.Services.MenuItemServices;
 using KafeQRMenu.BLogic.Services.MenuService;
+using KafeQRMenu.DataAccess.AppContext;
 using KafeQRMenu.UI.Areas.Admin.ViewModels.Menu;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
@@ -334,6 +335,8 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         {
             try
             {
+                var dbContext = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var trackedBefore = dbContext.ChangeTracker.Entries().ToList();
                 if (id == Guid.Empty)
                 {
                     TempData["Error"] = "Geçersiz menü ID.";
@@ -366,7 +369,7 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                 var viewModel = result.Data.Adapt<MenuEditViewModel>();
 
                 await LoadCategoriesForViewModel(viewModel, result.Data.CafeId);
-
+                var trackedBefore2= dbContext.ChangeTracker.Entries().ToList();
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -384,6 +387,8 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         {
             try
             {
+                var dbContext = HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var trackedBefore = dbContext.ChangeTracker.Entries().ToList();
                 // Validate and enforce user's CafeId
                 if (!ValidateUserCafeId(out var userCafeId))
                 {
@@ -448,6 +453,7 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
 
                 ModelState.AddModelError("", result.Message);
                 await LoadCategoriesForViewModel(viewModel, viewModel.CafeId);
+                var trackedBefore2= dbContext.ChangeTracker.Entries().ToList();
                 return View(viewModel);
             }
             catch (Exception ex)

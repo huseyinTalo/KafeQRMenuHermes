@@ -12,5 +12,6 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
         Task<IResult> DeleteAsync(MenuCategoryDTO menuCategoryDto);
         Task<IDataResult<List<MenuCategoryListDTO>>> GetAllAsyncCafesCats(Guid CafeId);
         Task<IDataResult<List<MenuCategoryListDTO>>> GetAllAsyncByMenuId(Guid menuId);
+        Task<IDataResult<List<MenuCategoryListDTO>>> GetAllAsyncByMenuId(Guid menuId, bool tracking);
     }
 }

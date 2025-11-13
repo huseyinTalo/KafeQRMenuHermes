@@ -35,6 +35,14 @@ namespace KafeQRMenu.DataAccess.AppContext
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(IEntityConfiguration).Assembly);
+            // Global Query Filters - Soft Delete için
+            builder.Entity<SuperAdmin>().HasQueryFilter(e => e.Status != Status.Deleted);
+            builder.Entity<Admin>().HasQueryFilter(e => e.Status != Status.Deleted);
+            builder.Entity<Cafe>().HasQueryFilter(e => e.Status != Status.Deleted);
+            builder.Entity<MenuCategory>().HasQueryFilter(e => e.Status != Status.Deleted);
+            builder.Entity<MenuItem>().HasQueryFilter(e => e.Status != Status.Deleted);
+            builder.Entity<ImageFile>().HasQueryFilter(e => e.Status != Status.Deleted);
+            builder.Entity<Menu>().HasQueryFilter(e => e.Status != Status.Deleted);
 
             base.OnModelCreating(builder);
         }

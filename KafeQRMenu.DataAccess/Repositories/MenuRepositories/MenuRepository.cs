@@ -15,13 +15,13 @@ namespace KafeQRMenu.DataAccess.Repositories.MenuRepositories
     {
         public MenuRepository(AppDbContext context) : base(context)
         {
-            
         }
 
         public async Task<Menu?> GetByIdWithCategoriesAsync(Guid menuId)
         {
             return await _table
-                .Include(m => m.CategoriesOfMenu)
+                .Include(m => m.CategoriesOfMenu.Where(c => c.Status != Status.Deleted))
+                    .ThenInclude(c => c.MenuItems.Where(i => i.Status != Status.Deleted))
                 .Include(m => m.Cafe)
                 .FirstOrDefaultAsync(m => m.Id == menuId && m.Status != Status.Deleted);
         }
@@ -29,8 +29,8 @@ namespace KafeQRMenu.DataAccess.Repositories.MenuRepositories
         public async Task<List<Menu>> GetAllWithDetailsAsync(Guid cafeId)
         {
             return await _table
-                .Include(m => m.CategoriesOfMenu)
-                    .ThenInclude(c => c.MenuItems)
+                .Include(m => m.CategoriesOfMenu.Where(c => c.Status != Status.Deleted))
+                    .ThenInclude(c => c.MenuItems.Where(i => i.Status != Status.Deleted))
                 .Include(m => m.Cafe)
                 .Where(m => m.CafeId == cafeId && m.Status != Status.Deleted)
                 .ToListAsync();
@@ -39,7 +39,7 @@ namespace KafeQRMenu.DataAccess.Repositories.MenuRepositories
         public async Task<List<Menu>> GetAllWithCafeAsync()
         {
             return await _table
-                .Include(m => m.Cafe) // ← ADD THIS
+                .Include(m => m.Cafe)
                 .Where(m => m.Status != Status.Deleted)
                 .OrderByDescending(m => m.CreatedTime)
                 .ToListAsync();

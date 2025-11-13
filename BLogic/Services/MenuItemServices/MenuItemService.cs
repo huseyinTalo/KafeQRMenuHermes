@@ -628,5 +628,62 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
                 );
             }
         }
+
+        public async Task<IDataResult<List<MenuItemListDTO>>> GetAllAsyncByCategoryIds(List<Guid> categoryIds, bool tracking)
+        {
+            try
+            {
+                if (categoryIds == null || !categoryIds.Any())
+                {
+                    return new SuccessDataResult<List<MenuItemListDTO>>(
+                        new List<MenuItemListDTO>(),
+                        "Kategori listesi boş."
+                    );
+                }
+
+                var menuItems = await _menuItemRepository.GetAllAsync(
+                    x => categoryIds.Contains(x.MenuCategoryId),
+                    orderBy: x => x.SortOrder,
+                    orderByDescending: false,
+                    tracking
+                );
+
+                if (menuItems == null || !menuItems.Any())
+                {
+                    return new SuccessDataResult<List<MenuItemListDTO>>(
+                        new List<MenuItemListDTO>(),
+                        "Kayıt bulunamadı."
+                    );
+                }
+
+                var itemList = menuItems.Adapt<List<MenuItemListDTO>>();
+
+                // Load image bytes for each item
+                foreach (var item in itemList)
+                {
+                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    {
+                        var imageFile = await _imageFileRepository.GetById(item.ImageFileId.Value, tracking);
+                        if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                        {
+                            item.ImageFileBytes = imageFile.ImageByteFile;
+                        }
+                    }
+                }
+
+                return new SuccessDataResult<List<MenuItemListDTO>>(
+                    itemList,
+                    $"{itemList.Count} adet ürün listelendi."
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllAsyncByCategoryIds metodunda hata oluştu.");
+                return new ErrorDataResult<List<MenuItemListDTO>>(
+                    null,
+                    $"Bir hata oluştu: {ex.Message}"
+                );
+            }
+        }
     }
 }

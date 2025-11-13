@@ -11,6 +11,7 @@ using KafeQRMenu.BLogic.Services.MenuItemServices;
 using Mapster;
 using KafeQRMenu.BLogic.Services.MenuService;
 using KafeQRMenu.BLogic.DTOs.CafeDTOs;
+using KafeQRMenu.DataAccess.AppContext;
 
 namespace KafeQRMenu.UI.Controllers;
 
@@ -43,17 +44,24 @@ public class HomeController : Controller
             var menuVM = new MenuVM();
 
             // Priority 1: Check if middleware resolved cafe by domain
-            if (HttpContext.Items["Cafe"] is CafeDTO cafeTenant)
+            // ✅ MIDDLEWARE'DEN SADECE ID AL, ENTITY DEĞİL
+            if (HttpContext.Items["CafeId"] is Guid cafeTenantId)
             {
-                menuVM.Cafe = cafeTenant.Adapt<CafeVM>();
-                cafeId = cafeTenant.Id;
-                _logger.LogInformation("Cafe middleware'den alındı. Domain: {Domain}, CafeId: {Id}",
-                    cafeTenant.DomainName, cafeId);
+                cafeId = cafeTenantId;
+                _logger.LogInformation("CafeId middleware'den alındı. CafeId: {Id}", cafeId);
+
+                // Cafe bilgisini tracking olmadan çek
+                var cafeResult = await _cafeService.GetByIdAsync(cafeTenantId, false);
+                if (cafeResult.IsSuccess && cafeResult.Data != null)
+                {
+                    menuVM.Cafe = cafeResult.Data.Adapt<CafeVM>();
+                }
+              
             }
             // Priority 2: Explicit cafeId parameter
             else if (cafeId.HasValue && cafeId.Value != Guid.Empty)
             {
-                var cafeResult = await _cafeService.GetByIdAsync(cafeId.Value);
+                var cafeResult = await _cafeService.GetByIdAsync(cafeId.Value, false);
                 if (cafeResult.IsSuccess && cafeResult.Data != null)
                 {
                     menuVM.Cafe = cafeResult.Data.Adapt<CafeVM>();
@@ -62,7 +70,7 @@ public class HomeController : Controller
             // Priority 3: Fallback - get first available or admin's cafe
             else
             {
-                var cafesResult = await _cafeService.GetAllAsync();
+                var cafesResult = await _cafeService.GetAllAsync(false);
                 if (cafesResult.IsSuccess && cafesResult.Data != null && cafesResult.Data.Any())
                 {
                     var cafeNameClaim = User.FindFirst("CafeName")?.Value;
@@ -84,6 +92,7 @@ public class HomeController : Controller
                         }
                     }
                 }
+               
             }
 
             // If still no cafe found, show welcome message
@@ -101,7 +110,7 @@ public class HomeController : Controller
             }
 
             // Get active menu for this cafe
-            var activeMenuResult = await _menuService.GetActiveByCafeIdAsync(cafeId.Value);
+            var activeMenuResult = await _menuService.GetActiveByCafeIdAsync(cafeId.Value, false);
 
             if (!activeMenuResult.IsSuccess || activeMenuResult.Data == null)
             {
@@ -117,7 +126,7 @@ public class HomeController : Controller
                 activeMenu.MenuId, activeMenu.MenuName);
 
             // Get categories for the active menu with images
-            var categoriesResult = await _menuCategoryService.GetAllAsyncByMenuId(activeMenu.MenuId);
+            var categoriesResult = await _menuCategoryService.GetAllAsyncByMenuId(activeMenu.MenuId, false);
             if (categoriesResult.IsSuccess && categoriesResult.Data != null)
             {
                 menuVM.Categories = categoriesResult.Data
@@ -144,7 +153,7 @@ public class HomeController : Controller
             if (menuVM.Categories.Any())
             {
                 var categoryIds = menuVM.Categories.Select(c => c.MenuCategoryId).ToList();
-                var productsResult = await _menuItemService.GetAllAsyncByCategoryIds(categoryIds);
+                var productsResult = await _menuItemService.GetAllAsyncByCategoryIds(categoryIds, false);
 
                 if (productsResult.IsSuccess && productsResult.Data != null)
                 {

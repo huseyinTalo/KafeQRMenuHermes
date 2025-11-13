@@ -3,11 +3,13 @@ using KafeQRMenu.Data.Entities;
 using KafeQRMenu.Data.Enums;
 using KafeQRMenu.Data.Utilities.Abstracts;
 using KafeQRMenu.Data.Utilities.Concretes;
+using KafeQRMenu.DataAccess.AppContext;
 using KafeQRMenu.DataAccess.Repositories.CafeRepositories;
 using KafeQRMenu.DataAccess.Repositories.ImageRepositories;
 using KafeQRMenu.DataAccess.Repositories.MenuCategoryRepositories;
 using KafeQRMenu.DataAccess.Repositories.MenuRepositories;
 using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +21,7 @@ namespace KafeQRMenu.BLogic.Services.MenuService
         private readonly IMenuCategoryRepository _menuCategoryRepository;
         private readonly ICafeRepository _cafeRepository;
         private readonly IImageFileRepository _imageFileRepository;
+        private readonly IHttpContextAccessor _context;
         private readonly ILogger<MenuService> _logger;
 
         public MenuService(
@@ -26,13 +29,15 @@ namespace KafeQRMenu.BLogic.Services.MenuService
             IMenuCategoryRepository menuCategoryRepository,
             ICafeRepository cafeRepository,
             IImageFileRepository imageFileRepository,
-            ILogger<MenuService> logger)
+            ILogger<MenuService> logger,
+            IHttpContextAccessor context)
         {
             _menuRepository = menuRepository;
             _menuCategoryRepository = menuCategoryRepository;
             _cafeRepository = cafeRepository;
             _imageFileRepository = imageFileRepository;
             _logger = logger;
+            _context = context;
         }
 
         public async Task<IDataResult<List<MenuListDTO>>> GetAllAsync()
@@ -815,6 +820,46 @@ namespace KafeQRMenu.BLogic.Services.MenuService
                 if (menuDto.ImageFileId.HasValue && menuDto.ImageFileId.Value != Guid.Empty)
                 {
                     var imageFile = await _imageFileRepository.GetById(menuDto.ImageFileId.Value);
+                    if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                    {
+                        menuDto.ImageFileBytes = imageFile.ImageByteFile;
+                    }
+                }
+
+                return new SuccessDataResult<MenuDTO>(menuDto, "Aktif menü getirildi.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetActiveByCafeIdAsync metodunda hata oluştu. CafeId: {CafeId}", cafeId);
+                return new ErrorDataResult<MenuDTO>(null, $"Bir hata oluştu: {ex.Message}");
+            }
+        }
+
+        public async Task<IDataResult<MenuDTO>> GetActiveByCafeIdAsync(Guid cafeId,bool tracking)
+        {
+            try
+            {
+                if (cafeId == Guid.Empty)
+                {
+                    return new ErrorDataResult<MenuDTO>(null, "Geçersiz Kafe Id.");
+                }
+
+                var activeMenu = await _menuRepository.GetAsync(
+                    x => x.CafeId == cafeId && x.IsActive == true,
+                    tracking
+                );
+
+                if (activeMenu == null)
+                {
+                    return new ErrorDataResult<MenuDTO>(null, "Aktif menü bulunamadı.");
+                }
+
+                var menuDto = activeMenu.Adapt<MenuDTO>();
+
+                // Load image bytes if exists
+                if (menuDto.ImageFileId.HasValue && menuDto.ImageFileId.Value != Guid.Empty)
+                {
+                    var imageFile = await _imageFileRepository.GetById(menuDto.ImageFileId.Value, tracking);
                     if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
                     {
                         menuDto.ImageFileBytes = imageFile.ImageByteFile;

@@ -605,5 +605,63 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
                 );
             }
         }
+
+        public async Task<IDataResult<List<MenuCategoryListDTO>>> GetAllAsyncByMenuId(Guid menuId, bool tracking)
+        {
+            try
+            {
+                if (menuId == Guid.Empty)
+                {
+                    return new ErrorDataResult<List<MenuCategoryListDTO>>(
+                        new List<MenuCategoryListDTO>(),
+                        "Geçersiz Menü Id."
+                    );
+                }
+
+                // Get categories that belong to this menu (many-to-many relationship)
+                var menuCategories = await _menuCategoryRepository.GetAllAsync(
+                    x => x.Menus.Any(m => m.Id == menuId),
+                    orderBy: x => x.SortOrder,
+                    orderByDescending: false,
+                    tracking
+                );
+
+                if (menuCategories == null || !menuCategories.Any())
+                {
+                    return new SuccessDataResult<List<MenuCategoryListDTO>>(
+                        new List<MenuCategoryListDTO>(),
+                        "Kayıt bulunamadı."
+                    );
+                }
+
+                var menuCategoryDtoList = menuCategories.Adapt<List<MenuCategoryListDTO>>();
+
+                // Load image bytes for each category
+                foreach (var item in menuCategoryDtoList)
+                {
+                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    {
+                        var imageByBytes = await _imageFileRepository.GetById(item.ImageFileId.Value, tracking);
+                        if (imageByBytes != null && imageByBytes.ImageByteFile != null && imageByBytes.ImageByteFile.Length > 0)
+                        {
+                            item.ImageFileBytes = imageByBytes.ImageByteFile;
+                        }
+                    }
+                }
+
+                return new SuccessDataResult<List<MenuCategoryListDTO>>(
+                    menuCategoryDtoList,
+                    $"{menuCategoryDtoList.Count} adet Kategori listelendi."
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllAsyncByMenuId metodunda hata oluştu. MenuId: {MenuId}", menuId);
+                return new ErrorDataResult<List<MenuCategoryListDTO>>(
+                    null,
+                    $"Bir hata oluştu: {ex.Message}"
+                );
+            }
+        }
     }
 }

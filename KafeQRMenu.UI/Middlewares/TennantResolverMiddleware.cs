@@ -1,4 +1,5 @@
 ﻿using KafeQRMenu.BLogic.Services.CafeServices;
+using KafeQRMenu.DataAccess.AppContext;
 
 public class CafeTenantMiddleware
 {
@@ -12,7 +13,6 @@ public class CafeTenantMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var cafeService = context.RequestServices.GetRequiredService<ICafeService>();
-
         var host = context.Request.Host.Host;
 
         // Try exact match first
@@ -32,8 +32,14 @@ public class CafeTenantMiddleware
         }
 
         if (result.IsSuccess && result.Data != null)
-            context.Items["Cafe"] = result.Data;
-
+        {
+            // SADECE primitive değerleri sakla, entity'yi değil
+            context.Items["CafeId"] = result.Data.Id;
+            context.Items["CafeName"] = result.Data.CafeName;
+            context.Items["CafeDomain"] = result.Data.DomainName;
+            // İhtiyacın olan diğer primitive değerler...
+        }
+        
         await _next(context);
     }
 }
