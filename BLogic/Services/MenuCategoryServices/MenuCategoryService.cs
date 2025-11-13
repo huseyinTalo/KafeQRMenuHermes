@@ -354,6 +354,55 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
             }
         }
 
+        public async Task<IDataResult<List<MenuCategoryListDTO>>> GetAllAsyncCafesCats(Guid CafeId, bool tracking)
+        {
+            try
+            {
+                var menuCategories = await _menuCategoryRepository.GetAllAsync(
+                    x => x.CafeId == CafeId,
+                    orderBy: x => x.CreatedTime,
+                    orderByDescending: true,
+                    tracking
+                );
+
+
+                if (menuCategories == null || !menuCategories.Any())
+                {
+                    return new SuccessDataResult<List<MenuCategoryListDTO>>(
+                        new List<MenuCategoryListDTO>(),
+                        "Kayıt bulunamadı."
+                    );
+                }
+
+                var menuCategoryDtoList = menuCategories.Adapt<List<MenuCategoryListDTO>>();
+                foreach (var item in menuCategoryDtoList)
+                {
+                    var imageId = item.ImageFileId ?? Guid.Empty;
+
+                    var imageByBytes = await _imageFileRepository.GetById(imageId, tracking);
+                    if (imageByBytes is not null)
+                    {
+                        if (imageByBytes.ImageByteFile.Length != 0)
+                        {
+                            item.ImageFileBytes = imageByBytes.ImageByteFile;
+                        }
+                    }
+                }
+                return new SuccessDataResult<List<MenuCategoryListDTO>>(
+                    menuCategoryDtoList,
+                    $"{menuCategoryDtoList.Count} adet Kategori listelendi."
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllAsync metodunda hata oluştu.");
+                return new ErrorDataResult<List<MenuCategoryListDTO>>(
+                    null,
+                    $"Bir hata oluştu: {ex.Message}"
+                );
+            }
+        }
+
         public async Task<IDataResult<MenuCategoryDTO>> GetByIdAsync(Guid Id)
         {
             try

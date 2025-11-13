@@ -53,7 +53,8 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
                 };
 
                 // Get categories
-                var categoriesResult = await _menuCategoryService.GetAllAsync();
+                Guid.TryParse(User.FindFirst("CafeId").Value, out Guid CafeId);
+                var categoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(CafeId, false);
                 if (categoriesResult.IsSuccess && categoriesResult.Data != null)
                 {
                     var categories = categoriesResult.Data;
@@ -86,7 +87,7 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
                 }
 
                 // Get menu items
-                var menuItemsResult = await _menuItemService.GetAllAsync();
+                var menuItemsResult = await _menuItemService.GetAllAsyncCafesCatsItems(CafeId, false);
                 if (menuItemsResult.IsSuccess && menuItemsResult.Data != null)
                 {
                     var menuItems = menuItemsResult.Data;
@@ -169,8 +170,9 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
         {
             try
             {
-                var categoriesResult = await _menuCategoryService.GetAllAsync();
-                var menuItemsResult = await _menuItemService.GetAllAsync();
+                Guid.TryParse(User.FindFirst("CafeId").Value, out Guid CafeId);
+                var categoriesResult = await _menuCategoryService.GetAllAsyncCafesCats(CafeId, false);
+                var menuItemsResult = await _menuItemService.GetAllAsyncCafesCatsItems(CafeId, false);
 
                 var stats = new
                 {

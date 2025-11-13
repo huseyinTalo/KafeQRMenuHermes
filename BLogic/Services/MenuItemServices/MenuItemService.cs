@@ -369,6 +369,74 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
             }
         }
 
+        public async Task<IDataResult<List<MenuItemListDTO>>> GetAllAsyncCafesCatsItems(Guid cafeId, bool tracking)
+        {
+            try
+            {
+                // Get category IDs for this cafe
+                var menuCategories = await _menuCategoryRepository.GetAllAsync(
+                    x => x.CafeId == cafeId,
+                    orderBy: x => x.SortOrder,
+                    orderByDescending: false,
+                    tracking
+                );
+
+                if (menuCategories == null || !menuCategories.Any())
+                {
+                    return new SuccessDataResult<List<MenuItemListDTO>>(
+                        new List<MenuItemListDTO>(),
+                        "Kayıt bulunamadı."
+                    );
+                }
+
+                var categoryIds = menuCategories.Select(c => c.Id).ToList();
+
+                // Query MenuItems directly from repository to avoid cached navigation properties
+                var menuItems = await _menuItemRepository.GetAllAsync(
+                    x => categoryIds.Contains(x.MenuCategoryId),
+                    orderBy: x => x.SortOrder,
+                    orderByDescending: false,
+                    tracking
+                );
+
+                if (menuItems == null || !menuItems.Any())
+                {
+                    return new SuccessDataResult<List<MenuItemListDTO>>(
+                        new List<MenuItemListDTO>(),
+                        "Kayıt bulunamadı."
+                    );
+                }
+
+                var itemList = menuItems.Adapt<List<MenuItemListDTO>>();
+
+                // Load image bytes for each item
+                foreach (var item in itemList)
+                {
+                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    {
+                        var imageFile = await _imageFileRepository.GetById(item.ImageFileId.Value, tracking);
+                        if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                        {
+                            item.ImageFileBytes = imageFile.ImageByteFile;
+                        }
+                    }
+                }
+
+                return new SuccessDataResult<List<MenuItemListDTO>>(
+                    itemList,
+                    $"{itemList.Count} adet Ürün listelendi."
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllAsyncCafesCatsItems metodunda hata oluştu.");
+                return new ErrorDataResult<List<MenuItemListDTO>>(
+                    null,
+                    $"Bir hata oluştu: {ex.Message}"
+                );
+            }
+        }
+
         public async Task<IDataResult<MenuItemDTO>> GetByIdAsync(Guid id)
         {
             try

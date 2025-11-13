@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'kafe-qr-menu-v1';
+﻿const CACHE_NAME = 'kafe-qr-menu-v2'; // ✅ Bumped version to force update
 const urlsToCache = [
     '/',
     '/Home/Index',
@@ -24,7 +24,7 @@ self.addEventListener('install', event => {
                     });
             })
     );
-    self.skipWaiting();
+    self.skipWaiting(); // Activate immediately
 });
 
 // Activate event - clean up old caches
@@ -45,55 +45,94 @@ self.addEventListener('activate', event => {
     return self.clients.claim();
 });
 
-// Fetch event - ONLY cache Home/Index and static assets
+// ✅ NEW: Network-first strategy for dynamic content (menu pages)
+function networkFirstStrategy(request) {
+    return fetch(request)
+        .then(response => {
+            // Clone the response before caching
+            const responseToCache = response.clone();
+
+            // Update cache with fresh content
+            caches.open(CACHE_NAME).then(cache => {
+                cache.put(request, responseToCache);
+                console.log('[Service Worker] Updated cache for:', request.url);
+            });
+
+            return response;
+        })
+        .catch(error => {
+            console.log('[Service Worker] Network failed, trying cache:', request.url);
+            // Fallback to cache if network fails (offline mode)
+            return caches.match(request)
+                .then(cachedResponse => {
+                    if (cachedResponse) {
+                        console.log('[Service Worker] Serving from cache (offline):', request.url);
+                        return cachedResponse;
+                    }
+                    // If not in cache, show offline page
+                    return caches.match('/offline.html');
+                });
+        });
+}
+
+// ✅ NEW: Cache-first strategy for static assets
+function cacheFirstStrategy(request) {
+    return caches.match(request)
+        .then(cachedResponse => {
+            if (cachedResponse) {
+                console.log('[Service Worker] Serving static asset from cache:', request.url);
+                return cachedResponse;
+            }
+
+            // If not in cache, fetch from network and cache it
+            return fetch(request).then(response => {
+                const responseToCache = response.clone();
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(request, responseToCache);
+                });
+                return response;
+            });
+        });
+}
+
+// ✅ UPDATED: Fetch event with smart routing
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // Only intercept for Home/Index or static assets (css, js, images)
-    const shouldCache =
-        url.pathname === '/' ||
-        url.pathname === '/Home/Index' ||
+    // Identify static assets (CSS, JS, images, libraries)
+    const isStaticAsset =
         url.pathname.startsWith('/css/') ||
         url.pathname.startsWith('/js/') ||
         url.pathname.startsWith('/lib/') ||
         url.pathname.startsWith('/images/') ||
+        url.pathname.endsWith('.css') ||
+        url.pathname.endsWith('.js') ||
+        url.pathname.endsWith('.png') ||
+        url.pathname.endsWith('.jpg') ||
+        url.pathname.endsWith('.jpeg') ||
+        url.pathname.endsWith('.gif') ||
+        url.pathname.endsWith('.webp') ||
         url.hostname !== location.hostname; // CDN resources
 
-    if (!shouldCache) {
-        // Let it go through normal MVC routing
+    // Identify menu/dynamic pages
+    const isMenuPage =
+        url.pathname === '/' ||
+        url.pathname === '/Home/Index' ||
+        url.pathname.startsWith('/Home/Menu/');
+
+    // ✅ Network-first for menu pages (always fresh when online)
+    if (isMenuPage) {
+        event.respondWith(networkFirstStrategy(event.request));
         return;
     }
 
-    // Cache strategy only for allowed URLs
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    console.log('[Service Worker] Serving from cache:', event.request.url);
-                    return response;
-                }
+    // ✅ Cache-first for static assets (fast loading)
+    if (isStaticAsset) {
+        event.respondWith(cacheFirstStrategy(event.request));
+        return;
+    }
 
-                const fetchRequest = event.request.clone();
-
-                return fetch(fetchRequest).then(response => {
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-
-                    const responseToCache = response.clone();
-
-                    caches.open(CACHE_NAME)
-                        .then(cache => {
-                            cache.put(event.request, responseToCache);
-                        });
-
-                    return response;
-                }).catch(error => {
-                    console.log('[Service Worker] Fetch failed:', error);
-                    return caches.match('/offline.html');
-                });
-            })
-    );
+    // Don't intercept other routes (let MVC handle them)
 });
 
 // Background Sync
