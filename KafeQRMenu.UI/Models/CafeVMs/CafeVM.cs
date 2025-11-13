@@ -10,5 +10,6 @@
         public string? Email { get; set; }
         public DateTime CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
+        public string DomainName { get; set; }
     }
 }

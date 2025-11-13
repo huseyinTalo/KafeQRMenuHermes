@@ -10,5 +10,6 @@ namespace KafeQRMenu.BLogic.Services.CafeServices
         Task<IResult> UpdateAsync(CafeUpdateDTO cafeUpdateDto);
         Task<IResult> CreateAsync(CafeCreateDTO cafeCreateDto);
         Task<IResult> DeleteAsync(CafeDTO cafeDto);
+        Task<IDataResult<CafeDTO>> GetByDomainAsync(string DomainName);
     }
 }

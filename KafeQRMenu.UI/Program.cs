@@ -50,7 +50,7 @@ app.UseStaticFiles(new StaticFileOptions
             "public,max-age=" + durationInSeconds;
     }
 });
-
+app.UseMiddleware<CafeTenantMiddleware>();
 app.UseRouting();
 
 app.UseAuthentication();

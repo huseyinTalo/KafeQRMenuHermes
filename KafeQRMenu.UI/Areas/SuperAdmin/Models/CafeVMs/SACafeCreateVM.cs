@@ -16,5 +16,6 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Models.CafeVMs
         [StringLength(200, ErrorMessage = "Adres en fazla 200 karakter olabilir.")]
         [Display(Name = "Adres")]
         public string Address { get; set; }
+        public string DomainName { get; set; }
     }
 }

@@ -202,4 +202,35 @@ public class CafeService : ICafeService
             return new ErrorResult($"Bir hata oluştu: {ex.Message}");
         }
     }
+
+    public async Task<IDataResult<CafeDTO>> GetByDomainAsync(string domainName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(domainName))
+            {
+                return new ErrorDataResult<CafeDTO>(null, "Geçersiz domain adı.");
+            }
+
+            var normalizedDomain = domainName.Trim().ToLowerInvariant();
+
+            // Use GetAsync - returns single entity by expression
+            var cafeEntity = await _cafeRepository.GetAsync(
+                c => c.DomainName.ToLower() == normalizedDomain
+            );
+
+            if (cafeEntity == null)
+            {
+                return new ErrorDataResult<CafeDTO>(null, "Domain için cafe bulunamadı.");
+            }
+
+            var cafeDto = cafeEntity.Adapt<CafeDTO>();
+            return new SuccessDataResult<CafeDTO>(cafeDto, "Cafe bulundu.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetByDomainAsync hata. Domain: {Domain}", domainName);
+            return new ErrorDataResult<CafeDTO>(null, $"Hata: {ex.Message}");
+        }
+    }
 }

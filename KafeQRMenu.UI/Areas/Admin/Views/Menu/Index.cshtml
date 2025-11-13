@@ -322,6 +322,47 @@
                 const card = checkbox.closest('.card');
                 const statusText = card.find('.status-text');
 
+                // If trying to activate, check if another menu is already active
+                if (isActive) {
+                    const currentlyActiveCount = $('.toggle-active-switch:checked').length;
+
+                    // If there's already another active menu (count > 1 because we just checked this one)
+                    if (currentlyActiveCount > 1) {
+                        // Find the other active menu
+                        const otherActiveMenu = $('.toggle-active-switch:checked').not(checkbox).closest('.card').find('.card-title').text().trim();
+
+                        Swal.fire({
+                            title: 'Bir Menü Zaten Aktif!',
+                            html: `<strong>${otherActiveMenu}</strong> menüsü şu anda aktif.<br><br>` +
+                                  `Aynı anda sadece <strong>bir menü</strong> aktif olabilir.<br><br>` +
+                                  `Devam ederseniz, diğer menü otomatik olarak pasif hale gelecek.`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#667eea',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: '<i class="bi bi-check-circle me-2"></i>Evet, Değiştir',
+                            cancelButtonText: 'İptal',
+                            reverseButtons: true,
+                            focusCancel: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // User confirmed, proceed with toggle
+                                performToggle(checkbox, menuId, isActive, card, statusText);
+                            } else {
+                                // User cancelled, revert checkbox
+                                checkbox.prop('checked', false);
+                            }
+                        });
+                        return; // Don't proceed further
+                    }
+                }
+
+                // If deactivating or no conflict, proceed normally
+                performToggle(checkbox, menuId, isActive, card, statusText);
+            });
+
+            // Extracted toggle function to avoid code duplication
+            function performToggle(checkbox, menuId, isActive, card, statusText) {
                 // Add loading state
                 checkbox.addClass('toggle-loading');
 
@@ -336,12 +377,26 @@
                         checkbox.removeClass('toggle-loading');
 
                         if (response.success) {
-                            // Update status text
+                            // If this menu was activated, deactivate all other menus in the UI
+                            if (response.isActive) {
+                                $('.toggle-active-switch').not(checkbox).each(function() {
+                                    const otherCheckbox = $(this);
+                                    const otherCard = otherCheckbox.closest('.card');
+                                    const otherStatusText = otherCard.find('.status-text');
+                                    const otherBadge = otherCard.find('.badge');
+
+                                    otherCheckbox.prop('checked', false);
+                                    otherStatusText.text('Pasif');
+                                    otherBadge.removeClass('bg-success').addClass('bg-secondary');
+                                    otherBadge.html('<i class="bi bi-x-circle me-1"></i>Pasif');
+                                });
+                            }
+
+                            // Update current menu status
                             statusText.text(response.isActive ? 'Aktif' : 'Pasif');
 
                             // Update badge
                             const badge = card.find('.badge');
-
                             if (response.isActive) {
                                 badge.removeClass('bg-secondary').addClass('bg-success');
                                 badge.html('<i class="bi bi-check-circle me-1"></i>Aktif');
@@ -350,11 +405,10 @@
                                 badge.html('<i class="bi bi-x-circle me-1"></i>Pasif');
                             }
 
-                            // Show success toast using layout's toast function
+                            // Show success toast
                             if (typeof showToast === 'function') {
                                 showToast(response.message, 'success', 3000);
                             } else {
-                                // Fallback to SweetAlert toast
                                 Swal.fire({
                                     toast: true,
                                     position: 'top-end',
@@ -391,45 +445,43 @@
                         });
                     }
                 });
-            });
+            }
 
-        
-        // Delete Menu with SweetAlert confirmation
-        $('.delete-menu-btn').on('click', function() {
-            const menuId = $(this).data('menu-id');
-            const menuName = $(this).data('menu-name');
+            // Delete Menu with SweetAlert confirmation
+            $('.delete-menu-btn').on('click', function() {
+                const menuId = $(this).data('menu-id');
+                const menuName = $(this).data('menu-name');
 
-            Swal.fire({
-                title: 'Emin misiniz?',
-                html: `<strong>${menuName}</strong> menüsünü silmek istediğinizden emin misiniz?<br><br>` +
-                      `<span class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Bu işlem geri alınamaz!</span>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#e74c3c',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-trash me-2"></i>Evet, Sil!',
-                cancelButtonText: 'İptal',
-                reverseButtons: true,
-                focusCancel: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Just POST directly with AJAX
-                    $.ajax({
-                        url: `/Admin/Menu/Delete/${menuId}`,
-                        type: 'POST',
-                        data: {
-                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function(response) {
-                            location.reload(); // Refresh page
-                        },
-                        error: function() {
-                            Swal.fire('Hata!', 'Silme işlemi başarısız.', 'error');
-                        }
-                    });
-                }
+                Swal.fire({
+                    title: 'Emin misiniz?',
+                    html: `<strong>${menuName}</strong> menüsünü silmek istediğinizden emin misiniz?<br><br>` +
+                          `<span class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Bu işlem geri alınamaz!</span>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-trash me-2"></i>Evet, Sil!',
+                    cancelButtonText: 'İptal',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/Admin/Menu/Delete/${menuId}`,
+                            type: 'POST',
+                            data: {
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function(response) {
+                                location.reload();
+                            },
+                            error: function() {
+                                Swal.fire('Hata!', 'Silme işlemi başarısız.', 'error');
+                            }
+                        });
+                    }
+                });
             });
         });
-    });
     </script>
 }

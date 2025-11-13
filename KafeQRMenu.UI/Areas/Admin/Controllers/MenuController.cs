@@ -542,7 +542,6 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                 }
 
                 var menuResult = await _menuService.GetByIdAsync(id);
-
                 if (!menuResult.IsSuccess || menuResult.Data == null)
                 {
                     return Json(new { success = false, message = menuResult.Message });
@@ -556,11 +555,39 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return Json(new { success = false, message = "Bu menü üzerinde işlem yapma yetkiniz yok." });
                 }
 
+                bool newActiveState = !menuResult.Data.IsActive;
+
+                // If activating this menu, first deactivate all other menus for this cafe
+                if (newActiveState)
+                {
+                    var allMenusResult = await _menuService.GetAllAsyncCafesCatsItems(userCafeId);
+                    if (allMenusResult.IsSuccess && allMenusResult.Data != null)
+                    {
+                        foreach (var otherMenu in allMenusResult.Data.Where(m => m.MenuId != id && m.IsActive))
+                        {
+                            var deactivateDto = new MenuUpdateDTO
+                            {
+                                MenuId = otherMenu.MenuId,
+                                MenuName = otherMenu.MenuName,
+                                IsActive = false,
+                                CafeId = userCafeId,
+                                ImageFileId = otherMenu.ImageFileId,
+                                CategoryIds = otherMenu.CategoryIds
+                            };
+
+                            await _menuService.UpdateAsync(deactivateDto);
+                            _logger.LogInformation("Deactivated menu {MenuId} ({MenuName}) because another menu is being activated",
+                                otherMenu.MenuId, otherMenu.MenuName);
+                        }
+                    }
+                }
+
+                // Now update the requested menu
                 var updateDto = new MenuUpdateDTO
                 {
                     MenuId = menuResult.Data.MenuId,
                     MenuName = menuResult.Data.MenuName,
-                    IsActive = !menuResult.Data.IsActive,
+                    IsActive = newActiveState,
                     CafeId = userCafeId,
                     ImageFileId = menuResult.Data.ImageFileId,
                     CategoryIds = menuResult.Data.CategoryIds
@@ -570,7 +597,16 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
 
                 if (result.IsSuccess)
                 {
-                    return Json(new { success = true, isActive = updateDto.IsActive, message = result.Message });
+                    string message = newActiveState
+                        ? "Menü aktif hale getirildi. Diğer menüler otomatik olarak pasif yapıldı."
+                        : "Menü pasif hale getirildi.";
+
+                    return Json(new
+                    {
+                        success = true,
+                        isActive = newActiveState,
+                        message = message
+                    });
                 }
 
                 return Json(new { success = false, message = result.Message });

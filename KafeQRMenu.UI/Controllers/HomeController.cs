@@ -10,6 +10,7 @@ using KafeQRMenu.BLogic.Services.MenuCategoryServices;
 using KafeQRMenu.BLogic.Services.MenuItemServices;
 using Mapster;
 using KafeQRMenu.BLogic.Services.MenuService;
+using KafeQRMenu.BLogic.DTOs.CafeDTOs;
 
 namespace KafeQRMenu.UI.Controllers;
 
@@ -41,8 +42,16 @@ public class HomeController : Controller
         {
             var menuVM = new MenuVM();
 
-            // Get cafe - either by ID or first available
-            if (cafeId.HasValue && cafeId.Value != Guid.Empty)
+            // Priority 1: Check if middleware resolved cafe by domain
+            if (HttpContext.Items["Cafe"] is CafeDTO cafeTenant)
+            {
+                menuVM.Cafe = cafeTenant.Adapt<CafeVM>();
+                cafeId = cafeTenant.Id;
+                _logger.LogInformation("Cafe middleware'den alındı. Domain: {Domain}, CafeId: {Id}",
+                    cafeTenant.DomainName, cafeId);
+            }
+            // Priority 2: Explicit cafeId parameter
+            else if (cafeId.HasValue && cafeId.Value != Guid.Empty)
             {
                 var cafeResult = await _cafeService.GetByIdAsync(cafeId.Value);
                 if (cafeResult.IsSuccess && cafeResult.Data != null)
@@ -50,6 +59,7 @@ public class HomeController : Controller
                     menuVM.Cafe = cafeResult.Data.Adapt<CafeVM>();
                 }
             }
+            // Priority 3: Fallback - get first available or admin's cafe
             else
             {
                 var cafesResult = await _cafeService.GetAllAsync();
@@ -65,12 +75,12 @@ public class HomeController : Controller
                     }
                     else
                     {
-                        // Fallback to PiGo cafe
-                        var piGoCafe = cafesResult.Data.FirstOrDefault(x => x.CafeName == "PiGo");
-                        if (piGoCafe != null)
+                        // Fallback to first cafe
+                        var firstCafe = cafesResult.Data.FirstOrDefault();
+                        if (firstCafe != null)
                         {
-                            menuVM.Cafe = piGoCafe.Adapt<CafeVM>();
-                            cafeId = piGoCafe.Id;
+                            menuVM.Cafe = firstCafe.Adapt<CafeVM>();
+                            cafeId = firstCafe.Id;
                         }
                     }
                 }
@@ -166,6 +176,8 @@ public class HomeController : Controller
                 menuVM.Products = new List<MenuItemListVM>();
             }
 
+            menuVM.CreatedTime = activeMenu.CreatedTime;
+            menuVM.UpdatedTime = activeMenu.UpdatedTime;
             return View(menuVM);
         }
         catch (Exception ex)

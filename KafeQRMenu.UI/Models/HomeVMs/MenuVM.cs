@@ -9,5 +9,7 @@ namespace KafeQRMenu.UI.Models.HomeVMs
         public CafeVM Cafe { get; set; } = new();
         public List<MenuCategoryListVM> Categories { get; set; } = new();
         public List<MenuItemListVM> Products { get; set; } = new();
+        public DateTime CreatedTime { get; set; }
+        public DateTime? UpdatedTime { get; set; }
     }
 }

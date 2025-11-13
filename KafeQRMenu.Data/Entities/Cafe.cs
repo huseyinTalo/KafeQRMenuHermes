@@ -17,5 +17,6 @@ namespace KafeQRMenu.Data.Entities
         public virtual ICollection<MenuCategory> MenuCategories { get; set; } = new HashSet<MenuCategory>();
         public virtual ICollection<Menu> Menus { get; set; } = new HashSet<Menu>();
         public Guid? ImageFileId { get; set; }
+        public string DomainName { get; set; }
     }
 }

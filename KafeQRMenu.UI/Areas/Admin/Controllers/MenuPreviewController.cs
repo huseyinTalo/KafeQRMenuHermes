@@ -28,9 +28,9 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
             _logger = logger;
         }
 
-        // GET: Admin/MenuPreview
+        // GET: Admin/MenuPreview?menuId=xxx
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(Guid? menuId)
         {
             try
             {
@@ -43,33 +43,83 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
 
                 var cafeName = User.FindFirst("CafeName")?.Value ?? "Menü";
 
-                // Get active menu for this cafe
-                var activeMenuResult = await _menuService.GetActiveByCafeIdAsync(cafeId);
+                // Get all menus for this cafe
+                var allMenusResult = await _menuService.GetAllAsyncCafesCatsItems(cafeId);
 
-                if (!activeMenuResult.IsSuccess || activeMenuResult.Data == null)
+                if (!allMenusResult.IsSuccess || allMenusResult.Data == null || !allMenusResult.Data.Any())
                 {
-                    TempData["WarningMessage"] = "Henüz aktif bir menü bulunmuyor. Lütfen bir menü oluşturun ve aktif hale getirin.";
+                    TempData["WarningMessage"] = "Henüz hiç menü oluşturulmamış. Lütfen önce bir menü oluşturun.";
                     return View(new MenuPreviewViewModel
                     {
                         CafeName = cafeName,
-                        MenuName = "Aktif Menü Yok"
+                        MenuName = "Menü Yok"
                     });
                 }
 
-                var activeMenu = activeMenuResult.Data;
-                _logger.LogInformation("Aktif menü önizlemesi yükleniyor. MenuId: {MenuId}, MenuName: {MenuName}",
-                    activeMenu.MenuId, activeMenu.MenuName);
+                // Convert to selection items
+                var availableMenus = allMenusResult.Data
+                    .OrderByDescending(m => m.IsActive)
+                    .ThenByDescending(m => m.CreatedTime)
+                    .Select(m => new MenuSelectionItem
+                    {
+                        MenuId = m.MenuId,
+                        MenuName = m.MenuName,
+                        IsActive = m.IsActive,
+                        CreatedTime = m.CreatedTime
+                    }).ToList();
 
-                // Get categories for the active menu
-                var categoriesResult = await _menuCategoryService.GetAllAsyncByMenuId(activeMenu.MenuId);
-
-                if (!categoriesResult.IsSuccess || categoriesResult.Data == null || !categoriesResult.Data.Any())
+                // Determine which menu to show
+                Guid selectedMenuId;
+                if (menuId.HasValue && menuId.Value != Guid.Empty)
                 {
-                    TempData["WarningMessage"] = "Aktif menüde henüz kategori bulunmuyor.";
+                    // User selected a specific menu
+                    selectedMenuId = menuId.Value;
+                    _logger.LogInformation("Kullanıcı tarafından seçilen menü önizlemesi yükleniyor. MenuId: {MenuId}", selectedMenuId);
+                }
+                else
+                {
+                    // Default to active menu, or first menu if no active
+                    var activeMenu = availableMenus.FirstOrDefault(m => m.IsActive);
+                    selectedMenuId = activeMenu?.MenuId ?? availableMenus.First().MenuId;
+                    _logger.LogInformation("Varsayılan menü önizlemesi yükleniyor. MenuId: {MenuId}", selectedMenuId);
+                }
+
+                // Validate selected menu exists
+                if (!availableMenus.Any(m => m.MenuId == selectedMenuId))
+                {
+                    TempData["ErrorMessage"] = "Seçilen menü bulunamadı.";
+                    selectedMenuId = availableMenus.First().MenuId;
+                }
+
+                // Get the selected menu details
+                var selectedMenuResult = await _menuService.GetByIdAsync(selectedMenuId);
+
+                if (!selectedMenuResult.IsSuccess || selectedMenuResult.Data == null)
+                {
+                    TempData["ErrorMessage"] = "Menü detayları yüklenemedi.";
                     return View(new MenuPreviewViewModel
                     {
                         CafeName = cafeName,
-                        MenuName = activeMenu.MenuName
+                        MenuName = "Hata",
+                        AvailableMenus = availableMenus,
+                        SelectedMenuId = selectedMenuId
+                    });
+                }
+
+                var selectedMenu = selectedMenuResult.Data;
+
+                // Get categories for the selected menu
+                var categoriesResult = await _menuCategoryService.GetAllAsyncByMenuId(selectedMenu.MenuId);
+
+                if (!categoriesResult.IsSuccess || categoriesResult.Data == null || !categoriesResult.Data.Any())
+                {
+                    TempData["WarningMessage"] = "Bu menüde henüz kategori bulunmuyor.";
+                    return View(new MenuPreviewViewModel
+                    {
+                        CafeName = cafeName,
+                        MenuName = selectedMenu.MenuName,
+                        AvailableMenus = availableMenus,
+                        SelectedMenuId = selectedMenuId
                     });
                 }
 
@@ -80,7 +130,9 @@ namespace KafeQRMenu.Web.Areas.Admin.Controllers
                 var viewModel = new MenuPreviewViewModel
                 {
                     CafeName = cafeName,
-                    MenuName = activeMenu.MenuName,
+                    MenuName = selectedMenu.MenuName,
+                    SelectedMenuId = selectedMenuId,
+                    AvailableMenus = availableMenus,
                     Categories = categoriesResult.Data
                         .OrderBy(c => c.SortOrder)
                         .Select(c => new MenuPreviewCategoryVM

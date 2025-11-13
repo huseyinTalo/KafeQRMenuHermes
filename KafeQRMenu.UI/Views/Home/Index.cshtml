@@ -2,7 +2,13 @@
 @{
     ViewData["Title"] = Model.Cafe?.CafeName ?? "Menü";
 }
+@{
+    var dateToShow = (Model.UpdatedTime == null || Model.UpdatedTime == default(DateTime))
+        ? Model.CreatedTime
+        : Model.UpdatedTime;
 
+    var formattedDate = (dateToShow ?? DateTime.Now).ToString("dd.MM.yyyy");
+}
 <div class="menu-wrapper">
     <div class="menu-container">
         <!-- Elegant Header -->
@@ -11,7 +17,7 @@
             <div class="header-content">
                 <div class="restaurant-brand">
                     <div class="restaurant-emblem">
-                        <i class="bi bi-cup-hot-fill"></i>
+                        <img src="~/caffeine-overload.png" alt="Logo" />
                     </div>
                     <h1 class="restaurant-name">@Model.Cafe.CafeName</h1>
                     @if (!string.IsNullOrEmpty(Model.Cafe.Description))
@@ -57,7 +63,14 @@
                     @foreach (var category in Model.Categories.OrderBy(c => c.SortOrder))
                     {
                         <button class="tab-button" data-category="@category.MenuCategoryId">
-                            @category.MenuCategoryName
+                            @if (!string.IsNullOrEmpty(category.ImageFileBase64))
+                            {
+                                <div class="tab-icon">
+                                    <img src="data:image/jpeg;base64,@category.ImageFileBase64"
+                                         alt="@category.MenuCategoryName">
+                                </div>
+                            }
+                            <span>@category.MenuCategoryName</span>
                         </button>
                     }
                 }
@@ -80,14 +93,22 @@
                         <section class="menu-category" id="category-@category.MenuCategoryId">
                             <div class="category-header" data-category-id="@category.MenuCategoryId">
                                 <div class="category-title-wrapper">
-                                    <h2 class="category-name">
-                                        <span class="category-text">@category.MenuCategoryName</span>
-                                        <span class="category-line"></span>
-                                    </h2>
-                                    @if (!string.IsNullOrEmpty(category.Description))
-                                    {
-                                        <p class="category-subtitle">@category.Description</p>
-                                    }
+                                    <div class="category-name">
+                                        @if (!string.IsNullOrEmpty(category.ImageFileBase64))
+                                        {
+                                            <div class="category-image">
+                                                <img src="data:image/jpeg;base64,@category.ImageFileBase64"
+                                                     alt="@category.MenuCategoryName">
+                                            </div>
+                                        }
+                                        <div class="category-text-content">
+                                            <h2 class="category-text">@category.MenuCategoryName</h2>
+                                            @if (!string.IsNullOrEmpty(category.Description))
+                                            {
+                                                <p class="category-subtitle">@category.Description</p>
+                                            }
+                                        </div>
+                                    </div>
                                 </div>
                                 <button class="category-toggle" aria-label="Toggle category">
                                     <i class="bi bi-chevron-down"></i>
@@ -123,7 +144,6 @@
                                             </div>
 
                                             <div class="entry-price">
-                                                <span class="price-dots"></span>
                                                 <span class="price-amount">₺@product.Price.ToString("N0")</span>
                                             </div>
                                         </div>
@@ -151,6 +171,24 @@
             }
         </main>
 
+        <!-- Price Info Footer -->
+        <footer class="menu-footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p class="footer-text">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        <span>
+                            Fiyatlarımız <strong>@formattedDate</strong> tarihinde güncellenmiştir
+                        </span>
+                    </p>
+                    <p class="footer-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <span>Fiyatlarımıza KDV dahildir</span>
+                    </p>
+                </div>
+            </div>
+        </footer>
+
         <!-- Back to Top -->
         <button class="scroll-top" id="scrollTop">
             <i class="bi bi-arrow-up"></i>
@@ -159,6 +197,12 @@
 </div>
 
 @section Styles {
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+
     <style>
         * {
             margin: 0;
@@ -167,32 +211,32 @@
         }
 
         :root {
-            /* Restaurant Menu Colors */
-            --menu-primary: #8B4513; /* Saddle Brown */
-            --menu-secondary: #D2691E; /* Chocolate */
-            --menu-accent: #CD853F; /* Peru */
-            --menu-gold: #DAA520; /* Goldenrod */
+            /* Modern Minimalist Color Palette - 60-30-10 Rule */
+            --primary-green: #1B4332; /* Koyu Yeşil - 60% (Primary) */
+            --primary-green-light: #2D5A47;
+            --primary-green-dark: #0F2419;
+            --accent-mustard: #D4A574; /* Hardal - 30% (Secondary) */
+            --accent-mustard-light: #E3C19F;
+            --accent-mustard-dark: #B88A5C;
+            --neutral-white: #FFFFFF; /* Beyaz - 10% (Accent) */
+            --neutral-cream: #F8F6F3;
+            --neutral-light: #F0EDE8;
             /* Text Colors */
-            --text-primary: #2C1810;
-            --text-secondary: #5D4E37;
-            --text-muted: #8B7355;
-            /* Background Colors */
-            --bg-cream: #FFF8F0;
-            --bg-white: #FFFFFF;
-            --bg-light: #FAF6F2;
-            --bg-tan: #F5E6D3;
-            /* UI Colors */
-            --border-light: #E8DDD5;
-            --border-medium: #D4C4B0;
-            --shadow-color: rgba(139, 69, 19, 0.1);
+            --text-primary: #1B4332;
+            --text-secondary: #2D5A47;
+            --text-muted: #6B8576;
+            /* Shadow */
+            --shadow-subtle: 0 2px 8px rgba(27, 67, 50, 0.08);
+            --shadow-medium: 0 4px 16px rgba(27, 67, 50, 0.12);
+            --shadow-strong: 0 8px 24px rgba(27, 67, 50, 0.16);
             /* Transitions */
-            --transition: all 0.3s ease;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-fast: all 0.15s ease;
         }
 
         body {
-            font-family: 'Georgia', 'Times New Roman', serif;
-            background: var(--bg-cream);
+            font-family: 'Montserrat';
+            background: var(--neutral-cream);
             color: var(--text-primary);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
@@ -201,23 +245,22 @@
         /* ========== Menu Container ========== */
         .menu-wrapper {
             min-height: 100vh;
-            background: linear-gradient(180deg, var(--bg-cream) 0%, var(--bg-light) 100%);
+            background: linear-gradient(180deg, var(--neutral-cream) 0%, var(--neutral-light) 100%);
         }
 
         .menu-container {
             max-width: 1200px;
             margin: 0 auto;
-            background: var(--bg-white);
-            box-shadow: 0 0 50px var(--shadow-color);
+            background: var(--neutral-white);
+            box-shadow: var(--shadow-medium);
         }
 
         /* ========== Header ========== */
         .menu-header {
-            background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-tan) 100%);
-            padding: 3rem 2rem 2rem;
+            background: var(--primary-green);
+            padding: 3rem 2rem 2.5rem;
             text-align: center;
             position: relative;
-            border-bottom: 3px double var(--border-medium);
         }
 
         .header-decoration {
@@ -225,39 +268,50 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 8px;
-            background: repeating-linear-gradient( 90deg, var(--menu-primary) 0px, var(--menu-primary) 10px, var(--menu-gold) 10px, var(--menu-gold) 20px );
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-mustard) 0%, var(--accent-mustard-light) 50%, var(--accent-mustard) 100% );
         }
 
         .restaurant-emblem {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1rem;
-            background: var(--menu-primary);
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 1.5rem;
+            background: var(--accent-mustard);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--menu-gold);
-            font-size: 2.5rem;
-            box-shadow: 0 4px 15px var(--shadow-color);
+            color: var(--neutral-white);
+            font-size: 2.75rem;
+            box-shadow: var(--shadow-medium);
+            transition: var(--transition);
         }
 
+            .restaurant-emblem img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain; /* Logo oranını korur */
+                padding: 8px; /* Kenarlarda biraz boşluk */
+            }
+            .restaurant-emblem:hover {
+                transform: scale(1.05) rotate(5deg);
+            }
+
         .restaurant-name {
-            font-size: 2.5rem;
-            font-weight: 400;
-            color: var(--menu-primary);
-            margin-bottom: 0.5rem;
-            font-family: 'Playfair Display', 'Georgia', serif;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            font-family: 'Montserrat'; /* ✅ MONTSERRAT */
+            font-size: 3rem;
+            font-weight: 700; /* Bold yaparak öne çıkar */
+            color: var(--neutral-white);
+            margin-bottom: 0.75rem;
+            letter-spacing: 1px;
         }
 
         .restaurant-tagline {
             font-size: 1.125rem;
-            color: var(--text-secondary);
+            color: var(--accent-mustard-light);
             font-style: italic;
             margin-bottom: 1.5rem;
+            font-weight: 300;
         }
 
         .restaurant-details {
@@ -266,7 +320,7 @@
             gap: 2rem;
             flex-wrap: wrap;
             font-size: 0.95rem;
-            color: var(--text-muted);
+            color: var(--neutral-cream);
             margin-top: 1rem;
         }
 
@@ -277,7 +331,7 @@
         }
 
             .detail-item i {
-                color: var(--menu-secondary);
+                color: var(--accent-mustard);
             }
 
         .header-divider {
@@ -286,38 +340,22 @@
         }
 
         .divider-ornament {
-            width: 100px;
+            width: 80px;
             height: 2px;
-            background: var(--menu-primary);
+            background: var(--accent-mustard);
             margin: 0 auto;
-            position: relative;
+            border-radius: 2px;
         }
-
-            .divider-ornament::before,
-            .divider-ornament::after {
-                content: '◆';
-                position: absolute;
-                top: -10px;
-                color: var(--menu-gold);
-                font-size: 1.25rem;
-            }
-
-            .divider-ornament::before {
-                left: -20px;
-            }
-
-            .divider-ornament::after {
-                right: -20px;
-            }
 
         /* ========== Search Section ========== */
         .search-section {
-            background: var(--bg-white);
+            background: var(--neutral-white);
             padding: 1.5rem;
-            border-bottom: 1px solid var(--border-light);
+            border-bottom: 1px solid var(--neutral-light);
             position: sticky;
             top: 0;
             z-index: 100;
+            backdrop-filter: blur(10px);
         }
 
         .search-container {
@@ -329,21 +367,23 @@
             position: relative;
             display: flex;
             align-items: center;
-            background: var(--bg-light);
-            border: 1px solid var(--border-light);
-            border-radius: 30px;
-            padding: 0.75rem 1.25rem;
+            background: var(--neutral-cream);
+            border: 2px solid transparent;
+            border-radius: 50px;
+            padding: 0.875rem 1.5rem;
             transition: var(--transition);
         }
 
             .search-box:focus-within {
-                border-color: var(--menu-secondary);
-                box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
+                border-color: var(--accent-mustard);
+                background: var(--neutral-white);
+                box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.1);
             }
 
             .search-box i {
                 color: var(--text-muted);
                 margin-right: 0.75rem;
+                font-size: 1.125rem;
             }
 
         .search-field {
@@ -351,10 +391,13 @@
             border: none;
             background: transparent;
             outline: none;
-            font-family: inherit;
             font-size: 1rem;
             color: var(--text-primary);
         }
+
+            .search-field::placeholder {
+                color: var(--text-muted);
+            }
 
         .clear-search {
             background: none;
@@ -365,61 +408,88 @@
             display: flex;
             align-items: center;
             transition: var(--transition-fast);
+            font-size: 1.125rem;
         }
 
             .clear-search:hover {
-                color: var(--menu-secondary);
+                color: var(--primary-green);
             }
 
         /* ========== Category Tabs ========== */
         .category-tabs {
-            background: var(--bg-light);
-            border-bottom: 2px solid var(--border-medium);
+            background: var(--neutral-light);
+            border-bottom: 1px solid var(--neutral-light);
             padding: 0 1rem;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
-            scrollbar-color: var(--border-medium) transparent;
+            scrollbar-color: var(--accent-mustard) transparent;
         }
+
+            .category-tabs::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .category-tabs::-webkit-scrollbar-thumb {
+                background: var(--accent-mustard);
+                border-radius: 4px;
+            }
 
         .tabs-container {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem;
             padding: 1rem 0;
             min-width: max-content;
         }
 
         .tab-button {
-            padding: 0.625rem 1.5rem;
-            background: transparent;
+            padding: 0.75rem 1.5rem;
+            background: var(--neutral-white);
             border: 2px solid transparent;
-            border-radius: 25px;
-            font-family: inherit;
-            font-size: 0.95rem;
+            border-radius: 50px;
+            font-size: 0.9375rem;
+            font-weight: 500;
             color: var(--text-secondary);
             cursor: pointer;
             transition: var(--transition);
             white-space: nowrap;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
         }
 
-            .tab-button:hover {
-                background: var(--bg-white);
-                border-color: var(--menu-secondary);
-                color: var(--menu-primary);
+        .tab-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--neutral-light);
+        }
+
+            .tab-icon img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
             }
 
-            .tab-button.active {
-                background: var(--menu-primary);
-                color: var(--bg-white);
-                border-color: var(--menu-primary);
-            }
+        .tab-button:hover {
+            background: var(--primary-green);
+            color: var(--neutral-white);
+            border-color: var(--primary-green);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .tab-button.active {
+            background: var(--accent-mustard);
+            color: var(--neutral-white);
+            border-color: var(--accent-mustard);
+        }
 
         /* ========== Menu Board ========== */
         .menu-board {
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             max-width: 1000px;
             margin: 0 auto;
         }
@@ -433,27 +503,70 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             cursor: pointer;
             user-select: none;
-            padding: 0.5rem;
-            border-radius: 8px;
+            padding: 1rem;
+            border-radius: 16px;
             transition: var(--transition-fast);
+            background: var(--neutral-cream);
         }
 
             .category-header:hover {
-                background: var(--bg-light);
+                background: var(--neutral-light);
             }
 
         .category-title-wrapper {
             flex: 1;
         }
 
+        .category-name {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .category-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--neutral-white);
+            box-shadow: var(--shadow-subtle);
+        }
+
+            .category-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        .category-text-content {
+            flex: 1;
+        }
+
+        .category-text {
+            font-family: 'Montserrat'; /* ✅ MONTSERRAT */
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-green);
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.5px;
+        }
+
+        .category-subtitle {
+            font-size: 0.9375rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-top: 0.25rem;
+        }
+
         .category-toggle {
-            width: 36px;
-            height: 36px;
-            background: var(--bg-tan);
-            border: 1px solid var(--border-light);
+            width: 40px;
+            height: 40px;
+            background: var(--neutral-white);
+            border: 2px solid var(--neutral-light);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -466,8 +579,9 @@
         }
 
             .category-toggle:hover {
-                background: var(--menu-secondary);
-                color: var(--bg-white);
+                background: var(--accent-mustard);
+                border-color: var(--accent-mustard);
+                color: var(--neutral-white);
             }
 
             .category-toggle i {
@@ -479,47 +593,17 @@
         }
 
         .menu-category.collapsed .category-header {
-            background: var(--bg-tan);
+            background: var(--neutral-light);
             margin-bottom: 0.5rem;
-        }
-
-        .category-name {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            position: relative;
-        }
-
-        .category-text {
-            font-size: 1.75rem;
-            font-weight: 400;
-            color: var(--menu-primary);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-family: 'Playfair Display', 'Georgia', serif;
-        }
-
-        .category-line {
-            flex: 1;
-            height: 2px;
-            background: linear-gradient(90deg, var(--menu-gold) 0%, transparent 100%);
-            margin-left: 1rem;
-        }
-
-        .category-subtitle {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            font-style: italic;
-            margin-top: 0.5rem;
         }
 
         /* ========== Menu Items ========== */
         .menu-items {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.75rem;
             overflow: hidden;
-            max-height: 3000px;
+            max-height: 5000px;
             opacity: 1;
             transition: max-height 0.4s ease, opacity 0.3s ease;
         }
@@ -530,24 +614,19 @@
             gap: 0;
         }
 
-        /* ========== Menu Entry (Full Width Horizontal Layout) ========== */
+        /* ========== Menu Entry ========== */
         .menu-entry {
-            background: var(--bg-white);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            padding: 1rem 1.25rem;
+            background: var(--neutral-white);
+            border: 1px solid var(--neutral-light);
+            border-radius: 16px;
+            padding: 1.25rem;
             transition: var(--transition);
             cursor: pointer;
             width: 100%;
             position: relative;
+            overflow: hidden;
         }
 
-            /* Subtle alternating backgrounds for better readability */
-            .menu-entry:nth-child(even) {
-                background: var(--bg-light);
-            }
-
-            /* Add a subtle left border accent */
             .menu-entry::before {
                 content: '';
                 position: absolute;
@@ -556,34 +635,33 @@
                 bottom: 0;
                 width: 4px;
                 background: transparent;
-                border-radius: 8px 0 0 8px;
                 transition: var(--transition);
             }
 
             .menu-entry:hover::before {
-                background: var(--menu-secondary);
+                background: var(--accent-mustard);
             }
 
             .menu-entry:hover {
-                box-shadow: 0 4px 12px var(--shadow-color);
+                box-shadow: var(--shadow-medium);
                 transform: translateY(-2px);
-                border-color: var(--menu-secondary);
+                border-color: var(--accent-mustard-light);
             }
 
         .entry-content {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.25rem;
             width: 100%;
         }
 
         .entry-image {
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
+            width: 90px;
+            height: 90px;
+            border-radius: 12px;
             overflow: hidden;
             flex-shrink: 0;
-            box-shadow: 0 2px 8px var(--shadow-color);
+            box-shadow: var(--shadow-subtle);
         }
 
             .entry-image img {
@@ -598,12 +676,12 @@
         }
 
         .entry-image.placeholder {
-            background: var(--bg-tan);
+            background: var(--neutral-light);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
-            font-size: 1.5rem;
+            font-size: 2rem;
         }
 
         .entry-details {
@@ -613,192 +691,184 @@
         }
 
         .entry-title {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 0.25rem;
-            font-family: 'Playfair Display', 'Georgia', serif;
+            margin-bottom: 0.375rem;
         }
 
         .entry-description {
-            font-size: 0.875rem;
+            font-size: 0.9375rem;
             color: var(--text-muted);
-            line-height: 1.4;
+            line-height: 1.5;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-        }
-
-        .popular-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            background: var(--menu-gold);
-            color: var(--bg-white);
-            padding: 0.125rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            margin-top: 0.5rem;
+            font-weight: 300;
         }
 
         .entry-price {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
             flex-shrink: 0;
-            margin-left: auto;
-        }
-
-        .price-dots {
-            width: 60px;
-            height: 1px;
-            background-image: repeating-linear-gradient( to right, var(--border-medium) 0, var(--border-medium) 3px, transparent 3px, transparent 6px );
-            display: none; /* Hide on mobile, show on desktop */
-        }
-
-        @@media (min-width: 768px) {
-            .price-dots
-
-        {
-            display: block;
-        }
-
         }
 
         .price-amount {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: var(--menu-primary);
+            color: var(--primary-green);
+            background: var(--accent-mustard-light);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
             min-width: max-content;
         }
 
-        /* ========== Larger Screens - Keep Vertical Layout ========== */
-        @@media (min-width: 768px) {
-            .menu-entry
-
-        {
-            padding: 1.25rem 1.5rem;
+        /* ========== Footer ========== */
+        .menu-footer {
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-light) 100%);
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+            border-top: 3px solid var(--accent-mustard);
         }
 
-        .entry-content {
-            gap: 1.25rem;
+        .footer-content {
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
-        .entry-image {
-            width: 90px;
-            height: 90px;
-        }
-
-        .entry-title {
-            font-size: 1.25rem;
-        }
-
-        .entry-description {
-            font-size: 0.9375rem;
-        }
-
-        .price-amount {
-            font-size: 1.375rem;
-        }
-
-        }
-
-        @@media (min-width: 1024px) {
-            .menu-board
-
-        {
-            max-width: 900px;
-        }
-
-        .entry-image {
-            width: 100px;
-            height: 100px;
-        }
-
-        .entry-content {
-            gap: 1.5rem;
-        }
-
-        }
-
-        /* ========== Mobile Responsive ========== */
-        @@media (max-width: 767px) {
-            .restaurant-name
-
-        {
-            font-size: 1.75rem;
-            letter-spacing: 1px;
-        }
-
-        .restaurant-details {
+        .footer-info {
+            display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.5rem;
             align-items: center;
+            text-align: center;
         }
 
-        .category-text {
-            font-size: 1.375rem;
-        }
-
-        .menu-board {
-            padding: 1.5rem 1rem;
-        }
-
-        .menu-entry {
-            padding: 0.875rem;
-        }
-
-        .entry-content {
-            gap: 0.75rem;
-        }
-
-        .entry-image {
-            width: 70px;
-            height: 70px;
-        }
-
-        .entry-title {
-            font-size: 1rem;
-        }
-
-        .entry-description {
-            font-size: 0.8125rem;
-            -webkit-line-clamp: 1; /* Show only 1 line on mobile to save space */
-        }
-
-        .price-amount {
-            font-size: 1.125rem;
-        }
-
-        .tabs-container {
-            padding: 0.75rem 0;
-        }
-
-        .tab-button {
-            padding: 0.5rem 1rem;
+        .footer-text {
             font-size: 0.875rem;
+            color: var(--neutral-cream);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            line-height: 1.6;
         }
 
+            .footer-text i {
+                color: var(--accent-mustard);
+                font-size: 1rem;
+                flex-shrink: 0;
+            }
+
+            .footer-text strong {
+                color: var(--accent-mustard);
+                font-weight: 600;
+            }
+
+        /* ========== Responsive ========== */
+        @@media (min-width: 768px) {
+            .menu-entry {
+                padding: 1.5rem;
+            }
+
+            .entry-content {
+                gap: 1.5rem;
+            }
+
+            .entry-image {
+                width: 100px;
+                height: 100px;
+            }
+
+            .entry-title {
+                font-size: 1.375rem;
+            }
+
+            .price-amount {
+                font-size: 1.625rem;
+            }
+
+            .footer-info {
+                flex-direction: row;
+                justify-content: center;
+                gap: 2rem;
+            }
+
+            .footer-text {
+                font-size: 0.9375rem;
+            }
         }
 
-        /* ========== Very Small Mobile ========== */
-        @@media (max-width: 420px) {
-            .entry-details
+        @@media (max-width: 767px) {
+            .restaurant-name {
+                font-size: 2rem;
+            }
 
-        {
-            padding-right: 0.5rem;
-        }
+            .category-text {
+                font-size: 1.5rem;
+            }
 
-        .entry-price {
-            flex-direction: column;
-            align-items: flex-end;
-        }
+            .category-image {
+                width: 50px;
+                height: 50px;
+            }
 
-        .price-amount {
-            font-size: 1rem;
-        }
+            .menu-board {
+                padding: 1.5rem 1rem;
+            }
 
+            .menu-entry {
+                padding: 1rem;
+            }
+
+            .entry-content {
+                gap: 1rem;
+            }
+
+            .entry-image {
+                width: 75px;
+                height: 75px;
+            }
+
+            .entry-title {
+                font-size: 1.125rem;
+            }
+
+            .entry-description {
+                font-size: 0.875rem;
+                -webkit-line-clamp: 1;
+            }
+
+            .price-amount {
+                font-size: 1.25rem;
+                padding: 0.375rem 0.75rem;
+            }
+
+            .tab-button {
+                padding: 0.625rem 1.25rem;
+                font-size: 0.875rem;
+            }
+
+            .tab-icon {
+                width: 28px;
+                height: 28px;
+            }
+
+            .menu-footer {
+                padding: 1.25rem 1rem;
+            }
+
+            .footer-text {
+                font-size: 0.8125rem;
+                flex-direction: column;
+                gap: 0.25rem;
+                text-align: center;
+            }
+
+            .footer-info {
+                gap: 0.75rem;
+            }
         }
 
         /* ========== Empty States ========== */
@@ -811,16 +881,23 @@
 
             .no-results i,
             .empty-menu i {
-                font-size: 3rem;
-                color: var(--border-medium);
-                margin-bottom: 1rem;
+                font-size: 3.5rem;
+                color: var(--accent-mustard);
+                margin-bottom: 1.5rem;
             }
 
             .no-results h3,
             .empty-menu h3 {
-                font-size: 1.5rem;
+                font-family: 'Montserrat'; /* ✅ MONTSERRAT */
+                font-size: 1.75rem;
+                font-weight: 600;
                 color: var(--text-secondary);
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .no-results p,
+            .empty-menu p {
+                font-weight: 300;
             }
 
         /* ========== Scroll Top Button ========== */
@@ -828,25 +905,26 @@
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            width: 50px;
-            height: 50px;
-            background: var(--menu-primary);
-            color: var(--bg-white);
-            border: 2px solid var(--menu-gold);
+            width: 56px;
+            height: 56px;
+            background: var(--primary-green);
+            color: var(--neutral-white);
+            border: none;
             border-radius: 50%;
             display: none;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: var(--transition);
-            box-shadow: 0 4px 12px var(--shadow-color);
+            box-shadow: var(--shadow-medium);
             z-index: 99;
+            font-size: 1.25rem;
         }
 
             .scroll-top:hover {
-                background: var(--menu-secondary);
-                transform: translateY(-3px);
-                box-shadow: 0 6px 20px var(--shadow-color);
+                background: var(--accent-mustard);
+                transform: translateY(-4px);
+                box-shadow: var(--shadow-strong);
             }
 
             .scroll-top.visible {
@@ -855,16 +933,13 @@
 
         /* ========== Print Styles ========== */
         @@media print {
-            .search-section, .category-tabs, .scroll-top
+            .search-section, .category-tabs, .scroll-top, .menu-footer {
+                display: none !important;
+            }
 
-        {
-            display: none !important;
-        }
-
-        .menu-entry {
-            break-inside: avoid;
-        }
-
+            .menu-entry {
+                break-inside: avoid;
+            }
         }
     </style>
 }
