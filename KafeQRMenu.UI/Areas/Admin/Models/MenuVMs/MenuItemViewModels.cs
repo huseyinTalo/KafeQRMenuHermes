@@ -121,6 +121,7 @@ namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
 
         public DateTime CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
+        public bool IsActiveOnTheMenu { get; set; }
 
         // For tracking price changes (useful for business logic)
         public decimal? OriginalPrice { get; set; }

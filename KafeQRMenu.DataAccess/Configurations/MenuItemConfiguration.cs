@@ -16,6 +16,7 @@ namespace KafeQRMenu.DataAccess.Configurations
         {
             builder.Property(x => x.MenuItemName).IsRequired().HasMaxLength(128);
             builder.Property(x => x.Price).IsRequired();
+            builder.Property(x => x.IsActiveOnTheMenu).HasDefaultValue(false);
             builder
                .HasOne(c => c.MenuItemImage)
                .WithOne(i => i.MenuItem)

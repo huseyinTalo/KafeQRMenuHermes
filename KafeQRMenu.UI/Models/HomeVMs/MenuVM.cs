@@ -11,5 +11,6 @@ namespace KafeQRMenu.UI.Models.HomeVMs
         public List<MenuItemListVM> Products { get; set; } = new();
         public DateTime CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
+        public DateTime DisplayDate { get; set; }
     }
 }

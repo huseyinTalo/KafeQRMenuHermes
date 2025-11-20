@@ -15,6 +15,7 @@ namespace KafeQRMenu.BLogic.MappingConfigs
                 .Map(dest => dest.ImageFileId, src => src.MenuItemImageId)
                 .Map(dest => dest.CreatedTime, src => src.CreatedTime)
                 .Map(dest => dest.UpdatedTime, src => src.UpdatedTime)
+                .Map(dest => dest.IsActiveOnTheMenu, src => src.IsActiveOnTheMenu)
                 .IgnoreNullValues(true);
 
             // MenuItem Entity -> MenuItemListDTO
@@ -24,12 +25,14 @@ namespace KafeQRMenu.BLogic.MappingConfigs
                 .Map(dest => dest.ImageFileId, src => src.MenuItemImage.Id)
                 .Map(dest => dest.CreatedTime, src => src.CreatedTime)
                 .Map(dest => dest.ImageFileBytes, src => src.MenuItemImage.ImageByteFile)
+                .Map(dest => dest.IsActiveOnTheMenu, src => src.IsActiveOnTheMenu)
                 .TwoWays();
 
             // MenuItemCreateDTO -> MenuItem Entity
             config.NewConfig<MenuItemCreateDTO, MenuItem>()
                 .Map(dest => dest.MenuCategoryId, src => src.MenuCategoryId)
                 .Map(dest => dest.MenuItemImageId, src => src.ImageFileId)
+                .Map(dest => dest.IsActiveOnTheMenu, src => src.IsActiveOnTheMenu)
                 .Ignore(dest => dest.Id)
                 .Ignore(dest => dest.MenuCategory)
                 .Ignore(dest => dest.MenuItemImage)
@@ -45,6 +48,7 @@ namespace KafeQRMenu.BLogic.MappingConfigs
                 .Map(dest => dest.SortOrder, src => src.SortOrder)
                 .Map(dest => dest.MenuCategoryId, src => src.MenuCategoryId)
                 .Map(dest => dest.MenuItemImageId, src => src.ImageFileId)
+                .Map(dest => dest.IsActiveOnTheMenu, src => src.IsActiveOnTheMenu)
                 .Ignore(dest => dest.Id)
                 .Ignore(dest => dest.MenuCategory)
                 .Ignore(dest => dest.MenuItemImage)

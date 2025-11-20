@@ -77,6 +77,29 @@
                             <span asp-validation-for="MenuName" class="text-danger small"></span>
                         </div>
 
+                        <!-- Display Date -->
+                        <div class="mb-4">
+                            <label asp-for="DisplayDate" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event me-2"></i>Menü Tarihi
+                                <span class="text-muted small">(Opsiyonel)</span>
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="DisplayDate"
+                                       type="datetime-local"
+                                       class="form-control form-control-lg"
+                                       id="displayDateInput"
+                                       value="@((Model.DisplayDate).ToString("yyyy-MM-ddTHH:mm"))" />
+                                <button type="button" class="btn btn-outline-secondary" id="clearDateBtn" title="Tarihi Bugüne Sıfırla">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="DisplayDate" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Menü üzerinde gösterilecek tarihi belirleyin (örn: Kış Menüsü 2024)
+                            </div>
+                        </div>
+
                         <!-- Categories Selection -->
                         <div class="mb-4">
                             <label asp-for="CategoryIds" class="form-label fw-semibold">
@@ -296,6 +319,31 @@
                 cursor: pointer;
                 margin-left: 0.5rem;
             }
+
+        /* DateTime input styling */
+        input[type="datetime-local"] {
+            position: relative;
+        }
+
+            input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+                cursor: pointer;
+                opacity: 0.6;
+                transition: opacity 0.3s;
+            }
+
+                input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+                    opacity: 1;
+                }
+
+        #clearDateBtn {
+            transition: all 0.3s ease;
+        }
+
+            #clearDateBtn:hover {
+                background-color: #43e97b;
+                color: white;
+                border-color: #43e97b;
+            }
     </style>
 }
 
@@ -344,6 +392,40 @@
 
             // Trigger initial category display
             $('#categorySelect').trigger('change');
+
+            // Clear date button handler
+            $('#clearDateBtn').on('click', function () {
+                Swal.fire({
+                    title: 'Tarihi Sıfırla?',
+                    text: 'Tarih bugünün tarihine sıfırlanacak. Devam edilsin mi?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#667eea',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Evet, Sıfırla',
+                    cancelButtonText: 'İptal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+
+                        const dateTimeLocal = `${year}-${month}-${day}T${hours}:${minutes}`;
+                        $('#displayDateInput').val(dateTimeLocal);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sıfırlandı',
+                            text: 'Tarih bugüne ayarlandı',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+            });
 
             // Image preview functionality
             $('#imageInput').on('change', function (e) {

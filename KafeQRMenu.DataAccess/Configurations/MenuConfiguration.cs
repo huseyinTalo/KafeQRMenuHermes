@@ -18,11 +18,13 @@ namespace KafeQRMenu.DataAccess.Configurations
            .WithMany(c => c.Menus)
            .HasForeignKey(m => m.CafeId)
            .OnDelete(DeleteBehavior.Cascade);
-            base.Configure(builder);
-
             builder.HasMany(m => m.CategoriesOfMenu)  // Menu'daki property adı
                .WithMany(mc => mc.Menus)           // MenuCategory'deki property adı
                .UsingEntity(j => j.ToTable("MenuMenuCategories"));
+            builder.Property(x => x.IsActive).HasDefaultValue(false);
+            builder.Property(x => x.DisplayDate).HasDefaultValue(DateTime.Now);
+            base.Configure(builder);
+
         }
     }
 }

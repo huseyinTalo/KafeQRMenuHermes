@@ -267,7 +267,7 @@ namespace KafeQRMenu.DataAccess.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MenuName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     ImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CafeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -300,6 +300,7 @@ namespace KafeQRMenu.DataAccess.Migrations
                     MenuCategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SortOrder = table.Column<int>(type: "int", nullable: false),
                     MenuItemImageId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActiveOnTheMenu = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),

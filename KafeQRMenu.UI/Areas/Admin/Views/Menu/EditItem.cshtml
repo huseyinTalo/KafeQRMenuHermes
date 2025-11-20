@@ -91,17 +91,26 @@
                             <span asp-validation-for="ItemName" class="text-danger small"></span>
                         </div>
 
-                        <!-- Description -->
+                        <!-- Description - Quill Editor -->
                         <div class="mb-4">
                             <label asp-for="Description" class="form-label fw-semibold">
                                 <i class="bi bi-text-paragraph me-2"></i>Açıklama
                                 <span class="text-muted small">(Opsiyonel)</span>
                             </label>
+
+                            <!-- Quill Editor Container -->
+                            <div id="quillEditor" style="height: 200px; background: white;"></div>
+
+                            <!-- Hidden textarea - form submit için -->
                             <textarea asp-for="Description"
-                                      class="form-control"
-                                      rows="4"
-                                      placeholder="Ürün içeriği, malzemeler veya özel notlar..."></textarea>
+                                      style="display: none;"
+                                      id="descriptionField"></textarea>
+
                             <span asp-validation-for="Description" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Ürün açıklamasını zengin metin formatıyla yazabilirsiniz
+                            </div>
                         </div>
 
                         <!-- Price and Sort Order Row -->
@@ -147,6 +156,29 @@
                                        min="0"
                                        max="9999" />
                                 <span asp-validation-for="SortOrder" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <!-- Active Status Toggle -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-eye me-2"></i>Menüde Görünürlük
+                            </label>
+                            <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
+                                <div>
+                                    <strong class="d-block mb-1">Ürün Durumu</strong>
+                                    <small class="text-muted">Bu ürün müşterilere gösterilsin mi?</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsActiveOnTheMenu"
+                                           class="form-check-input"
+                                           type="checkbox"
+                                           role="switch"
+                                           id="isActiveSwitch"
+                                           style="width: 3rem; height: 1.5rem; cursor: pointer;">
+                                    <label class="form-check-label ms-2" for="isActiveSwitch">
+                                        <span id="activeSwitchLabel">@(Model.IsActiveOnTheMenu ? "Aktif" : "Pasif")</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
@@ -317,6 +349,9 @@
 </div>
 
 @section Styles {
+
+    <!-- Quill CSS - LOCAL -->
+    <link href="~/lib/quill/quill.snow.css" rel="stylesheet" />
     <style>
         .image-preview-container {
             transition: all 0.3s ease;
@@ -348,6 +383,30 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4);
         }
+
+        /* ✅ Quill Editor Özel Stiller */
+        #quillEditor {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .ql-toolbar {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .ql-container {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        #quillEditor:focus-within {
+            border-color: #ff9800;
+            box-shadow: 0 0 0 0.25rem rgba(255, 152, 0, 0.25);
+        }
     </style>
 }
 
@@ -355,16 +414,59 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- Quill JS - LOCAL -->
+    <script src="~/lib/quill/quill.js"></script>
+
+
     <script>
         $(document).ready(function () {
             const originalPrice = parseFloat(@Model.OriginalPrice.GetValueOrDefault().ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
 
-            // Auto-dismiss alerts
+            // ===== QUILL EDITOR INITIALIZATION =====
+            var quill = new Quill('#quillEditor', {
+                theme: 'snow',
+                placeholder: 'Ürün açıklamasını buraya yazın...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'align': [] }],
+                        ['clean']
+                        // NOT: Image ve video butonları ÇIKARILDI
+                    ]
+                }
+            });
+
+            // ✅ MEVCUT İÇERİĞİ YÜKLE (Edit modunda kritik!)
+            var existingContent = $('#descriptionField').val();
+            if (existingContent) {
+                quill.root.innerHTML = existingContent;
+            }
+
+            // Form submit öncesi HTML içeriğini hidden field'a kopyala
+            $('#itemForm').on('submit', function(e) {
+                var htmlContent = quill.root.innerHTML;
+
+                // Boş içerik kontrolü
+                if (quill.getText().trim().length === 0) {
+                    $('#descriptionField').val('');
+                } else {
+                    $('#descriptionField').val(htmlContent);
+                }
+
+                const $submitBtn = $('#submitBtn');
+                $submitBtn.prop('disabled', true);
+                $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Kaydediliyor...');
+            });
+
+            // ===== AUTO-DISMISS ALERTS =====
             setTimeout(function () {
                 $('.alert').fadeOut('slow');
             }, 5000);
 
-            // Image preview functionality
+            // ===== IMAGE PREVIEW =====
             $('#imageInput').on('change', function (e) {
                 const file = e.target.files[0];
 
@@ -406,7 +508,7 @@
                 }
             });
 
-            // Remove image checkbox handler
+            // ===== REMOVE IMAGE CHECKBOX =====
             $('#removeImageCheck').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('#imageInput').val('');
@@ -415,10 +517,10 @@
                 }
             });
 
-            // Price validation and warnings
+            // ===== PRICE VALIDATION WITH QUILL =====
             $('#priceInput').on('input', function () {
                 const newPrice = parseFloat($(this).val());
-                const description = $('textarea[name="Description"]').val();
+                const description = quill.getText().trim(); // ✅ Quill'den metin al
 
                 // Check for expensive items without description
                 if (newPrice > 100 && !description) {
@@ -464,20 +566,20 @@
                 }
             });
 
-            $('textarea[name="Description"]').on('input', function () {
+            // ✅ Quill değişikliklerini dinle
+            quill.on('text-change', function() {
                 const price = parseFloat($('#priceInput').val());
-                const description = $(this).val();
+                const description = quill.getText().trim();
 
                 if (price > 100 && description) {
                     $('#priceAlert').slideUp();
                 }
             });
 
-            // Form submission with loading state
-            $('#itemForm').on('submit', function (e) {
-                const $submitBtn = $('#submitBtn');
-                $submitBtn.prop('disabled', true);
-                $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Kaydediliyor...');
+            // ===== ACTIVE STATUS SWITCH =====
+            $('#isActiveSwitch').on('change', function() {
+                const isActive = $(this).is(':checked');
+                $('#activeSwitchLabel').text(isActive ? 'Aktif' : 'Pasif');
             });
         });
     </script>

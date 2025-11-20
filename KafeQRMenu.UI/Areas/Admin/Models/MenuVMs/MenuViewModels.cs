@@ -148,6 +148,8 @@ namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
         // Business rules validation
         public List<string> ValidationErrors { get; set; } = new();
 
+        public DateTime DisplayDate { get; set; }
+
         public void Validate()
         {
             ValidationErrors.Clear();
@@ -203,7 +205,7 @@ namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
 
         [Display(Name = "Mevcut Resmi Sil")]
         public bool RemoveCurrentImage { get; set; }
-
+        public DateTime DisplayDate { get; set; }
         public MultiSelectList? Categories { get; set; }
 
         // UI helpers

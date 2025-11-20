@@ -1,4 +1,5 @@
-﻿using KafeQRMenu.BLogic.DTOs.CafeDTOs;
+﻿using Ganss.Xss;
+using KafeQRMenu.BLogic.DTOs.CafeDTOs;
 using KafeQRMenu.BLogic.DTOs.MenuCategoryDTOs;
 using KafeQRMenu.BLogic.DTOs.MenuDTOs;
 using KafeQRMenu.BLogic.DTOs.MenuItemDTOs;
@@ -23,17 +24,20 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
         private readonly IMenuCategoryService _menuCategoryService;
         private readonly IMenuItemService _menuItemService;
         private readonly ILogger<MenuController> _logger;
+        private readonly IHtmlSanitizer _htmlSanitizer;
 
         public MenuController(
             IMenuService menuService,
             IMenuCategoryService menuCategoryService,
             IMenuItemService menuItemService,
-            ILogger<MenuController> logger)
+            ILogger<MenuController> logger,
+            IHtmlSanitizer htmlSanitizer)
         {
             _menuService = menuService;
             _menuCategoryService = menuCategoryService;
             _menuItemService = menuItemService;
             _logger = logger;
+            _htmlSanitizer = htmlSanitizer;
         }
 
         #region Helper Methods for Claims
@@ -429,7 +433,8 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     IsActive = viewModel.IsActive,
                     CafeId = userCafeId,
                     ImageFileId = viewModel.ImageFileId,
-                    CategoryIds = viewModel.CategoryIds
+                    CategoryIds = viewModel.CategoryIds,
+                    DisplayDate = viewModel.DisplayDate
                 };
 
                 byte[]? imageData = null;
@@ -1403,6 +1408,11 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                     return View(viewModel);
                 }
 
+                if (!string.IsNullOrWhiteSpace(viewModel.Description))
+                {
+                    viewModel.Description = _htmlSanitizer.Sanitize(viewModel.Description);
+                }
+
                 // Map ViewModel to DTO
                 var itemCreateDto = new MenuItemCreateDTO
                 {
@@ -1517,7 +1527,11 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                 {
                     return View(viewModel);
                 }
-
+                // HTML içeriğini temizle
+                if (!string.IsNullOrWhiteSpace(viewModel.Description))
+                {
+                    viewModel.Description = _htmlSanitizer.Sanitize(viewModel.Description);
+                }
                 // Map ViewModel to DTO
                 var itemUpdateDto = new MenuItemUpdateDTO
                 {
@@ -1665,7 +1679,87 @@ namespace KafeQRMenu.UI.Areas.Admin.Controllers
                 return Json(new { success = false, message = "Sıralama güncellenirken bir hata oluştu." });
             }
         }
+        #region Item Active Toggle
 
+        // POST: Admin/Menu/ToggleItemActive
+        [HttpPost]
+        public async Task<IActionResult> ToggleItemActive(Guid itemId)
+        {
+            try
+            {
+                if (itemId == Guid.Empty)
+                {
+                    return Json(new { success = false, message = "Geçersiz ürün ID." });
+                }
+
+                if (!ValidateUserCafeId(out var userCafeId))
+                {
+                    return Json(new { success = false, message = "Kullanıcı kafe bilgisi bulunamadı." });
+                }
+
+                // Get the item
+                var itemResult = await _menuItemService.GetByIdAsync(itemId);
+                if (!itemResult.IsSuccess || itemResult.Data == null)
+                {
+                    return Json(new { success = false, message = itemResult.Message });
+                }
+
+                // Security check: Get category to verify it belongs to user's cafe
+                var categoryResult = await _menuCategoryService.GetByIdAsync(itemResult.Data.MenuCategoryId);
+                if (!categoryResult.IsSuccess || categoryResult.Data == null)
+                {
+                    return Json(new { success = false, message = "Kategori bulunamadı." });
+                }
+
+                if (categoryResult.Data.CafeId != userCafeId)
+                {
+                    _logger.LogWarning("User attempted to toggle item from different cafe. UserId: {UserId}",
+                        User.Identity?.Name);
+                    return Json(new { success = false, message = "Bu ürün üzerinde işlem yapma yetkiniz yok." });
+                }
+
+                // Toggle active state
+                bool newActiveState = !itemResult.Data.IsActiveOnTheMenu;
+
+                var updateDto = new MenuItemUpdateDTO
+                {
+                    MenuItemId = itemResult.Data.MenuItemId,
+                    MenuItemName = itemResult.Data.MenuItemName,
+                    Description = itemResult.Data.Description,
+                    Price = itemResult.Data.Price,
+                    SortOrder = itemResult.Data.SortOrder,
+                    MenuCategoryId = itemResult.Data.MenuCategoryId,
+                    MenuCategoryName = itemResult.Data.MenuCategoryName,
+                    ImageFileId = itemResult.Data.ImageFileId,
+                    IsActiveOnTheMenu = newActiveState
+                };
+
+                var result = await _menuItemService.UpdateAsync(updateDto);
+
+                if (result.IsSuccess)
+                {
+                    string message = newActiveState
+                        ? "Ürün menüde aktif hale getirildi."
+                        : "Ürün menüden gizlendi.";
+
+                    return Json(new
+                    {
+                        success = true,
+                        isActive = newActiveState,
+                        message = message
+                    });
+                }
+
+                return Json(new { success = false, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling active status for item ID: {ItemId}", itemId);
+                return Json(new { success = false, message = "Durum güncellenirken bir hata oluştu." });
+            }
+        }
+
+        #endregion
         // Helper class for item order update
         public class ItemOrderUpdateRequest
         {

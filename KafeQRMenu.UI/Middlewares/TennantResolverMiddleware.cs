@@ -1,6 +1,6 @@
 ﻿using KafeQRMenu.BLogic.Services.CafeServices;
 using KafeQRMenu.DataAccess.AppContext;
-
+using System.Web; // veya System.Net ekle
 public class CafeTenantMiddleware
 {
     private readonly RequestDelegate _next;
@@ -9,12 +9,11 @@ public class CafeTenantMiddleware
     {
         _next = next;
     }
-
     public async Task InvokeAsync(HttpContext context)
     {
         var cafeService = context.RequestServices.GetRequiredService<ICafeService>();
         var host = context.Request.Host.Host;
-
+        
         // Try exact match first
         var result = await cafeService.GetByDomainAsync(host);
 
@@ -37,9 +36,12 @@ public class CafeTenantMiddleware
             context.Items["CafeId"] = result.Data.Id;
             context.Items["CafeName"] = result.Data.CafeName;
             context.Items["CafeDomain"] = result.Data.DomainName;
-            // İhtiyacın olan diğer primitive değerler...
         }
-        
+        else
+        {
+            string.IsNullOrEmpty(result.Message);
+        }
+
         await _next(context);
     }
 }

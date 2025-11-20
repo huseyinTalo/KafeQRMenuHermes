@@ -16,5 +16,6 @@ namespace KafeQRMenu.BLogic.DTOs.MenuItemDTOs
         public Guid MenuCategoryId { get; set; }
         public string MenuCategoryName { get; set; }
         public Guid? ImageFileId { get; set; }
+        public bool IsActiveOnTheMenu { get; set; }
     }
 }

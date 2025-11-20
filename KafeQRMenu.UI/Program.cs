@@ -19,6 +19,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 var app = builder.Build();
+app.UseMiddleware<CafeTenantMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -29,28 +30,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx =>
-    {
-        // Service Worker ve Manifest için doğru MIME types
-        if (ctx.File.Name == "service-worker.js")
-        {
-            ctx.Context.Response.Headers.Append("Service-Worker-Allowed", "/");
-            ctx.Context.Response.Headers.Append("Content-Type", "application/javascript");
-        }
-        else if (ctx.File.Name == "manifest.json")
-        {
-            ctx.Context.Response.Headers.Append("Content-Type", "application/manifest+json");
-        }
-
-        // Cache control
-        const int durationInSeconds = 60 * 60 * 24 * 7; // 7 days
-        ctx.Context.Response.Headers[HeaderNames.CacheControl] =
-            "public,max-age=" + durationInSeconds;
-    }
-});
-app.UseMiddleware<CafeTenantMiddleware>();
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();

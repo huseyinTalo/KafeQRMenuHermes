@@ -17,5 +17,6 @@ namespace KafeQRMenu.BLogic.DTOs.MenuDTOs
         public string CafeName { get; set; } // ← ADD THIS
         public DateTime CreatedTime { get; set; } // ← ADD THIS
         public DateTime? UpdatedTime { get; set; }
+        public DateTime DisplayDate { get; set; }
     }
 }

@@ -36,7 +36,8 @@ namespace KafeQRMenu.UI.MappingConfigs
                 .Map(dest => dest.CafeId, src => src.CafeId)
                 .Map(dest => dest.ImageFileId, src => src.ImageFileId)
                 .Map(dest => dest.CategoryIds, src => src.CategoryIds)
-                .Map(dest => dest.CurrentImageBytes, src => src.ImageFileBytes);
+                .Map(dest => dest.CurrentImageBytes, src => src.ImageFileBytes)
+                .Map(dest => dest.DisplayDate, src => src.DisplayDate).TwoWays();
 
             // MenuDTO → MenuListItemViewModel entity
             config.NewConfig<MenuDTO, MenuListItemViewModel>()

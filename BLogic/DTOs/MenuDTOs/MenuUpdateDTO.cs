@@ -15,5 +15,6 @@ namespace KafeQRMenu.BLogic.DTOs.MenuDTOs
         public Guid CafeId { get; set; }
         public List<Guid>? CategoryIds { get; set; }
         public byte[]? ImageFileBytes { get; set; }
+        public DateTime DisplayDate { get; set; }
     }
 }

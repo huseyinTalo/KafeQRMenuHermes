@@ -14,5 +14,6 @@
         public string? ImageFileBase64 { get; set; } // Add this for the view
         public DateTime CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
+        public bool IsActiveOnTheMenu { get; set; }
     }
 }

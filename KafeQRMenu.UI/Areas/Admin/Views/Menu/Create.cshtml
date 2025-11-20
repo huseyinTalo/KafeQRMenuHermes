@@ -78,6 +78,24 @@
                             </div>
                         </div>
 
+                        <!-- Display Date -->
+                        <div class="mb-4">
+                            <label asp-for="DisplayDate" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event me-2"></i>Menü Tarihi
+                                <span class="text-muted small">(Opsiyonel)</span>
+                            </label>
+                            <input asp-for="DisplayDate"
+                                   type="datetime-local"
+                                   class="form-control form-control-lg"
+                                   id="displayDateInput"
+                                   value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                            <span asp-validation-for="DisplayDate" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Menü üzerinde gösterilecek tarihi belirleyin (örn: Kış Menüsü 2024)
+                            </div>
+                        </div>
+
                         <!-- Categories Selection -->
                         <div class="mb-4">
                             <label asp-for="CategoryIds" class="form-label fw-semibold">
@@ -285,6 +303,21 @@
                 cursor: pointer;
                 margin-left: 0.5rem;
             }
+
+        /* DateTime input styling */
+        input[type="datetime-local"] {
+            position: relative;
+        }
+
+            input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+                cursor: pointer;
+                opacity: 0.6;
+                transition: opacity 0.3s;
+            }
+
+                input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+                    opacity: 1;
+                }
     </style>
 }
 

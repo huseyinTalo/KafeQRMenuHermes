@@ -158,6 +158,7 @@ public class HomeController : Controller
                 if (productsResult.IsSuccess && productsResult.Data != null)
                 {
                     menuVM.Products = productsResult.Data
+                        .Where(p => p.IsActiveOnTheMenu)  // ✅ SADECE AKTİF ÜRÜNLER
                         .OrderBy(p => p.SortOrder)
                         .Select(p => new MenuItemListVM
                         {
@@ -171,7 +172,8 @@ public class HomeController : Controller
                             ImageFileId = p.ImageFileId,
                             ImageFileBase64 = p.ImageFileBytes != null && p.ImageFileBytes.Length > 0
                                 ? Convert.ToBase64String(p.ImageFileBytes)
-                                : null
+                                : null,
+                            IsActiveOnTheMenu = p.IsActiveOnTheMenu  // ✅ BU PROPERTY'Yİ DE KOPYALA
                         })
                         .ToList();
                 }
@@ -180,13 +182,10 @@ public class HomeController : Controller
                     menuVM.Products = new List<MenuItemListVM>();
                 }
             }
-            else
-            {
-                menuVM.Products = new List<MenuItemListVM>();
-            }
 
             menuVM.CreatedTime = activeMenu.CreatedTime;
             menuVM.UpdatedTime = activeMenu.UpdatedTime;
+            menuVM.DisplayDate = activeMenu.DisplayDate;
             return View(menuVM);
         }
         catch (Exception ex)

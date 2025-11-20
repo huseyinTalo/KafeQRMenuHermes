@@ -166,6 +166,21 @@
                                                         <span class="badge bg-light text-dark ms-2">#@item.SortOrder</span>
                                                     </div>
 
+                                                    <div class="mb-2">
+                                                        @if (item.IsActiveOnTheMenu)
+                                                        {
+                                                            <span class="badge bg-success item-status-badge-@item.ItemId">
+                                                                <i class="bi bi-check-circle me-1"></i>Aktif
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-secondary item-status-badge-@item.ItemId">
+                                                                <i class="bi bi-x-circle me-1"></i>Pasif
+                                                            </span>
+                                                        }
+                                                    </div>
+
                                                     @if (!string.IsNullOrEmpty(item.Description))
                                                     {
                                                         <p class="card-text small text-muted mb-2 flex-grow-1">
@@ -180,6 +195,20 @@
                                                                 <i class="bi bi-clock me-1"></i>
                                                                 @item.CreatedTime.ToString("dd MMM", new System.Globalization.CultureInfo("tr-TR"))
                                                             </small>
+                                                        </div>
+
+                                                        <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded mb-2">
+                                                            <small class="fw-semibold">Menüde Göster</small>
+                                                            <div class="form-check form-switch">
+                                                                <input class="form-check-input toggle-item-active-switch"
+                                                                       type="checkbox"
+                                                                       role="switch"
+                                                                       id="toggleItemActive_@item.ItemId"
+                                                                       data-item-id="@item.ItemId"
+                                                                       data-item-name="@item.ItemName"
+                                                                       style="width: 2.5rem; height: 1.25rem; cursor: pointer;"
+                                                                @(item.IsActiveOnTheMenu ? "checked" : "")>
+                                                            </div>
                                                         </div>
 
                                                         <div class="d-grid gap-1">
@@ -500,6 +529,76 @@
                     }
                 });
             });
+
+                    // Toggle Item Active/Inactive via Ajax
+        $('.toggle-item-active-switch').on('change', function() {
+            const checkbox = $(this);
+            const itemId = checkbox.data('item-id');
+            const itemName = checkbox.data('item-name');
+            const isActive = checkbox.is(':checked');
+            const card = checkbox.closest('.card');
+            const badge = card.find(`.item-status-badge-${itemId}`);
+
+            // Add loading state
+            checkbox.addClass('toggle-loading');
+
+            $.ajax({
+                url: '@Url.Action("ToggleItemActive", "Menu")',
+                type: 'POST',
+                data: {
+                    itemId: itemId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    checkbox.removeClass('toggle-loading');
+
+                    if (response.success) {
+                        // Update badge
+                        if (response.isActive) {
+                            badge.removeClass('bg-secondary').addClass('bg-success');
+                            badge.html('<i class="bi bi-check-circle me-1"></i>Aktif');
+                        } else {
+                            badge.removeClass('bg-success').addClass('bg-secondary');
+                            badge.html('<i class="bi bi-x-circle me-1"></i>Pasif');
+                        }
+
+                        // Show success toast
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: response.message,
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                    } else {
+                        // Revert checkbox state on error
+                        checkbox.prop('checked', !isActive);
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Hata',
+                            text: response.message,
+                            confirmButtonText: 'Tamam',
+                            confirmButtonColor: '#667eea'
+                        });
+                    }
+                },
+                error: function() {
+                    checkbox.removeClass('toggle-loading');
+                    checkbox.prop('checked', !isActive);
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Bağlantı Hatası',
+                        text: 'Durum güncellenirken bir hata oluştu.',
+                        confirmButtonText: 'Tamam',
+                        confirmButtonColor: '#667eea'
+                    });
+                }
+            });
+        });
         });
     </script>
 }

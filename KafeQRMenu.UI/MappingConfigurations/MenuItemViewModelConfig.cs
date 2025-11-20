@@ -20,7 +20,8 @@ namespace KafeQRMenu.UI.MappingConfigs
                 .Map(dest => dest.ImageFileBytes, src => src.ImageFileBytes)
                 .Map(dest => dest.CreatedTime, src => src.CreatedTime)
                 .Map(dest => dest.CanEdit, src => true)
-                .Map(dest => dest.CanDelete, src => true);
+                .Map(dest => dest.CanDelete, src => true)
+                .Map(dest => dest.IsActiveOnTheMenu, src => src.IsActiveOnTheMenu);
 
             // MenuItemDTO → ItemEditViewModel
             config.NewConfig<MenuItemDTO, ItemEditViewModel>()
@@ -33,7 +34,8 @@ namespace KafeQRMenu.UI.MappingConfigs
                 .Map(dest => dest.ImageFileId, src => src.ImageFileId)
                 .Map(dest => dest.CurrentImageBytes, src => src.ImageFileBytes)
                 .Map(dest => dest.CreatedTime, src => src.CreatedTime)
-                .Map(dest => dest.UpdatedTime, src => src.UpdatedTime);
+                .Map(dest => dest.UpdatedTime, src => src.UpdatedTime)
+                .Map(dest => dest.IsActiveOnTheMenu, src => src.IsActiveOnTheMenu);
         }
     }
 }

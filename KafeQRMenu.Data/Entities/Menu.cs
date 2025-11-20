@@ -16,5 +16,6 @@ namespace KafeQRMenu.Data.Entities
         public Guid? ImageFileId { get; set; }
         public Guid CafeId { get; set; }
         public virtual Cafe Cafe { get; set; }
+        public DateTime DisplayDate { get; set; } = DateTime.Today;
     }
 }

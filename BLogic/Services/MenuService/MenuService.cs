@@ -465,6 +465,7 @@ namespace KafeQRMenu.BLogic.Services.MenuService
                         existingMenu.MenuName = menuUpdateDto.MenuName;
                         existingMenu.IsActive = menuUpdateDto.IsActive;
                         existingMenu.CafeId = menuUpdateDto.CafeId;
+                        existingMenu.DisplayDate = menuUpdateDto.DisplayDate;
 
                         if (newImageFile != null)
                         {

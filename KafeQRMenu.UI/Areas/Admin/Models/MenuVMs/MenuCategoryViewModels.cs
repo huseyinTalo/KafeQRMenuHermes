@@ -65,6 +65,7 @@ namespace KafeQRMenu.UI.Areas.Admin.ViewModels.Menu
         public Guid? ImageFileId { get; set; }
         public byte[]? ImageFileBytes { get; set; }
         public DateTime CreatedTime { get; set; }
+        public bool IsActiveOnTheMenu { get; set; }
 
         // Authorization flags
         public bool CanEdit { get; set; } = true;

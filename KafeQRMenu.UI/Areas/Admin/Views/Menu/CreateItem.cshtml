@@ -96,14 +96,19 @@
                                 <i class="bi bi-text-paragraph me-2"></i>Açıklama
                                 <span class="text-muted small">(Opsiyonel)</span>
                             </label>
+
+                            <!-- Quill Editor Container -->
+                            <div id="quillEditor" style="height: 200px; background: white;"></div>
+
+                            <!-- Hidden textarea - form submit için -->
                             <textarea asp-for="Description"
-                                      class="form-control"
-                                      rows="4"
-                                      placeholder="Ürün içeriği, malzemeler veya özel notlar..."></textarea>
+                                      style="display: none;"
+                                      id="descriptionField"></textarea>
+
                             <span asp-validation-for="Description" class="text-danger small"></span>
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
-                                Detaylı açıklama müşterilerin karar vermesine yardımcı olur
+                                Ürün açıklamasını zengin metin formatıyla yazabilirsiniz
                             </div>
                         </div>
 
@@ -245,6 +250,8 @@
 </div>
 
 @section Styles {
+
+    <link href="~/lib/quill/quill.snow.css" rel="stylesheet" />
     <style>
         .image-preview-container {
             transition: all 0.3s ease;
@@ -281,15 +288,80 @@
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(67, 233, 123, 0.4);
             }
+
+        /* Quill Editor Özel Stiller */
+        #quillEditor {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .ql-toolbar {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .ql-container {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        #quillEditor:focus-within {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+        }
     </style>
 }
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <!-- Quill JS - LOCAL -->
+    <script src="~/lib/quill/quill.js"></script>
     <script>
         $(document).ready(function () {
+            // ===== QUILL EDITOR INITIALIZATION =====
+            var quill = new Quill('#quillEditor', {
+                theme: 'snow',
+                placeholder: 'Ürün açıklamasını buraya yazın...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'align': [] }],
+                        ['clean']
+                        // NOT: Image ve video butonları ÇIKARILDI
+                    ]
+                }
+            });
+
+            // Mevcut değeri yükle (edit modunda)
+            var existingContent = $('#descriptionField').val();
+            if (existingContent) {
+                quill.root.innerHTML = existingContent;
+            }
+
+            // Form submit öncesi HTML içeriğini hidden field'a kopyala
+            $('#itemForm').on('submit', function(e) {
+                var htmlContent = quill.root.innerHTML;
+
+                // Boş içerik kontrolü
+                if (quill.getText().trim().length === 0) {
+                    $('#descriptionField').val('');
+                } else {
+                    $('#descriptionField').val(htmlContent);
+                }
+
+                const $submitBtn = $('#submitBtn');
+                $submitBtn.prop('disabled', true);
+                $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Oluşturuluyor...');
+            });
+
+            // ===== MEVCUT KODLAR (Image preview, price validation) =====
             // Auto-dismiss alerts
             setTimeout(function () {
                 $('.alert').fadeOut('slow');
@@ -337,7 +409,7 @@
             // Price validation and warning
             $('input[name="Price"]').on('input', function () {
                 const price = parseFloat($(this).val());
-                const description = $('textarea[name="Description"]').val();
+                const description = quill.getText().trim(); // Quill'den metin al
 
                 if (price > 100 && !description) {
                     $('#priceAlert').slideDown();
@@ -346,20 +418,14 @@
                 }
             });
 
-            $('textarea[name="Description"]').on('input', function () {
+            // Quill değişikliklerini dinle
+            quill.on('text-change', function() {
                 const price = parseFloat($('input[name="Price"]').val());
-                const description = $(this).val();
+                const description = quill.getText().trim();
 
                 if (price > 100 && description) {
                     $('#priceAlert').slideUp();
                 }
-            });
-
-            // Form submission with loading state
-            $('#itemForm').on('submit', function (e) {
-                const $submitBtn = $('#submitBtn');
-                $submitBtn.prop('disabled', true);
-                $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Oluşturuluyor...');
             });
         });
     </script>

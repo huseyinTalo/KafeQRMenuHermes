@@ -17,5 +17,6 @@ namespace KafeQRMenu.Data.Entities
         public int SortOrder { get; set; }
         public Guid? MenuItemImageId { get; set; }
         public virtual ImageFile MenuItemImage { get; set; }
+        public bool IsActiveOnTheMenu { get; set; } = false;
     }
 }

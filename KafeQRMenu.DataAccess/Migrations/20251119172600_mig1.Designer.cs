@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KafeQRMenu.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251113123423_mig1")]
+    [Migration("20251119172600_mig1")]
     partial class mig1
     {
         /// <inheritdoc />
@@ -235,7 +235,9 @@ namespace KafeQRMenu.DataAccess.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("MenuName")
                         .IsRequired()
@@ -330,6 +332,11 @@ namespace KafeQRMenu.DataAccess.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActiveOnTheMenu")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<Guid>("MenuCategoryId")
                         .HasColumnType("uniqueidentifier");

@@ -12,8 +12,9 @@ namespace KafeQRMenu.BLogic.DTOs.MenuItemDTOs
         public Guid MenuCategoryId { get; set; }
         public string MenuCategoryName { get; set; }
         public Guid? ImageFileId { get; set; }
-        public byte[]? ImageFileBytes { get; set; }  // ADD THIS
-        public DateTime CreatedTime { get; set; }     // ADD THIS
-        public DateTime? UpdatedTime { get; set; }    // ADD THIS
+        public byte[]? ImageFileBytes { get; set; } 
+        public DateTime CreatedTime { get; set; }    
+        public DateTime? UpdatedTime { get; set; }    
+        public bool IsActiveOnTheMenu { get; set; }
     }
 }
