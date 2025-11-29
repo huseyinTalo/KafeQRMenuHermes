@@ -14,7 +14,7 @@
 </div>
 
 <div class="content-card">
-    <form asp-action="Create" method="post">
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
         <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
         <div class="form-group">
@@ -29,8 +29,9 @@
             <label asp-for="DomainName" class="form-label">
                 Domain Adı <span class="required">*</span>
             </label>
-            <input asp-for="DomainName" class="form-control" placeholder="Domain adını giriniz" />
+            <input asp-for="DomainName" class="form-control" placeholder="Domain adını giriniz (örn: cafem)" />
             <span asp-validation-for="DomainName" class="validation-message"></span>
+            <small class="form-text">Domain adı cafe'niz için benzersiz bir isim olmalıdır.</small>
         </div>
 
         <div class="form-group">
@@ -43,6 +44,29 @@
             <label asp-for="Address" class="form-label">Adres</label>
             <textarea asp-for="Address" class="form-control" rows="3" placeholder="Cafe adresini giriniz"></textarea>
             <span asp-validation-for="Address" class="validation-message"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="ImageFile" class="form-label">
+                <i class="bi bi-image"></i>
+                Cafe Resmi
+            </label>
+            <div class="image-upload-container">
+                <input type="file" asp-for="ImageFile" class="form-control" accept="image/*" id="imageInput" />
+                <span asp-validation-for="ImageFile" class="validation-message"></span>
+                <small class="form-text">
+                    <i class="bi bi-info-circle"></i>
+                    Desteklenen formatlar: JPG, JPEG, PNG, GIF, WEBP (Max: 5MB)
+                </small>
+
+                <div id="imagePreview" class="image-preview" style="display: none;">
+                    <img id="previewImage" src="" alt="Önizleme" />
+                    <button type="button" class="btn-remove-image" onclick="removeImage()">
+                        <i class="bi bi-x-circle"></i>
+                        Resmi Kaldır
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="form-actions">
@@ -178,12 +202,58 @@
             font-family: inherit;
         }
 
+        .form-text {
+            display: block;
+            margin-top: 0.5rem;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
         .validation-message {
             display: block;
             color: #dc3545;
             font-size: 0.875rem;
             margin-top: 0.5rem;
         }
+
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-top: 0.5rem;
+        }
+
+        .image-preview {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+            .image-preview img {
+                max-width: 100%;
+                max-height: 300px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+
+        .btn-remove-image {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+            .btn-remove-image:hover {
+                background: #c82333;
+            }
 
         .form-actions {
             display: flex;
@@ -219,4 +289,40 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        // Resim önizleme
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Dosya boyutu kontrolü (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Resim boyutu 5MB\'dan küçük olmalıdır.');
+                    e.target.value = '';
+                    return;
+                }
+
+                // Dosya türü kontrolü
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Sadece JPG, JPEG, PNG, GIF ve WEBP formatları desteklenir.');
+                    e.target.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImage').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function removeImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('previewImage').src = '';
+        }
+    </script>
 }

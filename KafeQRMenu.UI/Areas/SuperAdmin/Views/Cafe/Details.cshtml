@@ -14,18 +14,29 @@
 </div>
 
 <div class="content-card">
-    <div class="detail-header">
-        <div class="cafe-icon-large">
-            <i class="bi bi-cup-hot"></i>
+    @if (Model.ImageFileBytes != null && Model.ImageFileBytes.Length > 0)
+    {
+        <div class="detail-image-section">
+            <img src="data:image/jpeg;base64,@Convert.ToBase64String(Model.ImageFileBytes)"
+                 alt="@Model.CafeName"
+                 class="detail-image" />
         </div>
-        <h2>@Model.CafeName</h2>
-    </div>
+    }
+    else
+    {
+        <div class="detail-header no-image">
+            <div class="cafe-icon-large">
+                <i class="bi bi-cup-hot"></i>
+            </div>
+        </div>
+    }
 
     <div class="detail-header">
-        <div class="cafe-icon-large">
-            <i class="bi bi-cup-hot"></i>
-        </div>
-        <h2>@Model.DomainName</h2>
+        <h2>@Model.CafeName</h2>
+        <p class="domain-badge">
+            <i class="bi bi-globe"></i>
+            @Model.DomainName
+        </p>
     </div>
 
     <div class="detail-section">
@@ -35,6 +46,14 @@
                 Cafe Adı
             </div>
             <div class="detail-value">@Model.CafeName</div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-globe"></i>
+                Domain Adı
+            </div>
+            <div class="detail-value">@Model.DomainName</div>
         </div>
 
         <div class="detail-item">
@@ -67,6 +86,29 @@
                 else
                 {
                     @Model.Address
+                }
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">
+                <i class="bi bi-image"></i>
+                Resim Durumu
+            </div>
+            <div class="detail-value">
+                @if (Model.ImageFileBytes != null && Model.ImageFileBytes.Length > 0)
+                {
+                    <span class="badge-success">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Resim mevcut
+                    </span>
+                }
+                else
+                {
+                    <span class="badge-warning">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        Resim yüklenmemiş
+                    </span>
                 }
             </div>
         </div>
@@ -129,15 +171,6 @@
                 font-size: 1.1rem;
             }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-        }
-
-            .btn-primary:hover {
-                background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
-            }
-
         .btn-secondary {
             background: #6c757d;
             color: white;
@@ -165,15 +198,6 @@
                 background: #c82333;
             }
 
-        .btn-info {
-            background: #17a2b8;
-            color: white;
-        }
-
-            .btn-info:hover {
-                background: #138496;
-            }
-
         /* Page Styles */
         .page-header {
             margin-bottom: 2rem;
@@ -190,34 +214,70 @@
         .content-card {
             background: white;
             border-radius: 15px;
-            padding: 2rem;
+            padding: 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             max-width: 800px;
+            overflow: hidden;
+        }
+
+        /* Image Section */
+        .detail-image-section {
+            width: 100%;
+            max-height: 400px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .detail-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .detail-header {
             text-align: center;
-            padding-bottom: 2rem;
+            padding: 2rem;
             border-bottom: 2px solid #f0f0f0;
-            margin-bottom: 2rem;
         }
 
+            .detail-header.no-image {
+                background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+                padding: 3rem 2rem;
+            }
+
         .cafe-icon-large {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+            background: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 2.5rem;
+            color: #4CAF50;
+            font-size: 3rem;
             margin: 0 auto 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         .detail-header h2 {
-            font-size: 1.8rem;
+            font-size: 2rem;
             color: #2c3e50;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .domain-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 20px;
+            font-weight: 600;
             margin: 0;
         }
 
@@ -225,6 +285,7 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            padding: 2rem;
         }
 
         .detail-item {
@@ -239,6 +300,7 @@
 
             .detail-item:hover {
                 background: #e9ecef;
+                transform: translateX(5px);
             }
 
         .detail-label {
@@ -256,11 +318,37 @@
         .detail-value {
             color: #2c3e50;
             word-wrap: break-word;
+            display: flex;
+            align-items: center;
         }
 
         .text-muted {
             color: #999;
             font-style: italic;
+        }
+
+        .badge-success {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .badge-warning {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
         code {
@@ -276,16 +364,20 @@
             display: flex;
             gap: 1rem;
             justify-content: flex-end;
-            margin-top: 2rem;
-            padding-top: 1.5rem;
+            margin-top: 0;
+            padding: 1.5rem 2rem;
             border-top: 1px solid #e0e0e0;
             flex-wrap: wrap;
         }
 
         @@media (max-width: 768px) {
-            .content-card
+            .detail-image-section
 
         {
+            max-height: 250px;
+        }
+
+        .detail-section {
             padding: 1.5rem;
         }
 
@@ -296,6 +388,7 @@
 
         .form-actions {
             flex-direction: column;
+            padding: 1.5rem;
         }
 
             .form-actions .btn {

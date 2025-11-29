@@ -68,7 +68,36 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return View(saCafeCreateVM);
             }
 
-            var result = await _cafeService.CreateAsync(saCafeCreateVM.Adapt<CafeCreateDTO>());
+            byte[] imageData = null;
+
+            // Resim yüklenmişse byte array'e çevir
+            if (saCafeCreateVM.ImageFile != null && saCafeCreateVM.ImageFile.Length > 0)
+            {
+                // Resim boyut kontrolü (örn: max 5MB)
+                if (saCafeCreateVM.ImageFile.Length > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError("ImageFile", "Resim boyutu 5MB'dan küçük olmalıdır.");
+                    return View(saCafeCreateVM);
+                }
+
+                // Resim formatı kontrolü
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(saCafeCreateVM.ImageFile.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    ModelState.AddModelError("ImageFile", "Sadece .jpg, .jpeg, .png, .gif ve .webp formatları desteklenir.");
+                    return View(saCafeCreateVM);
+                }
+
+                using (var memoryStream = new MemoryStream())
+                {
+                    await saCafeCreateVM.ImageFile.CopyToAsync(memoryStream);
+                    imageData = memoryStream.ToArray();
+                }
+            }
+
+            var result = await _cafeService.CreateAsync(saCafeCreateVM.Adapt<CafeCreateDTO>(), imageData);
 
             if (result.IsSuccess)
             {
@@ -118,7 +147,36 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Controllers
                 return View(saCafeUpdateVM);
             }
 
-            var result = await _cafeService.UpdateAsync(saCafeUpdateVM.Adapt<CafeUpdateDTO>());
+            byte[] imageData = null;
+
+            // Yeni resim yüklenmişse
+            if (saCafeUpdateVM.ImageFile != null && saCafeUpdateVM.ImageFile.Length > 0)
+            {
+                // Resim boyut kontrolü (örn: max 5MB)
+                if (saCafeUpdateVM.ImageFile.Length > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError("ImageFile", "Resim boyutu 5MB'dan küçük olmalıdır.");
+                    return View(saCafeUpdateVM);
+                }
+
+                // Resim formatı kontrolü
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(saCafeUpdateVM.ImageFile.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    ModelState.AddModelError("ImageFile", "Sadece .jpg, .jpeg, .png, .gif ve .webp formatları desteklenir.");
+                    return View(saCafeUpdateVM);
+                }
+
+                using (var memoryStream = new MemoryStream())
+                {
+                    await saCafeUpdateVM.ImageFile.CopyToAsync(memoryStream);
+                    imageData = memoryStream.ToArray();
+                }
+            }
+
+            var result = await _cafeService.UpdateAsync(saCafeUpdateVM.Adapt<CafeUpdateDTO>(), imageData);
 
             if (result.IsSuccess)
             {

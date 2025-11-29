@@ -14,10 +14,11 @@
 </div>
 
 <div class="content-card">
-    <form asp-action="Edit" method="post">
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
         <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
         <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ImageFileId" />
 
         <div class="form-group">
             <label asp-for="CafeName" class="form-label">
@@ -33,6 +34,7 @@
             </label>
             <input asp-for="DomainName" class="form-control" placeholder="Domain adını giriniz" />
             <span asp-validation-for="DomainName" class="validation-message"></span>
+            <small class="form-text">Domain adı cafe'niz için benzersiz bir isim olmalıdır.</small>
         </div>
 
         <div class="form-group">
@@ -45,6 +47,54 @@
             <label asp-for="Address" class="form-label">Adres</label>
             <textarea asp-for="Address" class="form-control" rows="3" placeholder="Cafe adresini giriniz"></textarea>
             <span asp-validation-for="Address" class="validation-message"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">
+                <i class="bi bi-image"></i>
+                Cafe Resmi
+            </label>
+
+            @if (Model.ImageFileBytes != null && Model.ImageFileBytes.Length > 0)
+            {
+                <div class="current-image-container">
+                    <p class="current-image-label">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Mevcut Resim:
+                    </p>
+                    <img src="data:image/jpeg;base64,@Convert.ToBase64String(Model.ImageFileBytes)"
+                         alt="Cafe Resmi"
+                         class="current-image" />
+                </div>
+            }
+            else
+            {
+                <div class="no-image-container">
+                    <i class="bi bi-image"></i>
+                    <p>Mevcut resim yok</p>
+                </div>
+            }
+
+            <div class="image-upload-container">
+                <label asp-for="ImageFile" class="form-label-secondary">
+                    Yeni Resim Yükle (İsteğe Bağlı)
+                </label>
+                <input type="file" asp-for="ImageFile" class="form-control" accept="image/*" id="imageInput" />
+                <span asp-validation-for="ImageFile" class="validation-message"></span>
+                <small class="form-text">
+                    <i class="bi bi-info-circle"></i>
+                    Yeni resim yüklerseniz mevcut resim değiştirilecektir. Desteklenen formatlar: JPG, JPEG, PNG, GIF, WEBP (Max: 5MB)
+                </small>
+
+                <div id="imagePreview" class="image-preview" style="display: none;">
+                    <p class="preview-label">Yeni Resim Önizleme:</p>
+                    <img id="previewImage" src="" alt="Önizleme" />
+                    <button type="button" class="btn-remove-image" onclick="removeImage()">
+                        <i class="bi bi-x-circle"></i>
+                        Yeni Resmi Kaldır
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="form-actions">
@@ -151,6 +201,15 @@
             font-size: 0.95rem;
         }
 
+        .form-label-secondary {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
         .required {
             color: #dc3545;
         }
@@ -180,12 +239,113 @@
             font-family: inherit;
         }
 
+        .form-text {
+            display: block;
+            margin-top: 0.5rem;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
         .validation-message {
             display: block;
             color: #dc3545;
             font-size: 0.875rem;
             margin-top: 0.5rem;
         }
+
+        /* Current Image Styles */
+        .current-image-container {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .current-image-label {
+            font-weight: 600;
+            color: #28a745;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .current-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .no-image-container {
+            padding: 2rem;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+        }
+
+            .no-image-container i {
+                font-size: 3rem;
+                margin-bottom: 0.5rem;
+                display: block;
+            }
+
+            .no-image-container p {
+                margin: 0;
+                font-style: italic;
+            }
+
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-top: 0.5rem;
+        }
+
+        .image-preview {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 0.75rem;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-remove-image {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+            .btn-remove-image:hover {
+                background: #c82333;
+            }
 
         .form-actions {
             display: flex;
@@ -221,4 +381,40 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        // Resim önizleme
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Dosya boyutu kontrolü (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Resim boyutu 5MB\'dan küçük olmalıdır.');
+                    e.target.value = '';
+                    return;
+                }
+
+                // Dosya türü kontrolü
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Sadece JPG, JPEG, PNG, GIF ve WEBP formatları desteklenir.');
+                    e.target.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImage').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function removeImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('previewImage').src = '';
+        }
+    </script>
 }

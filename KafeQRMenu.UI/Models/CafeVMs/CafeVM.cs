@@ -11,5 +11,7 @@
         public DateTime CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
         public string DomainName { get; set; }
+        public byte[]? ImageFileBytes { get; set; }
+        public string? ImageFileBase64 { get; set; }
     }
 }

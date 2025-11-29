@@ -186,6 +186,13 @@ public class HomeController : Controller
             menuVM.CreatedTime = activeMenu.CreatedTime;
             menuVM.UpdatedTime = activeMenu.UpdatedTime;
             menuVM.DisplayDate = activeMenu.DisplayDate;
+            if(menuVM.Cafe.ImageFileBytes is not null)
+            {
+                if(menuVM.Cafe.ImageFileBytes.Length > 0)
+                {
+                    menuVM.Cafe.ImageFileBase64 = Convert.ToBase64String(menuVM.Cafe.ImageFileBytes);
+                }
+            }
             return View(menuVM);
         }
         catch (Exception ex)

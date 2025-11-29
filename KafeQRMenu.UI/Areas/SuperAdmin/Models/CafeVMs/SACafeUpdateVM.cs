@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace KafeQRMenu.UI.Areas.SuperAdmin.Models.CafeVMs
 {
@@ -12,6 +14,11 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Models.CafeVMs
         [Display(Name = "Cafe Adı")]
         public string CafeName { get; set; }
 
+        [Required(ErrorMessage = "Domain adı gereklidir.")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Domain adı 3-100 karakter arasında olmalıdır.")]
+        [Display(Name = "Domain Adı")]
+        public string DomainName { get; set; }
+
         [StringLength(500, ErrorMessage = "Açıklama en fazla 500 karakter olabilir.")]
         [Display(Name = "Açıklama")]
         public string Description { get; set; }
@@ -19,6 +26,13 @@ namespace KafeQRMenu.UI.Areas.SuperAdmin.Models.CafeVMs
         [StringLength(200, ErrorMessage = "Adres en fazla 200 karakter olabilir.")]
         [Display(Name = "Adres")]
         public string Address { get; set; }
-        public string DomainName { get; set; }
+
+        [Display(Name = "Yeni Cafe Resmi")]
+        public IFormFile ImageFile { get; set; }
+
+        // Mevcut resmi göstermek için
+        [BindNever]
+        public byte[]? ImageFileBytes { get; set; }
+        public Guid? ImageFileId { get; set; }
     }
 }

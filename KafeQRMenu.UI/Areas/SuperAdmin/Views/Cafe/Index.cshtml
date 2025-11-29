@@ -39,8 +39,8 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Cafe Adı</th>
-                        <th>Domain Adı</th>
+                        <th>Resim</th>
+                        <th>Cafe Bilgileri</th>
                         <th>Açıklama</th>
                         <th>Adres</th>
                         <th>İşlemler</th>
@@ -51,19 +51,28 @@
                     {
                         <tr>
                             <td>
-                                <div class="cafe-cell">
-                                    <div class="cafe-icon">
-                                        <i class="bi bi-cup-hot"></i>
-                                    </div>
-                                    <span class="cafe-name">@cafe.CafeName</span>
+                                <div class="image-cell">
+                                    @if (cafe.ImageFileBytes != null && cafe.ImageFileBytes.Length > 0)
+                                    {
+                                        <img src="data:image/jpeg;base64,@Convert.ToBase64String(cafe.ImageFileBytes)"
+                                             alt="@cafe.CafeName"
+                                             class="cafe-thumbnail" />
+                                    }
+                                    else
+                                    {
+                                        <div class="cafe-icon-placeholder">
+                                            <i class="bi bi-cup-hot"></i>
+                                        </div>
+                                    }
                                 </div>
                             </td>
                             <td>
-                                <div class="cafe-cell">
-                                    <div class="cafe-icon">
-                                        <i class="bi bi-cup-hot"></i>
-                                    </div>
-                                    <span class="cafe-name">@cafe.DomainName</span>
+                                <div class="cafe-info-cell">
+                                    <span class="cafe-name">@cafe.CafeName</span>
+                                    <span class="domain-name">
+                                        <i class="bi bi-globe"></i>
+                                        @cafe.DomainName
+                                    </span>
                                 </div>
                             </td>
                             <td>
@@ -260,6 +269,7 @@
             .data-table td {
                 padding: 1rem;
                 border-bottom: 1px solid #e0e0e0;
+                vertical-align: middle;
             }
 
             .data-table tbody tr {
@@ -268,34 +278,73 @@
 
                 .data-table tbody tr:hover {
                     background: #f8f9fa;
+                    transform: scale(1.01);
                 }
 
-        .cafe-cell {
+        /* Image Cell */
+        .image-cell {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            justify-content: center;
         }
 
-        .cafe-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+        .cafe-thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+            .cafe-thumbnail:hover {
+                transform: scale(1.1);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+
+        .cafe-icon-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
             background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.2rem;
+            font-size: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Cafe Info Cell */
+        .cafe-info-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
         .cafe-name {
             font-weight: 600;
             color: #2c3e50;
+            font-size: 1.05rem;
+        }
+
+        .domain-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.75rem;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            width: fit-content;
         }
 
         .description-text, .address-text {
             color: #666;
             font-size: 0.95rem;
+            line-height: 1.5;
         }
 
         .text-muted {
@@ -307,6 +356,7 @@
         .action-buttons {
             display: flex;
             gap: 0.5rem;
+            justify-content: center;
         }
 
         .btn-action {
@@ -330,6 +380,7 @@
             .btn-info:hover {
                 background: #138496;
                 transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(23,162,184,0.3);
             }
 
         .btn-warning {
@@ -340,6 +391,7 @@
             .btn-warning:hover {
                 background: #e0a800;
                 transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(255,193,7,0.3);
             }
 
         .btn-danger {
@@ -350,6 +402,7 @@
             .btn-danger:hover {
                 background: #c82333;
                 transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(220,53,69,0.3);
             }
 
         /* Empty State */
@@ -391,8 +444,18 @@
                     padding: 0.75rem 0.5rem;
                 }
 
+            .cafe-thumbnail,
+            .cafe-icon-placeholder {
+                width: 60px;
+                height: 60px;
+            }
+
             .cafe-name {
-                font-size: 0.9rem;
+                font-size: 0.95rem;
+            }
+
+            .domain-name {
+                font-size: 0.8rem;
             }
 
             .action-buttons {
