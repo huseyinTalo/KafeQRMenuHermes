@@ -1,0 +1,273 @@
+﻿@model KafeQRMenu.UI.Areas.Admin.Models.AdminVMs.AdminCafeEditVM
+
+@{
+    ViewData["Title"] = "Kafe Düzenle";
+    ViewData["BreadcrumbTitle"] = "Kafe Düzenle";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="fade-in">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-1">Kafe Bilgilerini Düzenle</h1>
+            <p class="text-muted mb-0">Kafe bilgilerinizi güncelleyin</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-action="CafeDetails" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Geri Dön
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="EditCafe" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ImageFileId" />
+
+        <div class="row g-4">
+            <!-- Logo Card -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="bi bi-image me-2 text-primary"></i>Kafe Logosu
+                        </h5>
+                    </div>
+                    <div class="card-body text-center py-4">
+                        <!-- Current Image Preview -->
+                        <div class="mb-4">
+                            <div id="imagePreviewContainer">
+                                @if (Model.ImageFileBytes != null && Model.ImageFileBytes.Length > 0)
+                                {
+                                    <img src="data:image/jpeg;base64,@Convert.ToBase64String(Model.ImageFileBytes)"
+                                         alt="Mevcut Logo"
+                                         id="imagePreview"
+                                         class="rounded"
+                                         style="width: 180px; height: 180px; object-fit: cover; border: 3px solid #43e97b;">
+                                }
+                                else
+                                {
+                                    <div id="defaultImagePlaceholder"
+                                         class="mx-auto"
+                                         style="width: 180px; height: 180px; border-radius: 12px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-cup-hot-fill text-white" style="font-size: 4rem;"></i>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="mb-3">
+                            <label for="ImageFile" class="form-label text-muted small">Yeni logo yükle</label>
+                            <input type="file"
+                                   class="form-control"
+                                   id="ImageFile"
+                                   name="ImageFile"
+                                   accept=".jpg,.jpeg,.png,.gif,.webp"
+                                   onchange="previewImage(this)">
+                            <span asp-validation-for="ImageFile" class="text-danger small"></span>
+                        </div>
+
+                        <small class="text-muted d-block">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Desteklenen formatlar: JPG, PNG, GIF, WebP (Max: 5MB)
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cafe Info Card -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="bi bi-shop me-2 text-primary"></i>Kafe Bilgileri
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div class="row g-3">
+                            <!-- Cafe Name -->
+                            <div class="col-12">
+                                <label asp-for="CafeName" class="form-label fw-semibold">
+                                    <i class="bi bi-tag me-1 text-muted"></i>Kafe Adı <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="CafeName"
+                                       class="form-control form-control-lg"
+                                       placeholder="Kafe adını girin">
+                                <span asp-validation-for="CafeName" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Address -->
+                            <div class="col-12">
+                                <label asp-for="Address" class="form-label fw-semibold">
+                                    <i class="bi bi-geo-alt me-1 text-muted"></i>Adres
+                                </label>
+                                <input asp-for="Address"
+                                       class="form-control"
+                                       placeholder="Kafe adresini girin">
+                                <span asp-validation-for="Address" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-semibold">
+                                    <i class="bi bi-text-paragraph me-1 text-muted"></i>Açıklama
+                                </label>
+                                <textarea asp-for="Description"
+                                          class="form-control"
+                                          rows="4"
+                                          placeholder="Kafe hakkında kısa bir açıklama yazın"></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                                <small class="text-muted">
+                                    <span id="descriptionCharCount">0</span>/500 karakter
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card-footer bg-white border-0 py-3">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="CafeDetails" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <style>
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .card:hover {
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+            }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-control-lg {
+            font-size: 1.1rem;
+            padding: 0.75rem 1rem;
+        }
+
+        #imagePreview {
+            transition: transform 0.3s ease;
+        }
+
+            #imagePreview:hover {
+                transform: scale(1.05);
+            }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+                transform: translateY(-1px);
+            }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+
+            // Character count for description
+            updateCharCount();
+            $('#Description').on('input', updateCharCount);
+        });
+
+        function updateCharCount() {
+            var length = $('#Description').val()?.length || 0;
+            $('#descriptionCharCount').text(length);
+
+            if (length > 450) {
+                $('#descriptionCharCount').addClass('text-warning');
+            } else {
+                $('#descriptionCharCount').removeClass('text-warning');
+            }
+
+            if (length >= 500) {
+                $('#descriptionCharCount').removeClass('text-warning').addClass('text-danger');
+            } else {
+                $('#descriptionCharCount').removeClass('text-danger');
+            }
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+
+                // Boyut kontrolü (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Logo boyutu 5MB\'dan küçük olmalıdır.');
+                    input.value = '';
+                    return;
+                }
+
+                var reader = new FileReader();
+
+                reader.onload = function(e) {
+                    var container = $('#imagePreviewContainer');
+
+                    // Mevcut içeriği temizle
+                    container.empty();
+
+                    // Yeni resmi ekle
+                    container.html(
+                        '<img src="' + e.target.result + '" ' +
+                        'alt="Yeni Logo" ' +
+                        'id="imagePreview" ' +
+                        'class="rounded" ' +
+                        'style="width: 180px; height: 180px; object-fit: cover; border: 3px solid #667eea;">'
+                    );
+                }
+
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+}

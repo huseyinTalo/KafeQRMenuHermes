@@ -454,6 +454,110 @@ namespace KafeQRMenu.BLogic.Services.AdminServices
             }
         }
 
+        public async Task<IDataResult<AdminDTO>> GetByIdAsync(Guid Id, bool tracking)
+        {
+            _logger.LogInformation("Admin getiriliyor. AdminId: {AdminId}", Id);
+
+            try
+            {
+                var admin = await _adminRepository.GetById(Id, tracking);
+
+                if (admin == null)
+                {
+                    _logger.LogWarning("Admin bulunamadı. AdminId: {AdminId}", Id);
+                    return new ErrorDataResult<AdminDTO>(
+                        null,
+                        "Admin bulunamadı."
+                    );
+                }
+
+                var adminDto = admin.Adapt<AdminDTO>();
+                adminDto.CafeName = admin.Cafe.CafeName;
+
+                _logger.LogInformation("Admin başarıyla getirildi. AdminId: {AdminId}, Email: {Email}",
+                    Id, adminDto.Email);
+
+                return new SuccessDataResult<AdminDTO>(
+                    adminDto,
+                    "Admin başarıyla getirildi."
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Admin getirilirken hata oluştu. AdminId: {AdminId}", Id);
+                return new ErrorDataResult<AdminDTO>(
+                    null,
+                    $"Bir hata oluştu: {ex.Message}"
+                );
+            }
+        }
+
+        public async Task<IDataResult<AdminDTO>> GetByIdentityIdAsync(string identityId, bool tracking)
+        {
+            _logger.LogInformation("Admin getiriliyor. IdentityId: {IdentityId}", identityId);
+
+            try
+            {
+                if (string.IsNullOrEmpty(identityId))
+                {
+                    _logger.LogWarning("IdentityId boş veya null.");
+                    return new ErrorDataResult<AdminDTO>(
+                        null,
+                        "Geçersiz kullanıcı kimliği."
+                    );
+                }
+
+                // IdentityId ile admin'i bul
+                var admin = await _adminRepository.GetAsync(a => a.IdentityId == identityId, tracking);
+
+                if (admin == null)
+                {
+                    _logger.LogWarning("Admin bulunamadı. IdentityId: {IdentityId}", identityId);
+                    return new ErrorDataResult<AdminDTO>(
+                        null,
+                        "Admin bulunamadı."
+                    );
+                }
+
+                var adminDto = admin.Adapt<AdminDTO>();
+
+                // Cafe bilgisini al
+                if (admin.CafeId != Guid.Empty)
+                {
+                    var cafe = await _cafeRepository.GetById(admin.CafeId, tracking: false);
+                    adminDto.CafeName = cafe?.CafeName;
+                }
+
+                // ImageFile varsa byte array olarak ekle
+                var imageFile = await _imageFileRepository.GetAsync(
+                    img => img.AdminId == admin.Id && img.ImageContentType == ImageContentType.Person && img.IsActive,
+                    tracking: false
+                );
+
+                if (imageFile != null)
+                {
+                    adminDto.ImageFileBytes = imageFile.ImageByteFile;
+                    adminDto.ImageFileId = imageFile.Id;
+                }
+
+                _logger.LogInformation("Admin başarıyla getirildi. AdminId: {AdminId}, IdentityId: {IdentityId}, Email: {Email}",
+                    admin.Id, identityId, adminDto.Email);
+
+                return new SuccessDataResult<AdminDTO>(
+                    adminDto,
+                    "Admin başarıyla getirildi."
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Admin getirilirken hata oluştu. IdentityId: {IdentityId}", identityId);
+                return new ErrorDataResult<AdminDTO>(
+                    null,
+                    $"Bir hata oluştu: {ex.Message}"
+                );
+            }
+        }
+
         public async Task<IResult> UpdateAsync(AdminUpdateDTO adminUpdateDto, byte[] newImageData = null)
         {
             _logger.LogInformation("Admin güncelleme işlemi başlatıldı. AdminId: {AdminId}, Email: {Email}",

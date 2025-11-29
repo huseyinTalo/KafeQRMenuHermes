@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 namespace KafeQRMenu.UI.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class MenuController : Controller
     {
         private readonly IMenuService _menuService;
