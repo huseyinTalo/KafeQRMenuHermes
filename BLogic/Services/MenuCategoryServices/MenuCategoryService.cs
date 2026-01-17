@@ -326,19 +326,26 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
                 }
 
                 var menuCategoryDtoList = menuCategories.Adapt<List<MenuCategoryListDTO>>();
+
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = menuCategoryDtoList
+                    .Where(c => c.ImageFileId.HasValue && c.ImageFileId != Guid.Empty)
+                    .Select(c => c.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking: false);
+
                 foreach (var item in menuCategoryDtoList)
                 {
-                    var imageId = item.ImageFileId ?? Guid.Empty;
-
-                    var imageByBytes = await _imageFileRepository.GetById(imageId);
-                    if (imageByBytes is not null)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageData))
                     {
-                        if (imageByBytes.ImageByteFile.Length != 0)
+                        if (imageData.ImageByteFile != null && imageData.ImageByteFile.Length > 0)
                         {
-                            item.ImageFileBytes = imageByBytes.ImageByteFile;
+                            item.ImageFileBytes = imageData.ImageByteFile;
                         }
                     }
                 }
+
                 return new SuccessDataResult<List<MenuCategoryListDTO>>(
                     menuCategoryDtoList,
                     $"{menuCategoryDtoList.Count} adet Kategori listelendi."
@@ -375,19 +382,26 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
                 }
 
                 var menuCategoryDtoList = menuCategories.Adapt<List<MenuCategoryListDTO>>();
+
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = menuCategoryDtoList
+                    .Where(c => c.ImageFileId.HasValue && c.ImageFileId != Guid.Empty)
+                    .Select(c => c.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking);
+
                 foreach (var item in menuCategoryDtoList)
                 {
-                    var imageId = item.ImageFileId ?? Guid.Empty;
-
-                    var imageByBytes = await _imageFileRepository.GetById(imageId, tracking);
-                    if (imageByBytes is not null)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageData))
                     {
-                        if (imageByBytes.ImageByteFile.Length != 0)
+                        if (imageData.ImageByteFile != null && imageData.ImageByteFile.Length > 0)
                         {
-                            item.ImageFileBytes = imageByBytes.ImageByteFile;
+                            item.ImageFileBytes = imageData.ImageByteFile;
                         }
                     }
                 }
+
                 return new SuccessDataResult<List<MenuCategoryListDTO>>(
                     menuCategoryDtoList,
                     $"{menuCategoryDtoList.Count} adet Kategori listelendi."
@@ -627,15 +641,21 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
 
                 var menuCategoryDtoList = menuCategories.Adapt<List<MenuCategoryListDTO>>();
 
-                // Load image bytes for each category
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = menuCategoryDtoList
+                    .Where(c => c.ImageFileId.HasValue && c.ImageFileId.Value != Guid.Empty)
+                    .Select(c => c.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking: false);
+
                 foreach (var item in menuCategoryDtoList)
                 {
-                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageData))
                     {
-                        var imageByBytes = await _imageFileRepository.GetById(item.ImageFileId.Value);
-                        if (imageByBytes != null && imageByBytes.ImageByteFile != null && imageByBytes.ImageByteFile.Length > 0)
+                        if (imageData.ImageByteFile != null && imageData.ImageByteFile.Length > 0)
                         {
-                            item.ImageFileBytes = imageByBytes.ImageByteFile;
+                            item.ImageFileBytes = imageData.ImageByteFile;
                         }
                     }
                 }
@@ -685,15 +705,21 @@ namespace KafeQRMenu.BLogic.Services.MenuCategoryServices
 
                 var menuCategoryDtoList = menuCategories.Adapt<List<MenuCategoryListDTO>>();
 
-                // Load image bytes for each category
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = menuCategoryDtoList
+                    .Where(c => c.ImageFileId.HasValue && c.ImageFileId.Value != Guid.Empty)
+                    .Select(c => c.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking);
+
                 foreach (var item in menuCategoryDtoList)
                 {
-                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageData))
                     {
-                        var imageByBytes = await _imageFileRepository.GetById(item.ImageFileId.Value, tracking);
-                        if (imageByBytes != null && imageByBytes.ImageByteFile != null && imageByBytes.ImageByteFile.Length > 0)
+                        if (imageData.ImageByteFile != null && imageData.ImageByteFile.Length > 0)
                         {
-                            item.ImageFileBytes = imageByBytes.ImageByteFile;
+                            item.ImageFileBytes = imageData.ImageByteFile;
                         }
                     }
                 }

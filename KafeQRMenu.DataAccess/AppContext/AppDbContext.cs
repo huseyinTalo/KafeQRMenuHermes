@@ -20,6 +20,9 @@ namespace KafeQRMenu.DataAccess.AppContext
     public class AppDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        // Cache to avoid repeated database queries - once SuperAdmins exist, they always will
+        private bool? _hasSuperAdmins = null;
+
         public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor = null) : base(options)
         {
             _httpContextAccessor = httpContextAccessor;
@@ -107,9 +110,16 @@ namespace KafeQRMenu.DataAccess.AppContext
 
         private string GetUserId()
         {
-            if (SuperAdmins.Count() > 0)
+            // Use cached value if available, otherwise check database
+            // Once SuperAdmins exist, they will always exist (one-way state change)
+            if (!_hasSuperAdmins.HasValue)
             {
-                return _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "SystemCreatedThee"; 
+                _hasSuperAdmins = SuperAdmins.Any();
+            }
+
+            if (_hasSuperAdmins.Value)
+            {
+                return _httpContextAccessor?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "SystemCreatedThee";
             }
 
             return "SystemCreatedThee";

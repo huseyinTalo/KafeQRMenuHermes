@@ -97,22 +97,35 @@ namespace KafeQRMenu.BLogic.Services.MenuService
                 var menuDto = menu.Adapt<MenuDTO>();
                 menuDto.CategoryIds = menu.CategoriesOfMenu?.Select(c => c.Id).ToList();
 
-                // Image varsa byte array olarak ekle
+                // Collect all image IDs to fetch in batch (menu image + category images)
+                var imageIds = new List<Guid>();
                 if (menuDto.ImageFileId.HasValue && menuDto.ImageFileId != Guid.Empty)
                 {
-                    var imageData = await _imageFileRepository.GetById(menuDto.ImageFileId.Value);
-                    if (imageData?.ImageByteFile != null)
+                    imageIds.Add(menuDto.ImageFileId.Value);
+                }
+                foreach (var item in menuDto.Categories)
+                {
+                    if (item.ImageFileId.HasValue && item.ImageFileId != Guid.Empty)
                     {
-                        menuDto.ImageFileBytes = imageData.ImageByteFile;
+                        imageIds.Add(item.ImageFileId.Value);
                     }
                 }
 
-                foreach(var item in menuDto.Categories)
+                // Fetch all images in a single query
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking: false);
+
+                // Assign menu image
+                if (menuDto.ImageFileId.HasValue && imagesDict.TryGetValue(menuDto.ImageFileId.Value, out var menuImage))
                 {
-                    if(item.ImageFileId.HasValue && item.ImageFileId != Guid.Empty)
+                    menuDto.ImageFileBytes = menuImage.ImageByteFile;
+                }
+
+                // Assign category images
+                foreach (var item in menuDto.Categories)
+                {
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var categoryImage))
                     {
-                        var imageData = await _imageFileRepository.GetById(item.ImageFileId ?? Guid.Empty);
-                        item.ImageFileBytes = imageData.ImageByteFile;
+                        item.ImageFileBytes = categoryImage.ImageByteFile;
                     }
                 }
 
@@ -151,16 +164,20 @@ namespace KafeQRMenu.BLogic.Services.MenuService
                     return dto;
                 }).ToList();
 
-                // Her menü için image byte array'i ekle
+                // Collect all image IDs from all menus and fetch in a single query
+                var imageIds = menuDtos
+                    .Where(m => m.ImageFileId.HasValue && m.ImageFileId != Guid.Empty)
+                    .Select(m => m.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking: false);
+
+                // Assign images to menus
                 foreach (var menuDto in menuDtos)
                 {
-                    if (menuDto.ImageFileId.HasValue && menuDto.ImageFileId != Guid.Empty)
+                    if (menuDto.ImageFileId.HasValue && imagesDict.TryGetValue(menuDto.ImageFileId.Value, out var imageData))
                     {
-                        var imageData = await _imageFileRepository.GetById(menuDto.ImageFileId.Value);
-                        if (imageData?.ImageByteFile != null)
-                        {
-                            menuDto.ImageFileBytes = imageData.ImageByteFile;
-                        }
+                        menuDto.ImageFileBytes = imageData.ImageByteFile;
                     }
                 }
 

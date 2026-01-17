@@ -434,16 +434,19 @@ public class CafeService : ICafeService
             // Entity'lerden DTO'lara Mapster ile mapping
             var cafeDtoList = cafes.Adapt<List<CafeListDTO>>();
 
-            // Her cafe için image byte array'i ekle
+            // Batch load all images in a single query to avoid N+1
+            var imageIds = cafeDtoList
+                .Where(c => c.ImageFileId.HasValue && c.ImageFileId != Guid.Empty)
+                .Select(c => c.ImageFileId.Value)
+                .ToList();
+
+            var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking: false);
+
             foreach (var cafeDto in cafeDtoList)
             {
-                if (cafeDto.ImageFileId.HasValue && cafeDto.ImageFileId != Guid.Empty)
+                if (cafeDto.ImageFileId.HasValue && imagesDict.TryGetValue(cafeDto.ImageFileId.Value, out var imageData))
                 {
-                    var imageData = await _imageFileRepository.GetById(cafeDto.ImageFileId.Value, tracking: false);
-                    if (imageData?.ImageByteFile != null)
-                    {
-                        cafeDto.ImageFileBytes = imageData.ImageByteFile;
-                    }
+                    cafeDto.ImageFileBytes = imageData.ImageByteFile;
                 }
             }
 
@@ -486,16 +489,19 @@ public class CafeService : ICafeService
             // Entity'lerden DTO'lara Mapster ile mapping
             var cafeDtoList = cafes.Adapt<List<CafeListDTO>>();
 
-            // Her cafe için image byte array'i ekle
+            // Batch load all images in a single query to avoid N+1
+            var imageIds = cafeDtoList
+                .Where(c => c.ImageFileId.HasValue && c.ImageFileId != Guid.Empty)
+                .Select(c => c.ImageFileId.Value)
+                .ToList();
+
+            var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking);
+
             foreach (var cafeDto in cafeDtoList)
             {
-                if (cafeDto.ImageFileId.HasValue && cafeDto.ImageFileId != Guid.Empty)
+                if (cafeDto.ImageFileId.HasValue && imagesDict.TryGetValue(cafeDto.ImageFileId.Value, out var imageData))
                 {
-                    var imageData = await _imageFileRepository.GetById(cafeDto.ImageFileId.Value, tracking);
-                    if (imageData?.ImageByteFile != null)
-                    {
-                        cafeDto.ImageFileBytes = imageData.ImageByteFile;
-                    }
+                    cafeDto.ImageFileBytes = imageData.ImageByteFile;
                 }
             }
 
