@@ -341,13 +341,19 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
 
                 var itemList = menuItems.Adapt<List<MenuItemListDTO>>();
 
-                // Load image bytes for each item
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = itemList
+                    .Where(i => i.ImageFileId.HasValue && i.ImageFileId.Value != Guid.Empty)
+                    .Select(i => i.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking: false);
+
                 foreach (var item in itemList)
                 {
-                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageFile))
                     {
-                        var imageFile = await _imageFileRepository.GetById(item.ImageFileId.Value);
-                        if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                        if (imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
                         {
                             item.ImageFileBytes = imageFile.ImageByteFile;
                         }
@@ -409,13 +415,19 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
 
                 var itemList = menuItems.Adapt<List<MenuItemListDTO>>();
 
-                // Load image bytes for each item
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = itemList
+                    .Where(i => i.ImageFileId.HasValue && i.ImageFileId.Value != Guid.Empty)
+                    .Select(i => i.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking);
+
                 foreach (var item in itemList)
                 {
-                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageFile))
                     {
-                        var imageFile = await _imageFileRepository.GetById(item.ImageFileId.Value, tracking);
-                        if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                        if (imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
                         {
                             item.ImageFileBytes = imageFile.ImageByteFile;
                         }
@@ -669,13 +681,19 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
 
                 var itemList = menuItems.Adapt<List<MenuItemListDTO>>();
 
-                // Load image bytes for each item
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = itemList
+                    .Where(i => i.ImageFileId.HasValue && i.ImageFileId.Value != Guid.Empty)
+                    .Select(i => i.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking: false);
+
                 foreach (var item in itemList)
                 {
-                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageFile))
                     {
-                        var imageFile = await _imageFileRepository.GetById(item.ImageFileId.Value);
-                        if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                        if (imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
                         {
                             item.ImageFileBytes = imageFile.ImageByteFile;
                         }
@@ -726,13 +744,19 @@ namespace KafeQRMenu.BLogic.Services.MenuItemServices
 
                 var itemList = menuItems.Adapt<List<MenuItemListDTO>>();
 
-                // Load image bytes for each item
+                // Batch load all images in a single query to avoid N+1
+                var imageIds = itemList
+                    .Where(i => i.ImageFileId.HasValue && i.ImageFileId.Value != Guid.Empty)
+                    .Select(i => i.ImageFileId.Value)
+                    .ToList();
+
+                var imagesDict = await _imageFileRepository.GetByIdsAsync(imageIds, tracking);
+
                 foreach (var item in itemList)
                 {
-                    if (item.ImageFileId.HasValue && item.ImageFileId.Value != Guid.Empty)
+                    if (item.ImageFileId.HasValue && imagesDict.TryGetValue(item.ImageFileId.Value, out var imageFile))
                     {
-                        var imageFile = await _imageFileRepository.GetById(item.ImageFileId.Value, tracking);
-                        if (imageFile != null && imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
+                        if (imageFile.ImageByteFile != null && imageFile.ImageByteFile.Length > 0)
                         {
                             item.ImageFileBytes = imageFile.ImageByteFile;
                         }
